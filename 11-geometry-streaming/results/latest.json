@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T20:01:18.453Z",
+  "timestamp": "2026-09-11T20:09:43.483Z",
   "test": "11-geometry-streaming",
   "status": "measured",
   "verdict": "INTEGRATE",
@@ -15,7 +15,7 @@
     "lights": 4
   },
   "cpu": {
-    "frameMs": 0.061,
+    "frameMs": 0.049,
     "submitMs": null
   },
   "gpu": {

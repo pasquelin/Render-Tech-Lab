@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix='geometry-oracles-') as temporary:
 PY
 ```
 
-Les fonctions ajoutées pour les extensions couvrent la sphère entièrement devant le proche, la profondeur perspective, les plages entières, les extrema affines, les corrections de bits, les coordonnées barycentriques, Bézier, la SGGX diagonale dans son repère principal et la transmittance. Elles sont des références f64 sur leur domaine déclaré ; elles ne prétendent pas fournir des intervalles à arrondi dirigé. La quadrature SGGX est une vérification numérique sous tolérance.
+Les fonctions ajoutées pour les extensions couvrent la sphère entièrement devant le proche, la profondeur perspective, les plages entières, les extrema affines, les corrections de bits, les coordonnées barycentriques, Bézier, la SGGX diagonale dans son repère principal et la transmittance. Elles sont des références f64 sur leur domaine déclaré ; elles ne prétendent pas fournir des intervalles à arrondi dirigé. Des entrées finies peuvent dépasser la plage arithmétique : les oracles de sphère et SGGX rejettent ces cas au lieu de livrer NaN, sans promettre de les résoudre par remise à l'échelle. L'oracle barycentrique normalise les poids dont la somme est acceptée proche de 1 ; leur interprétation est celle de coordonnées affines normalisées. La quadrature SGGX est une vérification numérique sous tolérance.
 
 ## Fonctions de référence
 
@@ -347,11 +347,15 @@ def sphere_ratio_bounds(center, radius, near):
         raise ValueError('Sphere hors domaine non clippe')
     z = center[2]
     denominator = z * z - radius * radius
+    if not math.isfinite(denominator) or denominator <= 0:
+        raise ValueError('Sphere hors plage arithmetique de cet oracle')
     result = []
     for coordinate in center[:2]:
         spread = radius * math.sqrt(coordinate * coordinate + denominator)
         result.append(((coordinate * z - spread) / denominator,
                        (coordinate * z + spread) / denominator))
+    if any(not math.isfinite(v) for pair in result for v in pair):
+        raise ValueError('Sphere hors plage arithmetique de cet oracle')
     return result
 
 
@@ -360,8 +364,9 @@ def depth_encode(distance, near, far=None, reversed_z=False):
             or distance < near or (far is not None and
                 (not math.isfinite(far) or far <= near or distance > far))):
         raise ValueError('Domaine de profondeur invalide')
-    value = 1 - near / distance if far is None else far * (distance - near) / (distance * (far - near))
-    return 1 - value if reversed_z else value
+    if reversed_z:
+        return near / distance if far is None else (near / distance) * ((far - distance) / (far - near))
+    return 1 - near / distance if far is None else ((distance - near) / distance) * (far / (far - near))
 
 
 def depth_decode(value, near, far=None, reversed_z=False):
@@ -369,10 +374,12 @@ def depth_decode(value, near, far=None, reversed_z=False):
             or not 0 <= value <= 1 or (far is not None and
                 (not math.isfinite(far) or far <= near))):
         raise ValueError('Domaine de profondeur invalide')
-    value = 1 - value if reversed_z else value
     if far is None:
-        return math.inf if value == 1 else near / (1 - value)
-    return near * far / (far - (far - near) * value)
+        denominator = value if reversed_z else 1 - value
+    else:
+        ratio = near / far
+        denominator = ratio + (1 - ratio) * value if reversed_z else (1 - value) + ratio * value
+    return math.inf if denominator == 0 else near / denominator
 
 
 def dispatch_range(count, workers, index):
@@ -407,6 +414,8 @@ def barycentric_distance_squared(vertices, first, second):
             or any(not math.isfinite(v) for row in [*vertices, first, second] for v in row)
             or not math.isclose(sum(first), 1) or not math.isclose(sum(second), 1)):
         raise ValueError('Coordonnees barycentriques invalides')
+    first = [v / sum(first) for v in first]
+    second = [v / sum(second) for v in second]
     delta = [a - b for a, b in zip(first, second)]
     return -sum(delta[i] * delta[j] * sum((vertices[i][k] - vertices[j][k]) ** 2 for k in range(3))
                 for i in range(3) for j in range(i + 1, 3))
@@ -429,8 +438,14 @@ def sggx_diagonal(diagonal, normal, view):
         raise ValueError('SGGX exige une matrice positive et des directions unitaires')
     sigma = math.sqrt(sum(s * w * w for s, w in zip(diagonal, view)))
     denominator = sum(n * n / s for s, n in zip(diagonal, normal))
-    distribution = 1 / (math.pi * math.sqrt(math.prod(diagonal)) * denominator ** 2)
-    return sigma, distribution, max(0, dot(view, normal)) * distribution / sigma
+    try:
+        distribution = 1 / (math.pi * math.sqrt(math.prod(diagonal)) * denominator ** 2)
+        pdf = max(0, dot(view, normal)) * distribution / sigma
+    except (ZeroDivisionError, OverflowError) as error:
+        raise ValueError('SGGX hors plage arithmetique de cet oracle') from error
+    if any(not math.isfinite(v) for v in [sigma, distribution, pdf]):
+        raise ValueError('SGGX hors plage arithmetique de cet oracle')
+    return sigma, distribution, pdf
 
 
 def transmittance(extinction, length):
@@ -754,7 +769,7 @@ class MathematicalContractTests(unittest.TestCase):
 
     def test_sphere_zero_and_clipped_domain(self):
         self.assertEqual(reference.sphere_ratio_bounds([2, 4, 8], 0, 1), [(0.25, 0.25), (0.5, 0.5)])
-        for center, radius, near in [([0, 0, 2], 1, 1), ([0, 0, 0], 1, 0.1), ([0, 0, 3], -1, 1), ([math.nan, 0, 3], 1, 1)]:
+        for center, radius, near in [([0, 0, 2], 1, 1), ([0, 0, 0], 1, 0.1), ([0, 0, 3], -1, 1), ([math.nan, 0, 3], 1, 1), ([1e200, 0, 1e200], 0, 1)]:
             with self.assertRaises(ValueError):
                 reference.sphere_ratio_bounds(center, radius, near)
 
@@ -780,6 +795,15 @@ class MathematicalContractTests(unittest.TestCase):
         step = 1e-7
         numerical = (reference.depth_decode(q + step, near, far) - reference.depth_decode(q - step, near, far)) / (2 * step)
         self.assertAlmostEqual(numerical, distance * distance * (far - near) / (near * far), places=6)
+
+    def test_reversed_depth_preserves_small_values(self):
+        self.assertAlmostEqual(reference.depth_decode(1, 1, 1e20) / 1e20, 1)
+        self.assertAlmostEqual(reference.depth_encode(1e16, 0.1, reversed_z=True) / 1e-17, 1)
+        self.assertAlmostEqual(reference.depth_decode(1e-17, 0.1, reversed_z=True) / 1e16, 1)
+        for far in [1e18, 1e30]:
+            distance = 1e16
+            q = reference.depth_encode(distance, 0.1, far, True)
+            self.assertAlmostEqual(reference.depth_decode(q, 0.1, far, True) / distance, 1)
 
     def test_depth_invalid_domain(self):
         for q, near, far in [(math.nan, 1, 2), (-0.1, 1, 2), (0.5, 0, 2), (0.5, 2, 1)]:
@@ -835,6 +859,8 @@ class MathematicalContractTests(unittest.TestCase):
         self.assertNotEqual(reference.compose_bit_patches(set_bit, clear_bit), reference.compose_bit_patches(clear_bit, set_bit))
 
     def test_barycentric_distance_matches_cartesian(self):
+        vertices = [[1e9, 0, 0], [1e9 + 1, 0, 0], [1e9, 1, 0]]
+        self.assertEqual(reference.barycentric_distance_squared(vertices, [1 + 5e-10, 0, 0], [1, 0, 0]), 0)
         generator = random.Random(322)
         for _ in range(500):
             vertices = [[generator.uniform(-10, 10) for _ in range(3)] for _ in range(3)]
@@ -888,7 +914,7 @@ class MathematicalContractTests(unittest.TestCase):
         self.assertAlmostEqual(integral * 4 * math.pi / (nz * nphi), 1, delta=0.002)
 
     def test_sggx_rejects_singular_matrix_and_nonunit_directions(self):
-        for diagonal, direction in [([1, 1, 0], [0, 0, 1]), ([1, 1, -1], [0, 0, 1]), ([1, 1, 1], [0, 0, 2])]:
+        for diagonal, direction in [([1, 1, 0], [0, 0, 1]), ([1, 1, -1], [0, 0, 1]), ([1, 1, 1], [0, 0, 2]), ([1e200] * 3, [0, 0, 1])]:
             with self.assertRaises(ValueError):
                 reference.sggx_diagonal(diagonal, direction, [0, 0, 1])
 

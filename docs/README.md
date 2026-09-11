@@ -21,7 +21,13 @@ Les exemples sont des algorithmes pédagogiques, pas un moteur livré et compila
 | 11 | [Expériences de performance](PLAN_EXPERIENCES_PERFORMANCE.md) | expériences indépendantes, métriques et critères de décision |
 | 12 | [Oracles exécutables](ORACLES_ET_TESTS.md) | fonctions Python autonomes et tests mathématiques intégrés |
 | 13 | [Schémas et dérivées](SCHEMAS_ET_DERIVEES.md) | représentation des transitions et propagation des gradients |
-| 14 | [Validation documentaire](VALIDATION_DOCUMENTAIRE.md) | contrôles effectués et portée exacte des garanties |
+| 14 | [Construction et compression avancées](CONSTRUCTION_ET_COMPRESSION_AVANCEES.md) | partition pondérée, QEM multiattribut, prédiction, strips, palettes et découverte des pages |
+| 15 | [Projection, profondeur et couleur](PROJECTION_PROFONDEUR_ET_COULEUR.md) | sphères projetées, reconstruction, précision, atlas et matériau commun |
+| 16 | [Stratégies avancées](STRATEGIES_AVANCEES.md) | imposteurs, groupes d'instances, files GPU, ombres paginées et raccords entre assets |
+| 17 | [Assemblages et procédural](ASSEMBLAGES_ET_PROCEDURAL.md) | prototypes, transforms, masques, matériaux, squelettes, terrain et tâches asynchrones |
+| 18 | [Déformation, cellules et courbes](DEFORMATION_CELLULES_ET_COURBES.md) | déplacement borné, BVH, voxelisation, échantillonnage, SGGX et fibres |
+| 19 | [Pipeline GPU et extensions](PIPELINE_GPU_ET_EXTENSIONS.md) | capacités, couverture, départage, shading, streaming, rayons, tessellation et opacité |
+| 20 | [Validation documentaire](VALIDATION_DOCUMENTAIRE.md) | comparaison des supports, couverture, exclusions et preuves d'autonomie |
 
 ## Exemples complémentaires
 
@@ -38,4 +44,4 @@ Commencer par meshes statiques opaques, assets résidents, sélection CPU et ras
 
 Les fichiers proposés à l'exécution des oracles sont temporaires et sont générés depuis le Markdown. Les futures dépendances logicielles et outils de compilation devront être installés au moment du développement ; « documentation autonome » ne signifie pas « programme exécutable sans environnement ».
 
-La complétude vérifiée porte sur les mathématiques, stratégies, invariants et recettes nécessaires au socle. Le format détaillé des sections, les budgets, les versions moteur et les points d'intégration doivent être figés avant les étapes correspondantes. Les extensions possèdent une direction et des limites explicites ; elles ne constituent pas toutes des spécifications prêtes à implémenter. Le bilan de validation précise ces réserves et les contrôles réellement exécutés.
+La comparaison documentaire couvre les familles mathématiques et stratégiques du socle et des extensions identifiées dans les supports étudiés. Leurs formules, domaines, invariants, replis et recettes sont conservés ici, sans dépendance à ces supports. Le format final des sections, les budgets et les points d'intégration sont des choix de notre développement, à figer avant les étapes correspondantes. Le bilan distingue cette autonomie d'une implémentation terminée ou de la reproduction exacte d'un autre moteur.

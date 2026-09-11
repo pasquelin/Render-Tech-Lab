@@ -28,6 +28,8 @@ Avec proche `n>0`, lointain fini `f>n`, profondeur vue positive `d` et profondeu
 
 La projection standard ainsi définie donne `q=0` au proche et `q=1` au lointain. Si la projection inversée utilise précisément `q_reverse=1-q`, substituer `1-q_reverse` dans la formule. Ne pas appliquer cette substitution à une projection différente sans la dériver depuis sa matrice.
 
+Cette substitution est algébrique : en flottants, calculer directement la branche inversée préserve les petites valeurs. Pour un lointain fini, `q_reverse=(n/d)*((f-d)/(f-n))` et `d=n/[n/f+(1-n/f)*q_reverse]`. Pour le lointain infini, utiliser directement `q_reverse=n/d` et `d=n/q_reverse`, avec zéro réservé au fond infini. Calculer d'abord `1-n/d`, puis soustraire de 1 peut arrondir une profondeur inversée valide à zéro ; avec `n=0.1` et `d=10^16`, la valeur à conserver est `10^-17`.
+
 Pour un lointain infini, prendre la limite : standard `q=1-n/d`, inversé `q_reverse=n/d`. Le fond inversé nul correspond à une profondeur infinie ; il ne donne pas une position finie à reconstruire. En orthographique standard, `q=(d-n)/(f-n)` et `d=n+q*(f-n)`.
 
 La sensibilité perspective finie vaut `dd/dq=d²*(f-n)/(n*f)`. Une même erreur normalisée déplace donc bien davantage une surface lointaine. Cette dérivée est une approximation locale : pour une borne, reconstruire les deux extrémités de l'intervalle d'erreur en profondeur normalisée.
