@@ -1,4 +1,5 @@
 import { defineConfig, type Plugin } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -160,7 +161,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [saveReportPlugin()],
+  plugins: [tailwindcss(), saveReportPlugin()],
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
     open: false,

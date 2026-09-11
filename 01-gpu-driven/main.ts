@@ -1,8 +1,9 @@
+import '../src/style.css';
 import { BenchmarkRunner } from './benchmark/runner.ts';
 import { formatMarkdownReport } from './benchmark/reporter.ts';
 import type { FrameMeasurement, CrossoverReport } from './types.ts';
 
-// Parser Markdown vers HTML propre et sécurisé
+// Parser Markdown vers HTML daisyUI propre, sobre et sécurisé
 function parseMarkdownToHtml(md: string): string {
   let html = md
     .replace(/&/g, '&amp;')
@@ -11,33 +12,33 @@ function parseMarkdownToHtml(md: string): string {
 
   // Blocs de code ```...```
   html = html.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/g, (_m, _lang, code) => {
-    return `<pre><code>${code.trim()}</code></pre>`;
+    return `<pre class="bg-base-100 p-3 rounded-box border border-base-content/10 font-mono text-xs overflow-x-auto my-2 text-base-content/90"><code>${code.trim()}</code></pre>`;
   });
 
-  // Titres #, ##, ###
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+  // Titres avec styles daisyUI sobres
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-xs font-bold uppercase tracking-wider text-base-content/80 mt-4 mb-1">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-sm font-bold tracking-tight text-primary border-b border-base-content/10 pb-1.5 mt-5 mb-2.5">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-base font-bold text-base-content border-b border-base-content/15 pb-2 mb-3">$1</h1>');
 
-  // Citations / blockquote >
-  html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+  // Citations / blockquote avec bordure primaire sobre
+  html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-2 border-primary bg-base-200/60 pl-3 py-1.5 my-2 text-xs italic text-base-content/80 rounded-r-box">$1</blockquote>');
 
-  // Séparateur horizontal ---
-  html = html.replace(/^---$/gim, '<hr>');
+  // Séparateur horizontal
+  html = html.replace(/^---$/gim, '<div class="divider my-3 opacity-30"></div>');
 
-  // Gras **text**
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Gras
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-base-content">$1</strong>');
 
-  // Code inline `text`
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Code inline
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-base-200 px-1 py-0.5 rounded font-mono text-xs text-primary border border-base-content/10">$1</code>');
 
   // Math KaTeX basique $...$
-  html = html.replace(/\$([^\$]+)\$/g, '<code style="color: #a5f3fc; background: #0c1a2e;">$1</code>');
+  html = html.replace(/\$([^\$]+)\$/g, '<code class="bg-base-100 px-1 py-0.5 rounded font-mono text-xs text-cyan-400 border border-cyan-500/20">$1</code>');
 
-  // Listes à puces - item
-  html = html.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
+  // Listes à puces
+  html = html.replace(/^\s*-\s+(.*$)/gim, '<li class="ml-4 list-disc text-xs text-base-content/80 my-0.5">$1</li>');
 
-  // Traitement des tables Markdown (| th | th | ...)
+  // Traitement des tables Markdown en daisyUI table table-zebra table-sm
   const lines = html.split('\n');
   const result: string[] = [];
   let inTable = false;
@@ -50,13 +51,13 @@ function parseMarkdownToHtml(md: string): string {
 
       if (!inTable) {
         inTable = true;
-        result.push('<table>');
+        result.push('<div class="overflow-x-auto my-3 rounded-box border border-base-content/10 bg-base-200/40"><table class="table table-zebra table-sm w-full font-mono text-xs">');
       }
 
       if (isSep) {
-        const cells = line.split('|').slice(1, -1).map((c) => `<th>${c.trim()}</th>`).join('');
+        const cells = line.split('|').slice(1, -1).map((c) => `<th class="bg-base-300 text-base-content/80">${c.trim()}</th>`).join('');
         result.push(`<thead><tr>${cells}</tr></thead><tbody>`);
-        i++; // Sauter le séparateur
+        i++; // Sauter la ligne de séparation
         continue;
       }
 
@@ -64,7 +65,7 @@ function parseMarkdownToHtml(md: string): string {
       result.push(`<tr>${cells}</tr>`);
     } else {
       if (inTable) {
-        result.push('</tbody></table>');
+        result.push('</tbody></table></div>');
         inTable = false;
       }
       if (line.length > 0) {
@@ -72,11 +73,11 @@ function parseMarkdownToHtml(md: string): string {
           !line.startsWith('<h') &&
           !line.startsWith('<blockquote') &&
           !line.startsWith('<pre') &&
-          !line.startsWith('<hr') &&
-          !line.startsWith('<li>') &&
+          !line.startsWith('<div') &&
+          !line.startsWith('<li') &&
           !line.startsWith('<table')
         ) {
-          result.push(`<p>${line}</p>`);
+          result.push(`<p class="text-xs text-base-content/80 leading-relaxed mb-1.5">${line}</p>`);
         } else {
           result.push(line);
         }
@@ -84,7 +85,7 @@ function parseMarkdownToHtml(md: string): string {
     }
   }
   if (inTable) {
-    result.push('</tbody></table>');
+    result.push('</tbody></table></div>');
   }
 
   return result.join('\n');
@@ -117,14 +118,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnOpenReports = document.getElementById('btn-open-reports') as HTMLButtonElement | null;
   const openReportHint = document.getElementById('open-report-hint') as HTMLElement | null;
 
-  // Éléments du Modal Rapport
-  const reportModal = document.getElementById('report-modal') as HTMLElement | null;
+  // Dialog daisyUI natif
+  const reportModal = document.getElementById('report-modal') as HTMLDialogElement | null;
   const modalTitle = document.getElementById('modal-report-title') as HTMLElement | null;
   const modalPath = document.getElementById('modal-report-path') as HTMLElement | null;
   const modalBody = document.getElementById('modal-report-body') as HTMLElement | null;
   const modalFeedback = document.getElementById('modal-feedback') as HTMLElement | null;
-  const btnCloseModal = document.getElementById('btn-close-modal') as HTMLButtonElement | null;
-  const btnModalClose = document.getElementById('btn-modal-close') as HTMLButtonElement | null;
   const btnRefreshReport = document.getElementById('btn-refresh-report') as HTMLButtonElement | null;
   const btnCopyReport = document.getElementById('btn-copy-report') as HTMLButtonElement | null;
   const btnModalOpenFinder = document.getElementById('btn-modal-open-finder') as HTMLButtonElement | null;
@@ -136,11 +135,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   const webGpuSupported = await runner.init();
 
   if (!webGpuSupported) {
-    benchStatus.innerText = '⚠️ WebGPU natif non disponible sur ce navigateur. Mode émulation/secours actif.';
-    benchStatus.style.color = '#f59e0b';
+    benchStatus.innerText = '⚠️ WebGPU non disponible. Mode secours actif.';
+    benchStatus.className = 'alert alert-warning bg-warning/10 text-warning border border-warning/20 py-2 px-3 text-[11px] font-mono leading-tight';
   } else {
-    benchStatus.innerText = '✅ WebGPU natif actif (Metal / Direct3D / Vulkan backend détecté)';
-    benchStatus.style.color = '#10b981';
+    benchStatus.innerText = '✅ WebGPU natif actif (Metal / Direct3D / Vulkan)';
+    benchStatus.className = 'alert alert-success bg-success/10 text-success border border-success/20 py-2 px-3 text-[11px] font-mono leading-tight';
   }
 
   // Redimensionnement réactif
@@ -165,9 +164,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (moduleId === '00-baseline') {
       canvasWebGpu.style.display = 'none';
       canvasWebGL.style.display = 'none';
-      if (viewBaseline) viewBaseline.style.display = 'block';
+      if (viewBaseline) viewBaseline.classList.remove('hidden');
     } else {
-      if (viewBaseline) viewBaseline.style.display = 'none';
+      if (viewBaseline) viewBaseline.classList.add('hidden');
       runner.setMode(runner.currentMode);
     }
   }
@@ -190,14 +189,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Lissage et stabilisation des métriques (mise à jour toutes les 350ms)
+  // Mise à jour visuelle des boutons Test A / Test B avec daisyUI
+  function updateModeButtons(mode: 'classic' | 'gpu-driven') {
+    if (mode === 'classic') {
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-error text-error-content shadow-xs';
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-neutral';
+      statMode.innerText = 'Test A (Three.js WebGL)';
+      statMode.className = 'text-error font-bold';
+      statSubmit.className = 'text-base font-bold text-error';
+    } else {
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-info text-info-content shadow-xs';
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-neutral';
+      statMode.innerText = 'Test B (GPU-Driven WebGPU)';
+      statMode.className = 'text-cyan-400 font-bold';
+      statSubmit.className = 'text-base font-bold text-cyan-400';
+    }
+  }
+
+  // Lissage des métriques toutes les 350ms
   let lastUiUpdate = 0;
   let sumSubmit = 0;
   let sumCpu = 0;
   let sumFps = 0;
   let sampleCount = 0;
 
-  runner.onMetricsUpdate = (m: FrameMeasurement, mode: string, count: number) => {
+  runner.onMetricsUpdate = (m: FrameMeasurement, _mode: string, count: number) => {
     sumSubmit += m.submitMs;
     sumCpu += m.cpuFrameMs;
     sumFps += m.fps;
@@ -209,10 +225,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       const avgCpu = sumCpu / sampleCount;
       const avgFps = Math.round(sumFps / sampleCount);
 
-      statMode.innerText = mode === 'classic' ? 'Test A (Three.js WebGL)' : 'Test B (GPU-Driven WebGPU)';
-      statMode.style.color = mode === 'classic' ? '#ef4444' : '#06b6d4';
       statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
-
       statSubmit.innerText = avgSubmit < 0.05 ? '< 0.1 ms' : `${avgSubmit.toFixed(1)} ms`;
       statCpuFrame.innerText = avgCpu < 0.05 ? '< 0.1 ms' : `${avgCpu.toFixed(1)} ms`;
       statFps.innerText = `${Math.min(avgFps, 120)} FPS`;
@@ -228,15 +241,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   runner.onBenchmarkProgress = (stage: string, progress: number) => {
     benchStatus.innerText = `⏳ [${Math.round(progress * 100)}%] ${stage}...`;
-    benchStatus.style.color = '#38bdf8';
+    benchStatus.className = 'alert alert-info bg-info/10 text-info border border-info/20 py-2 px-3 text-[11px] font-mono leading-tight';
   };
 
   runner.onBenchmarkComplete = async (report: CrossoverReport) => {
     const mdReport = formatMarkdownReport(report, '01-gpu-driven');
-    benchStatus.innerText = `🏁 Benchmark terminé ! Crossover : ${
+    benchStatus.innerText = `🏁 Crossover : ${
       report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
     }`;
-    benchStatus.style.color = '#10b981';
+    benchStatus.className = 'alert alert-success bg-success/10 text-success border border-success/20 py-2 px-3 text-[11px] font-mono leading-tight';
 
     try {
       const res = await fetch('/api/save-report', {
@@ -245,14 +258,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({ testId: '01-gpu-driven', markdown: mdReport }),
       });
       if (res.ok) {
-        benchStatus.innerText += ' | 💾 REPORT.md actualisé sur disque';
+        benchStatus.innerText += ' | 💾 REPORT.md archivé';
       }
     } catch {
       // Dev mode fallback
     }
   };
 
-  // --- Gestion du Modal de Consultation du Rapport ---
+  // --- Gestion du Modal daisyUI de Consultation du Rapport ---
   async function openReportModal(testId = currentModuleId) {
     if (!reportModal || !modalBody) return;
 
@@ -262,8 +275,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (modalPath) {
       modalPath.innerText = `reports/${testId}.md & ${testId}/results/REPORT.md`;
     }
-    modalBody.innerHTML = '<div style="color: #38bdf8;">⏳ Chargement du rapport depuis le disque...</div>';
-    reportModal.style.display = 'flex';
+    modalBody.innerHTML = '<div class="text-xs text-primary font-mono animate-pulse">⏳ Chargement du rapport depuis le disque...</div>';
+
+    if (typeof reportModal.showModal === 'function') {
+      reportModal.showModal();
+    }
 
     try {
       const res = await fetch(`/api/get-report?testId=${encodeURIComponent(testId)}`);
@@ -272,32 +288,15 @@ window.addEventListener('DOMContentLoaded', async () => {
         modalBody.innerHTML = parseMarkdownToHtml(rawReportContent);
       } else {
         const errText = await res.text();
-        modalBody.innerHTML = `<div style="color: #f87171;">⚠️ ${errText}</div>`;
+        modalBody.innerHTML = `<div class="alert alert-warning text-xs font-mono">⚠️ ${errText}</div>`;
       }
     } catch (err: any) {
-      modalBody.innerHTML = `<div style="color: #f87171;">Erreur réseau : ${err.message}</div>`;
-    }
-  }
-
-  function closeReportModal() {
-    if (reportModal) {
-      reportModal.style.display = 'none';
+      modalBody.innerHTML = `<div class="alert alert-error text-xs font-mono">Erreur réseau : ${err.message}</div>`;
     }
   }
 
   if (btnViewReport) {
     btnViewReport.addEventListener('click', () => openReportModal());
-  }
-  if (btnCloseModal) {
-    btnCloseModal.addEventListener('click', closeReportModal);
-  }
-  if (btnModalClose) {
-    btnModalClose.addEventListener('click', closeReportModal);
-  }
-  if (reportModal) {
-    reportModal.addEventListener('click', (e) => {
-      if (e.target === reportModal) closeReportModal();
-    });
   }
 
   if (btnRefreshReport) {
@@ -323,11 +322,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // --- Gestion de l'ouverture du dossier Finder / Explorateur ---
+  // --- Révélation dans le Finder ---
   async function triggerOpenFinder(testId = currentModuleId) {
     if (openReportHint) {
-      openReportHint.innerText = '⏳ Ouverture du Finder...';
-      openReportHint.style.color = '#38bdf8';
+      openReportHint.innerText = '⏳ Révélation dans le Finder...';
+      openReportHint.className = 'text-[10px] text-info text-center font-mono truncate';
     }
     try {
       const res = await fetch('/api/open-folder', {
@@ -339,12 +338,12 @@ window.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         const displayPath = data.targetFile || data.targetDir || 'reports/';
         if (openReportHint) {
-          openReportHint.innerText = `✅ Ouvert dans Finder : ${displayPath}`;
-          openReportHint.style.color = '#10b981';
+          openReportHint.innerText = `✅ Finder ouvert : ${displayPath}`;
+          openReportHint.className = 'text-[10px] text-success text-center font-mono truncate';
           setTimeout(() => {
             if (openReportHint) {
-              openReportHint.innerText = 'Chemins : 01-gpu-driven/results/REPORT.md & reports/';
-              openReportHint.style.color = '#64748b';
+              openReportHint.innerText = '01-gpu-driven/results/REPORT.md & reports/';
+              openReportHint.className = 'text-[10px] text-base-content/40 text-center font-mono truncate';
             }
           }, 6000);
         }
@@ -356,15 +355,15 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
       } else {
         if (openReportHint) {
-          openReportHint.innerText = '⚠️ Impossible d\'ouvrir automatiquement le Finder. Chemin : ./reports/';
-          openReportHint.style.color = '#f59e0b';
+          openReportHint.innerText = '⚠️ Chemin : ./reports/';
+          openReportHint.className = 'text-[10px] text-warning text-center font-mono truncate';
         }
       }
     } catch (err: any) {
       console.warn('Erreur ouverture dossier :', err);
       if (openReportHint) {
-        openReportHint.innerText = '📁 Chemin manuel : render-tech-lab/reports/';
-        openReportHint.style.color = '#94a3b8';
+        openReportHint.innerText = '📁 ./reports/';
+        openReportHint.className = 'text-[10px] text-base-content/50 text-center font-mono truncate';
       }
     }
   }
@@ -378,20 +377,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Bascule instantanée entre Test A (Three.js) et Test B (GPU-Driven)
   btnClassic.addEventListener('click', () => {
-    btnClassic.classList.add('active');
-    btnGpuDriven.classList.remove('active');
+    updateModeButtons('classic');
     runner.setMode('classic');
   });
 
   btnGpuDriven.addEventListener('click', () => {
-    btnGpuDriven.classList.add('active');
-    btnClassic.classList.remove('active');
+    updateModeButtons('gpu-driven');
     runner.setMode('gpu-driven');
   });
 
   selectCount.addEventListener('change', async (e) => {
     const val = parseInt((e.target as HTMLSelectElement).value, 10);
-    benchStatus.innerText = `Génération de la scène avec ${val} objets...`;
+    benchStatus.innerText = `Scène ${val} objets...`;
     await runner.setupTier(val);
     benchStatus.innerText = `Prêt (${val} objets).`;
   });
@@ -421,6 +418,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Initialisation de l'état des boutons au lancement
+  updateModeButtons('gpu-driven');
 
   // Boucle d'animation
   function animate(t: number) {
