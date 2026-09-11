@@ -35,11 +35,10 @@ async function requestDevice(): Promise<GPUDevice | null> {
     const adapter = await nav.gpu.requestAdapter({ powerPreference: 'high-performance' });
     if (!adapter) return null;
 
-    const requiredFeatures = OPTIONAL_FEATURES.filter((f) => adapter.features.has(f));
+    const requiredFeatures: GPUFeatureName[] = [];
     for (const f of OPTIONAL_FEATURES) {
-      if (!requiredFeatures.includes(f)) {
-        console.warn(`[banc] Feature WebGPU absente sur cet adaptateur : ${f}`);
-      }
+      if (adapter.features.has(f)) requiredFeatures.push(f);
+      else console.warn(`[banc] Feature WebGPU absente sur cet adaptateur : ${f}`);
     }
 
     sharedDevice = await adapter.requestDevice({ requiredFeatures });
@@ -48,11 +47,6 @@ async function requestDevice(): Promise<GPUDevice | null> {
     console.warn('[banc] requestDevice a échoué :', err);
     return null;
   }
-}
-
-/** Device déjà résolu, ou null tant que `getSharedDevice()` n'a pas abouti. */
-export function peekSharedDevice(): GPUDevice | null {
-  return sharedDevice;
 }
 
 /** Contexte WebGPU du canvas, configuré une seule fois sur le device partagé. */

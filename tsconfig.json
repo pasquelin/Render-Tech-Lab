@@ -16,5 +16,5 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["@webgpu/types", "node"]
   },
-  "include": ["01-gpu-driven", "benchmarks", "src"]
+  "include": ["[0-9][0-9]-*", "benchmarks", "shared", "src"]
 }

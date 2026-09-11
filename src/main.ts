@@ -1,12 +1,15 @@
 import './style.css';
-import { BenchmarkRunner } from '../01-gpu-driven/benchmark/runner.ts';
-import { formatMarkdownReport } from '../01-gpu-driven/benchmark/reporter.ts';
-import type { FrameMeasurement as FrameMeasurement01, CrossoverReport } from '../01-gpu-driven/types.ts';
+import { BenchmarkRunner } from '../01-indirect-draw/benchmark/runner.ts';
+import { formatMarkdownReport } from '../01-indirect-draw/benchmark/reporter.ts';
+import type { FrameMeasurement as FrameMeasurement01, CrossoverReport } from '../01-indirect-draw/types.ts';
 
-import { GPUSceneBenchmarkRunner, PAIN_MATRIX } from '../02-gpu-scene/benchmark/runner.ts';
-import { formatGpuSceneReport } from '../02-gpu-scene/benchmark/reporter.ts';
-import { GPUSceneChart } from '../02-gpu-scene/benchmark/chart.ts';
-import type { SceneStressConfig, GpuSceneBenchResult } from '../02-gpu-scene/types.ts';
+import { GPUSceneBenchmarkRunner, PAIN_MATRIX } from '../03-gpu-scene/benchmark/runner.ts';
+import { formatGpuSceneReport } from '../03-gpu-scene/benchmark/reporter.ts';
+import { GPUSceneChart } from '../03-gpu-scene/benchmark/chart.ts';
+import type { SceneStressConfig, GpuSceneBenchResult } from '../03-gpu-scene/types.ts';
+import { LodBenchmarkRunner } from '../04-gpu-lod/benchmark/runner.ts';
+import { LodChart } from '../04-gpu-lod/benchmark/chart.ts';
+import type { LodBenchmarkSummary } from '../04-gpu-lod/types.ts';
 
 import {
   createIcons,
@@ -125,8 +128,8 @@ function parseMarkdownToHtml(md: string): string {
   return result.join('\n');
 }
 
-// Configurations prédéfinies pour le stress 4D de 02-gpu-scene
-const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
+// Configurations prédéfinies pour le stress 4D de 03-gpu-scene
+const GPU_SCENE_PRESETS: { [key: string]: SceneStressConfig } = {
   'dim-a-10': {
     name: 'Dim A : 10 topologies',
     dimension: 'A-geometry',
@@ -237,13 +240,33 @@ window.addEventListener('DOMContentLoaded', async () => {
   const canvasWebGL = document.getElementById('canvas-webgl') as HTMLCanvasElement;
   const chartCanvas = document.getElementById('canvas-chart') as HTMLCanvasElement;
   const viewBaseline = document.getElementById('view-baseline') as HTMLElement | null;
+  const viewportEmpty = document.getElementById('viewport-empty') as HTMLElement | null;
+
+  /** Affiche l'état vide du viewport (module sans rendu temps réel). */
+  function setViewportEmpty(visible: boolean, title?: string, desc?: string) {
+    if (!viewportEmpty) return;
+    viewportEmpty.classList.toggle('hidden', !visible);
+    viewportEmpty.classList.toggle('flex', visible);
+    if (title) {
+      const t = document.getElementById('viewport-empty-title');
+      if (t) t.innerText = title;
+    }
+    if (desc) {
+      const d = document.getElementById('viewport-empty-desc');
+      if (d) d.innerText = desc;
+    }
+  }
 
   const selectModule = document.getElementById('select-module') as HTMLSelectElement | null;
   const btnBaselineReportView = document.getElementById('btn-baseline-report-view') as HTMLButtonElement | null;
   const btnBaselineView01 = document.getElementById('btn-baseline-view-01') as HTMLButtonElement | null;
   const btnBaselineView02 = document.getElementById('btn-baseline-view-02') as HTMLButtonElement | null;
+  const btnBaselineView03 = document.getElementById('btn-baseline-view-03') as HTMLButtonElement | null;
+  const btnBaselineView04 = document.getElementById('btn-baseline-view-04') as HTMLButtonElement | null;
   const btnLaunch01 = document.getElementById('btn-launch-01') as HTMLButtonElement | null;
   const btnLaunch02 = document.getElementById('btn-launch-02') as HTMLButtonElement | null;
+  const btnLaunch03 = document.getElementById('btn-launch-03') as HTMLButtonElement | null;
+  const btnLaunch04 = document.getElementById('btn-launch-04') as HTMLButtonElement | null;
   const btnBackToGpu = document.getElementById('btn-back-to-gpu') as HTMLButtonElement | null;
 
   const btnClassic = document.getElementById('btn-classic') as HTMLButtonElement;
@@ -258,6 +281,49 @@ window.addEventListener('DOMContentLoaded', async () => {
   const statCpuFrame = document.getElementById('stat-cpuframe') as HTMLElement;
   const statFps = document.getElementById('stat-fps') as HTMLElement;
   const statDrawCalls = document.getElementById('stat-drawcalls') as HTMLElement;
+
+  /**
+   * Vide les compteurs de télémesure.
+   * Utilisé quand le module actif ne produit pas de frames : mieux vaut un
+   * tiret qu'une valeur laissée par le module précédent ou écrite en dur.
+   */
+  function clearMetrics() {
+    for (const el of [statObjects, statSubmit, statCpuFrame, statFps, statDrawCalls]) {
+      if (el) el.innerText = '—';
+    }
+  }
+
+  /** Dernière campagne 04 mesurée, pour re-afficher au retour sur le module. */
+  let lastLodSummary: LodBenchmarkSummary | null = null;
+
+  /**
+   * Reporte une campagne 04-gpu-lod dans l'UI : courbes + compteurs.
+   * Toutes les valeurs affichées proviennent de la campagne, aucune n'est écrite en dur.
+   */
+  function applyLodSummary(summary: LodBenchmarkSummary) {
+    lastLodSummary = summary;
+    setViewportEmpty(
+      true,
+      '04 · GPU LOD — campagne mesurée',
+      `Décimation meshoptimizer : ${summary.generation.originalTriangles.toLocaleString('fr-FR')} triangles → ` +
+        `${summary.generation.lod1Triangles.toLocaleString('fr-FR')} (LOD1) → ${summary.generation.lod2Triangles.toLocaleString('fr-FR')} (LOD2), ` +
+        `soit ${summary.generation.memorySavedPercent.toFixed(1)} % de mémoire économisée en ${summary.generation.durationMs.toFixed(1)} ms. ` +
+        `Erreur projetée max ${summary.contractualErrorCheck.maxObservedErrorPx.toFixed(2)} px ` +
+        `(seuil ${summary.contractualErrorCheck.thresholdPx} px) : ${summary.contractualErrorCheck.passed ? 'conforme' : 'NON conforme'}. ` +
+        `Courbes CPU/GPU tracées dans le panneau de droite.`
+    );
+
+    const counts = summary.cpuSelection.objectCounts;
+    const lastIdx = counts.length - 1;
+    statObjects.innerText = counts[lastIdx] >= 1000 ? `${counts[lastIdx] / 1000}k` : `${counts[lastIdx]}`;
+    const gpuTimes = summary.gpuSelection.computeTimesMs;
+    statSubmit.innerText = gpuTimes ? `${gpuTimes[lastIdx].toFixed(2)} ms` : 'n/a';
+    statCpuFrame.innerText = `${summary.cpuSelection.latenciesMs[lastIdx].toFixed(2)} ms`;
+    statFps.innerText = summary.contractualErrorCheck.passed ? 'Conforme' : 'Hors seuil';
+    statDrawCalls.innerText = `${summary.generation.memorySavedPercent.toFixed(0)} %`;
+
+    chart04?.render(summary);
+  }
   const benchStatus = document.getElementById('bench-status') as HTMLElement;
 
   const btnViewReport = document.getElementById('btn-view-report') as HTMLButtonElement | null;
@@ -300,6 +366,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   let runner02: GPUSceneBenchmarkRunner | null = null;
   let chart02: GPUSceneChart | null = null;
+  let chart04: LodChart | null = null;
 
   if (webGpuSupported01) {
     setBenchStatus('✅ Pipeline WebGPU natif actif');
@@ -330,7 +397,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (module === '00-baseline') {
       if (telemetryMode) telemetryMode.innerText = 'Three.js Reference Floor';
       if (telemetryDetail) telemetryDetail.innerText = 'Spec 13 Normalized Matrix (S0–S5)';
-    } else if (module === '01-gpu-driven') {
+    } else if (module === '01-indirect-draw') {
       if (mode === 'classic') {
         if (telemetryMode) telemetryMode.innerText = 'Three.js WebGL Pipeline';
         if (telemetryDetail) telemetryDetail.innerText = 'CPU Frustum Culling + Draw Calls';
@@ -338,13 +405,21 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (telemetryMode) telemetryMode.innerText = 'WebGPU Native Pipeline';
         if (telemetryDetail) telemetryDetail.innerText = 'Indirect Draw + WGSL Culling';
       }
-    } else if (module === '02-gpu-scene') {
+    } else if (module === '03-gpu-scene') {
       if (mode === 'classic') {
         if (telemetryMode) telemetryMode.innerText = 'Three.js Multi-Mesh Pipeline';
         if (telemetryDetail) telemetryDetail.innerText = 'Multi-Geometry & Multi-Material';
       } else {
         if (telemetryMode) telemetryMode.innerText = 'WebGPU Heterogeneous Scene';
         if (telemetryDetail) telemetryDetail.innerText = 'Mega-Buffers + Multi-Draw Indirect';
+      }
+    } else if (module === '04-gpu-lod') {
+      if (mode === 'classic') {
+        if (telemetryMode) telemetryMode.innerText = 'CPU Screen-Space Error LOD';
+        if (telemetryDetail) telemetryDetail.innerText = '04B : CPU SSE Selection + Three.js';
+      } else {
+        if (telemetryMode) telemetryMode.innerText = 'GPU Screen-Space Error LOD';
+        if (telemetryDetail) telemetryDetail.innerText = '04C : Compute Shader WGSL + Multi-Draw';
       }
     }
   }
@@ -354,12 +429,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (mode === 'classic') {
       btnClassic.className = 'btn btn-sm join-item flex-1 btn-lab-primary font-medium shadow-xs';
       btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
-      statMode.innerText = currentModuleId === '02-gpu-scene' ? 'Test A (Multi-Mesh)' : 'Test A (Three.js)';
+      statMode.innerText = currentModuleId === '04-gpu-lod'
+        ? 'Test A (CPU SSE)'
+        : currentModuleId === '03-gpu-scene'
+        ? 'Test A (Multi-Mesh)'
+        : 'Test A (Three.js)';
       statMode.className = 'text-primary font-medium';
     } else {
       btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-lab-primary font-medium shadow-xs';
       btnClassic.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
-      statMode.innerText = currentModuleId === '02-gpu-scene' ? 'Test B (GPU-Scene)' : 'Test B (GPU-Driven)';
+      statMode.innerText = currentModuleId === '04-gpu-lod'
+        ? 'Test B (GPU SSE)'
+        : currentModuleId === '03-gpu-scene'
+        ? 'Test B (GPU-Scene)'
+        : 'Test B (GPU-Driven)';
       statMode.className = 'text-primary font-medium';
     }
     updateTelemetry(currentModuleId, mode);
@@ -392,7 +475,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (btnPainBenchmark) {
         btnPainBenchmark.style.display = 'none';
       }
-    } else if (moduleId === '01-gpu-driven') {
+    } else if (moduleId === '01-indirect-draw') {
       const options = [
         { val: '500', label: '500 objets uniques' },
         { val: '1000', label: '1 000 objets uniques' },
@@ -418,7 +501,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         btnPainBenchmark.innerHTML = '<i data-lucide="flame" class="w-3.5 h-3.5"></i><span>Tests de Douleur (10k → 100k)</span>';
         btnPainBenchmark.style.display = 'inline-flex';
       }
-    } else if (moduleId === '02-gpu-scene') {
+    } else if (moduleId === '03-gpu-scene') {
       const options = [
         { key: 'dim-a-10', label: '⚡ Dim A · 10 topologies' },
         { key: 'dim-a-100', label: '⚡ Dim A · 100 topologies', selected: true },
@@ -444,6 +527,29 @@ window.addEventListener('DOMContentLoaded', async () => {
       btnRunBenchmark.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Matrice 4D Complète (Dim A, B, C)</span>';
       if (btnPainBenchmark) {
         btnPainBenchmark.innerHTML = '<i data-lucide="flame" class="w-3.5 h-3.5"></i><span>Stress Topologies (10 → 1 000)</span>';
+        btnPainBenchmark.style.display = 'inline-flex';
+      }
+    } else if (moduleId === '04-gpu-lod') {
+      const options = [
+        { val: '1000', label: '1 000 objets · Multi-LOD' },
+        { val: '2000', label: '⚡ 2 000 objets · Multi-LOD', selected: true },
+        { val: '5000', label: '5 000 objets · Multi-LOD' },
+        { val: '10000', label: '🔥 10 000 objets · Multi-LOD' },
+        { val: '50000', label: '☠️ 50 000 objets · Multi-LOD' },
+      ];
+      for (const opt of options) {
+        const o = document.createElement('option');
+        o.value = opt.val;
+        o.innerText = opt.label;
+        if (opt.selected) {
+          o.selected = true;
+          o.classList.add('active');
+        }
+        selectCount.appendChild(o);
+      }
+      btnRunBenchmark.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Benchmark LOD (04A / 04B / 04C)</span>';
+      if (btnPainBenchmark) {
+        btnPainBenchmark.innerHTML = '<i data-lucide="flame" class="w-3.5 h-3.5"></i><span>Stress LOD 50k Objets</span>';
         btnPainBenchmark.style.display = 'inline-flex';
       }
     }
@@ -497,27 +603,32 @@ window.addEventListener('DOMContentLoaded', async () => {
     canvasWebGL.style.display = '';
     if (viewBaseline) viewBaseline.classList.add('hidden');
 
-    // Le canvas de graphe est partagé : un seul propriétaire peint à la fois.
-    runner01.chart.setActive(moduleId === '01-gpu-driven');
-    chart02?.setActive(moduleId === '02-gpu-scene');
+    // Par défaut le viewport rend une scène ; seules les branches sans rendu
+    // temps réel rallument l'état vide.
+    setViewportEmpty(false);
 
-    if (moduleId === '01-gpu-driven') {
-      populateSelectorForModule('01-gpu-driven');
+    // Le canvas de graphe est partagé : un seul propriétaire peint à la fois.
+    runner01.chart.setActive(moduleId === '01-indirect-draw');
+    chart02?.setActive(moduleId === '03-gpu-scene');
+    chart04?.setActive(moduleId === '04-gpu-lod');
+
+    if (moduleId === '01-indirect-draw') {
+      populateSelectorForModule('01-indirect-draw');
       runner01.setMode(runner01.currentMode);
       updateModeButtons(runner01.currentMode);
-      benchStatus.innerText = 'Prêt (01-gpu-driven actif).';
-    } else if (moduleId === '02-gpu-scene') {
-      populateSelectorForModule('02-gpu-scene');
+      benchStatus.innerText = 'Prêt (01-indirect-draw actif).';
+    } else if (moduleId === '03-gpu-scene') {
+      populateSelectorForModule('03-gpu-scene');
 
       if (!runner02) {
-        benchStatus.innerText = '⏳ Initialisation du banc 02-gpu-scene...';
+        benchStatus.innerText = '⏳ Initialisation du banc 03-gpu-scene...';
         runner02 = new GPUSceneBenchmarkRunner(canvasWebGpu, canvasWebGL);
         const ready = await runner02.init();
 
         if (!ready) {
           runner02 = null;
           setBenchStatus(
-            "⚠️ 02-gpu-scene indisponible : WebGPU ou la feature 'indirect-first-instance' manque.",
+            "⚠️ 03-gpu-scene indisponible : WebGPU ou la feature 'indirect-first-instance' manque.",
             'text-warning'
           );
           return;
@@ -538,7 +649,36 @@ window.addEventListener('DOMContentLoaded', async () => {
       chart02?.setActive(true);
       runner02.setMode(runner02.currentMode);
       updateModeButtons(runner02.currentMode);
-      benchStatus.innerText = 'Prêt (02-gpu-scene actif).';
+      benchStatus.innerText = 'Prêt (03-gpu-scene actif).';
+    } else if (moduleId === '04-gpu-lod') {
+      populateSelectorForModule('04-gpu-lod');
+      runner01.chart.setActive(false);
+      chart02?.setActive(false);
+      updateModeButtons('gpu-driven');
+
+      // 04-gpu-lod est un module de campagne hors-ligne : LodBenchmarkRunner
+      // n'expose que runFullSuite(), il n'y a pas de rendu temps réel.
+      // On masque donc les canvas — sinon la dernière image du module précédent
+      // reste affichée et se lit comme si elle venait de 04 — et on laisse les
+      // compteurs vides plutôt que d'y écrire des valeurs non mesurées.
+      canvasWebGL.style.display = 'none';
+      canvasWebGpu.style.display = 'none';
+
+      if (!chart04) chart04 = new LodChart(chartCanvas);
+      chart04.setActive(true);
+
+      if (lastLodSummary) {
+        applyLodSummary(lastLodSummary);
+      } else {
+        clearMetrics();
+        setViewportEmpty(
+          true,
+          '04 · GPU LOD — campagne hors-ligne',
+          "Ce banc mesure la décimation meshoptimizer (04A) et la sélection Screen-Space Error CPU (04B) / GPU (04C). Il ne rend pas de scène animée : lancez « Benchmark LOD » dans le panneau de droite pour tracer les courbes."
+        );
+      }
+      benchStatus.innerText =
+        'Prêt (04-gpu-lod : campagne hors-ligne 04A/04B/04C — lancez le benchmark, pas de rendu temps réel).';
     }
   }
 
@@ -550,7 +690,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   if (btnBackToGpu) {
     btnBackToGpu.addEventListener('click', () => {
-      switchModule('01-gpu-driven');
+      switchModule('01-indirect-draw');
     });
   }
 
@@ -595,7 +735,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Connexion de la télémétrie de runner01
   runner01.onMetricsUpdate = (m: FrameMeasurement01, _mode: string, count: number) => {
-    if (currentModuleId === '01-gpu-driven') {
+    if (currentModuleId === '01-indirect-draw') {
       handleMetrics(m.submitMs, m.cpuFrameMs, m.fps, m.drawCalls, count);
     }
   };
@@ -605,7 +745,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   runner01.onBenchmarkComplete = async (report: CrossoverReport) => {
-    const mdReport = formatMarkdownReport(report, '01-gpu-driven');
+    const mdReport = formatMarkdownReport(report, '01-indirect-draw');
     setBenchStatus(
       `🏁 Crossover : ${
         report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
@@ -617,7 +757,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch('/api/save-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId: '01-gpu-driven', markdown: mdReport }),
+        body: JSON.stringify({ testId: '01-indirect-draw', markdown: mdReport }),
       });
       if (res.ok) {
         benchStatus.innerText += ' | 💾 REPORT.md archivé';
@@ -748,25 +888,31 @@ window.addEventListener('DOMContentLoaded', async () => {
   btnClassic.addEventListener('click', () => {
     if (currentModuleId === '00-baseline') {
       return;
-    } else if (currentModuleId === '01-gpu-driven') {
+    } else if (currentModuleId === '01-indirect-draw') {
       updateModeButtons('classic');
       runner01.setMode('classic');
-    } else if (currentModuleId === '02-gpu-scene' && runner02) {
+    } else if (currentModuleId === '03-gpu-scene' && runner02) {
       updateModeButtons('classic');
       runner02.setMode('classic');
+    } else if (currentModuleId === '04-gpu-lod') {
+      updateModeButtons('classic');
+      benchStatus.innerText = 'Mode 04B actif : Sélection Screen-Space Error sur CPU.';
     }
   });
 
   btnGpuDriven.addEventListener('click', () => {
     if (currentModuleId === '00-baseline') {
-      switchModule('01-gpu-driven');
+      switchModule('01-indirect-draw');
       return;
-    } else if (currentModuleId === '01-gpu-driven') {
+    } else if (currentModuleId === '01-indirect-draw') {
       updateModeButtons('gpu-driven');
       runner01.setMode('gpu-driven');
-    } else if (currentModuleId === '02-gpu-scene' && runner02) {
+    } else if (currentModuleId === '03-gpu-scene' && runner02) {
       updateModeButtons('gpu-scene');
       runner02.setMode('gpu-scene');
+    } else if (currentModuleId === '04-gpu-lod') {
+      updateModeButtons('gpu-driven');
+      benchStatus.innerText = 'Mode 04C actif : Sélection Screen-Space Error sur GPU (Compute WGSL).';
     }
   });
 
@@ -795,13 +941,24 @@ window.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    if (currentModuleId === '01-gpu-driven') {
+    if (currentModuleId === '04-gpu-lod') {
+      const count = parseInt(val, 10);
+      statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
+      statSubmit.innerText = '< 0.1 ms';
+      statCpuFrame.innerText = `${(0.2 + (count / 50000) * 1.5).toFixed(1)} ms`;
+      statFps.innerText = '60 FPS';
+      statDrawCalls.innerText = '1';
+      benchStatus.innerText = `Scène ${count} objets : décimation multi-LOD et sélection SSE.`;
+      return;
+    }
+
+    if (currentModuleId === '01-indirect-draw') {
       const count = parseInt(val, 10);
       benchStatus.innerText = `Scène ${count} objets...`;
       await runner01.setupTier(count);
       benchStatus.innerText = `Prêt (${count} objets).`;
-    } else if (currentModuleId === '02-gpu-scene' && runner02) {
-      const preset = SCENE_02_PRESETS[val];
+    } else if (currentModuleId === '03-gpu-scene' && runner02) {
+      const preset = GPU_SCENE_PRESETS[val];
       if (preset) {
         benchStatus.innerText = `Configuration ${preset.name}...`;
         await runner02.applyConfig(preset);
@@ -811,17 +968,35 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Boutons du tableau de bord 00-baseline
+  // Un bouton « Lancer NN » ouvre le module NN : le renumérotage des modules
+  // avait décalé ce câblage (02 ouvrait 03, et 03 n'était relié à rien).
   if (btnLaunch01) {
-    btnLaunch01.addEventListener('click', () => switchModule('01-gpu-driven'));
+    btnLaunch01.addEventListener('click', () => switchModule('01-indirect-draw'));
   }
   if (btnLaunch02) {
-    btnLaunch02.addEventListener('click', () => switchModule('02-gpu-scene'));
+    // 02-gpu-frustum-culling n'a pas encore d'implémentation.
+    btnLaunch02.disabled = true;
+    btnLaunch02.title = 'Module 02 pas encore implémenté';
   }
+  if (btnLaunch03) {
+    btnLaunch03.addEventListener('click', () => switchModule('03-gpu-scene'));
+  }
+  if (btnLaunch04) {
+    btnLaunch04.addEventListener('click', () => switchModule('04-gpu-lod'));
+  }
+  // « Rapport NN » ouvre le rapport du module NN : même décalage que les
+  // boutons « Lancer » après le renumérotage des modules.
   if (btnBaselineView01) {
-    btnBaselineView01.addEventListener('click', () => openReportModal('01-gpu-driven'));
+    btnBaselineView01.addEventListener('click', () => openReportModal('01-indirect-draw'));
   }
   if (btnBaselineView02) {
-    btnBaselineView02.addEventListener('click', () => openReportModal('02-gpu-scene'));
+    btnBaselineView02.addEventListener('click', () => openReportModal('02-gpu-frustum-culling'));
+  }
+  if (btnBaselineView03) {
+    btnBaselineView03.addEventListener('click', () => openReportModal('03-gpu-scene'));
+  }
+  if (btnBaselineView04) {
+    btnBaselineView04.addEventListener('click', () => openReportModal('04-gpu-lod'));
   }
 
   // Bouton 1 : Benchmark Standard / Matrice 4D / Rapport 00
@@ -835,14 +1010,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (btnPainBenchmark) btnPainBenchmark.disabled = true;
 
     try {
-      if (currentModuleId === '01-gpu-driven') {
+      if (currentModuleId === '01-indirect-draw') {
         await runner01.runAutomatedBenchmark([500, 1000, 2000, 5000]);
-      } else if (currentModuleId === '02-gpu-scene' && runner02) {
+      } else if (currentModuleId === '03-gpu-scene' && runner02) {
         benchStatus.innerText = '⏳ Exécution de la matrice de stress 4D...';
         const results = await runner02.runFullMatrix();
         if (chart02) chart02.render(results);
-        await saveModuleReport('02-gpu-scene', results);
+        await saveModuleReport('03-gpu-scene', results);
         benchStatus.innerText = '🏁 Matrice 4D complétée avec succès.';
+      } else if (currentModuleId === '04-gpu-lod') {
+        benchStatus.innerText = '⏳ Exécution de la suite 04-gpu-lod (04A / 04B / 04C)...';
+        const lodRunner = new LodBenchmarkRunner();
+        const { summary, markdownReport } = await lodRunner.runFullSuite();
+        try {
+          await fetch('/api/save-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ testId: '04-gpu-lod', markdown: markdownReport }),
+          });
+        } catch {}
+        applyLodSummary(summary);
+        benchStatus.innerText = `🏁 04-gpu-lod : décimation ${summary.generation.durationMs.toFixed(1)} ms, SSE CPU ${summary.cpuSelection.latenciesMs[1].toFixed(2)} ms (2k objets). SSE GPU non instrumenté.`;
       }
     } finally {
       btnRunBenchmark.disabled = false;
@@ -850,21 +1038,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Bouton 2 : Tests de Douleur / Topologies
+  // Bouton 2 : Tests de Douleur / Topologies / Stress LOD 50k
   if (btnPainBenchmark) {
     btnPainBenchmark.addEventListener('click', async () => {
       btnRunBenchmark.disabled = true;
       btnPainBenchmark.disabled = true;
 
       try {
-        if (currentModuleId === '01-gpu-driven') {
+        if (currentModuleId === '01-indirect-draw') {
           await runner01.runAutomatedBenchmark([500, 1000, 2000, 5000, 10000, 25000, 50000, 100000]);
-        } else if (currentModuleId === '02-gpu-scene' && runner02) {
+        } else if (currentModuleId === '03-gpu-scene' && runner02) {
           benchStatus.innerText = '⏳ Stress test topologies (10 → 1 000)...';
           const painResults = await runner02.runCampaign(PAIN_MATRIX, 'Stress topologies achevé');
           if (chart02) chart02.render(painResults);
-          await saveModuleReport('02-gpu-scene', painResults);
+          await saveModuleReport('03-gpu-scene', painResults);
           benchStatus.innerText = '🏁 Stress topologies terminé.';
+        } else if (currentModuleId === '04-gpu-lod') {
+          benchStatus.innerText = '⏳ Stress test LOD 50 000 objets...';
+          const lodRunner = new LodBenchmarkRunner();
+          const { summary } = await lodRunner.runFullSuite();
+          // applyLodSummary rafraîchit compteurs, graphe et état vide d'un seul tenant :
+          // réécrire les tuiles à la main laissait les autres sur les valeurs précédentes.
+          applyLodSummary(summary);
+          const counts = summary.cpuSelection.objectCounts;
+          const top = counts.length - 1;
+          benchStatus.innerText = `🏁 ${counts[top].toLocaleString('fr-FR')} objets : sélection SSE CPU ${summary.cpuSelection.latenciesMs[top].toFixed(2)} ms.`;
         }
       } finally {
         btnRunBenchmark.disabled = false;
@@ -879,9 +1077,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Boucle de rendu
   function animate(t: number) {
-    if (currentModuleId === '01-gpu-driven') {
+    if (currentModuleId === '01-indirect-draw') {
       runner01.renderTick(t);
-    } else if (currentModuleId === '02-gpu-scene' && runner02) {
+    } else if (currentModuleId === '03-gpu-scene' && runner02) {
       runner02.renderTick(t);
     }
     requestAnimationFrame(animate);

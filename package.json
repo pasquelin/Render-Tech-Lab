@@ -10,7 +10,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "bench": "node --experimental-strip-types 01-gpu-driven/benchmark/test_crossover.ts"
+    "bench": "node --experimental-strip-types 01-indirect-draw/benchmark/test_crossover.ts",
+    "bench:lod": "node --experimental-strip-types 04-gpu-lod/benchmark/test_lod.ts",
+    "test": "node --experimental-strip-types shared/math/screenSpaceError.test.ts"
   },
   "dependencies": {
     "lucide": "^1.44.0",

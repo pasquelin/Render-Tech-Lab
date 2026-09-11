@@ -17,7 +17,7 @@ function saveReportPlugin(): Plugin {
           req.on('end', () => {
             try {
               const data = JSON.parse(body);
-              const testId = data.testId || '01-gpu-driven';
+              const testId = data.testId || '01-indirect-draw';
               const markdown = data.markdown;
 
               if (markdown) {
@@ -55,7 +55,7 @@ function saveReportPlugin(): Plugin {
       server.middlewares.use('/api/get-report', (req, res) => {
         try {
           const url = new URL(req.url || '', 'http://localhost');
-          const rawId = url.searchParams.get('testId') || '01-gpu-driven';
+          const rawId = url.searchParams.get('testId') || '01-indirect-draw';
           const testId = path.basename(rawId);
           const reportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
           const localReportPath = path.resolve(server.config.root, testId, 'results', 'REPORT.md');
@@ -92,7 +92,7 @@ function saveReportPlugin(): Plugin {
           req.on('end', () => {
             try {
               const data = JSON.parse(body || '{}');
-              const rawId = data.testId || '01-gpu-driven';
+              const rawId = data.testId || '01-indirect-draw';
               const testId = path.basename(rawId);
               const folderType = data.folder || 'reports';
 
@@ -165,6 +165,12 @@ export default defineConfig({
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
     open: false,
+    watch: {
+      // Les campagnes écrivent leurs rapports dans l'arborescence surveillée.
+      // Sans cette exclusion, /api/save-report déclenche un rechargement complet
+      // à la fin de chaque benchmark et efface les résultats tout juste mesurés.
+      ignored: ['**/results/**', '**/reports/**'],
+    },
   },
   build: {
     target: 'esnext',

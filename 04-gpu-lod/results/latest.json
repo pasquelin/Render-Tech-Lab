@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-09-11T15:42:30.737Z",
+  "test": "04-gpu-lod",
+  "commit": "d2eb71a",
+  "gpuDevice": "Apple M-Series GPU (WebGPU)",
+  "browser": "Node.js/26",
+  "threeVersion": "0.174.0",
+  "scene": {
+    "objects": 2000,
+    "triangles": 16128000,
+    "materials": 1,
+    "lights": 2
+  },
+  "cpu": {
+    "frameMs": 0.85,
+    "submitMs": 0.027349900000004368
+  },
+  "gpu": {
+    "frameMs": 3.4
+  },
+  "memory": {
+    "gpuBytes": 297332
+  },
+  "draw": {
+    "submitted": 2000,
+    "visible": 2000
+  },
+  "customMetrics": {
+    "lod0Count": 300,
+    "lod1Count": 700,
+    "lod2Count": 1000,
+    "decimationTimeMs": 4.999916999999996,
+    "maxProjectedErrorPx": 0.04418670961156395,
+    "errorContractPassed": true
+  }
+}
