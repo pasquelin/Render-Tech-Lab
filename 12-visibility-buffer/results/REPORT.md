@@ -1,6 +1,6 @@
 # Rapport du Banc : 12-visibility-buffer (Visibilité Découplée)
 
-**Date :** 2026-09-11T19:56:56.614Z  
+**Date :** 2026-09-11T20:01:18.454Z  
 **Statut :** `INTEGRATE`  
 **Principe :** Passe 1 (Raster ID 32-bit + Depth) ──► Passe 2 (Compute Shading barycentrique sans surdessin)
 

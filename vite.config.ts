@@ -52,7 +52,7 @@ function saveReportPlugin(): Plugin {
       });
 
       // 2. Lecture du rapport pour affichage dans l'application
-      server.middlewares.use('/api/get-report', (req, res) => {
+      const handleGetReport = (req: any, res: any) => {
         try {
           const url = new URL(req.url || '', 'http://localhost');
           const rawId = url.searchParams.get('testId') || '01-indirect-draw';
@@ -80,7 +80,10 @@ function saveReportPlugin(): Plugin {
           res.statusCode = 500;
           res.end(`Erreur serveur : ${err.message}`);
         }
-      });
+      };
+
+      server.middlewares.use('/api/get-report', handleGetReport);
+      server.middlewares.use('/api/read-report', handleGetReport);
 
       // 3. Lecture des métriques latest.json pour le module
       server.middlewares.use('/api/get-latest', (req, res) => {

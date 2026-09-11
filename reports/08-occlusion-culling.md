@@ -1,6 +1,6 @@
 # Rapport du Banc : 08-occlusion-culling (Équation de Gain Net)
 
-**Date :** 2026-09-11T19:56:56.547Z  
+**Date :** 2026-09-11T20:01:18.382Z  
 **Statut :** `INTEGRATE`  
 **Charge de référence :** 1 000 000 triangles sous charge Three.js S3  
 **Formule maîtresse :** $\text{Gain}_{\text{net}} = \text{Coût}_{\text{baseline}} - (\text{Coût}_{\text{HiZ}} + \text{Coût}_{\text{culling}} + \text{Coût}_{\text{raster résiduel}})$

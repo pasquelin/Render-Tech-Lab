@@ -1993,10 +1993,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     reportBody.innerHTML = '<div class="text-xs text-primary font-mono animate-pulse">⏳ Chargement de l\'analyse technique in-situ...</div>';
     try {
-      const res = await fetch(`/api/read-report?testId=${encodeURIComponent(moduleId)}`);
+      const res = await fetch(`/api/get-report?testId=${encodeURIComponent(moduleId)}`);
       if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
         const text = await res.text();
-        reportBody.innerHTML = parseMarkdownToHtml(text);
+        if (contentType.includes('text/html') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+          reportBody.innerHTML = `<div class="text-xs text-base-content/60 font-mono">Rapport archivé dans <code>reports/${moduleId}.md</code>.</div>`;
+        } else {
+          reportBody.innerHTML = parseMarkdownToHtml(text);
+        }
       } else {
         reportBody.innerHTML = `<div class="text-xs text-base-content/60 font-mono">Rapport archivé dans <code>reports/${moduleId}.md</code>.</div>`;
       }
@@ -2597,9 +2602,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch(`/api/get-report?testId=${encodeURIComponent(testId)}`);
       if (res.ok) {
-        rawReportContent = await res.text();
-        modalBody.innerHTML = parseMarkdownToHtml(rawReportContent);
-        refreshIcons();
+        const contentType = res.headers.get('content-type') || '';
+        const text = await res.text();
+        if (contentType.includes('text/html') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+          modalBody.innerHTML = `<div class="alert alert-warning text-xs font-mono">⚠️ Rapport Markdown non disponible pour ${testId}.</div>`;
+        } else {
+          rawReportContent = text;
+          modalBody.innerHTML = parseMarkdownToHtml(rawReportContent);
+          refreshIcons();
+        }
       } else {
         const errText = await res.text();
         modalBody.innerHTML = `<div class="alert alert-warning text-xs font-mono">⚠️ ${errText}</div>`;

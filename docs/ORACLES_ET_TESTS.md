@@ -29,6 +29,8 @@ with tempfile.TemporaryDirectory(prefix='geometry-oracles-') as temporary:
 PY
 ```
 
+Les fonctions ajoutées pour les extensions couvrent la sphère entièrement devant le proche, la profondeur perspective, les plages entières, les extrema affines, les corrections de bits, les coordonnées barycentriques, Bézier, la SGGX diagonale dans son repère principal et la transmittance. Elles sont des références f64 sur leur domaine déclaré ; elles ne prétendent pas fournir des intervalles à arrondi dirigé. La quadrature SGGX est une vérification numérique sous tolérance.
+
 ## Fonctions de référence
 
 <!-- executable: reference_math.py -->
@@ -338,6 +340,103 @@ def signed_unfold(value):
     if not isinstance(value, int) or value < 0:
         raise ValueError('Entier non signe requis')
     return value // 2 if value % 2 == 0 else -(value // 2) - 1
+
+def sphere_ratio_bounds(center, radius, near):
+    if (len(center) != 3 or any(not math.isfinite(v) for v in [*center, radius, near])
+            or radius < 0 or near <= 0 or center[2] - radius <= near):
+        raise ValueError('Sphere hors domaine non clippe')
+    z = center[2]
+    denominator = z * z - radius * radius
+    result = []
+    for coordinate in center[:2]:
+        spread = radius * math.sqrt(coordinate * coordinate + denominator)
+        result.append(((coordinate * z - spread) / denominator,
+                       (coordinate * z + spread) / denominator))
+    return result
+
+
+def depth_encode(distance, near, far=None, reversed_z=False):
+    if (not math.isfinite(near) or near <= 0 or not math.isfinite(distance)
+            or distance < near or (far is not None and
+                (not math.isfinite(far) or far <= near or distance > far))):
+        raise ValueError('Domaine de profondeur invalide')
+    value = 1 - near / distance if far is None else far * (distance - near) / (distance * (far - near))
+    return 1 - value if reversed_z else value
+
+
+def depth_decode(value, near, far=None, reversed_z=False):
+    if (not math.isfinite(near) or near <= 0 or not math.isfinite(value)
+            or not 0 <= value <= 1 or (far is not None and
+                (not math.isfinite(far) or far <= near))):
+        raise ValueError('Domaine de profondeur invalide')
+    value = 1 - value if reversed_z else value
+    if far is None:
+        return math.inf if value == 1 else near / (1 - value)
+    return near * far / (far - (far - near) * value)
+
+
+def dispatch_range(count, workers, index):
+    if (any(type(v) is not int for v in [count, workers, index])
+            or count < 0 or workers <= 0 or not 0 <= index < workers):
+        raise ValueError('Plage de travail invalide')
+    return index * count // workers, (index + 1) * count // workers
+
+
+def affine_rectangle_range(coefficients, center, half_size):
+    if (len(coefficients) != 3 or len(center) != 2 or len(half_size) != 2
+            or any(not math.isfinite(v) for v in [*coefficients, *center, *half_size])
+            or min(half_size) < 0):
+        raise ValueError('Rectangle invalide')
+    a, b, c = coefficients
+    middle = a * center[0] + b * center[1] + c
+    radius = abs(a) * half_size[0] + abs(b) * half_size[1]
+    return middle - radius, middle + radius
+
+
+def compose_bit_patches(first, second):
+    a1, o1 = first
+    a2, o2 = second
+    if any(type(v) is not int or v < 0 for v in [a1, o1, a2, o2]):
+        raise ValueError('Masque entier non negatif requis')
+    return a1 & a2, (o1 & a2) | o2
+
+
+def barycentric_distance_squared(vertices, first, second):
+    if (len(vertices) != 3 or any(len(v) != 3 for v in vertices)
+            or len(first) != 3 or len(second) != 3
+            or any(not math.isfinite(v) for row in [*vertices, first, second] for v in row)
+            or not math.isclose(sum(first), 1) or not math.isclose(sum(second), 1)):
+        raise ValueError('Coordonnees barycentriques invalides')
+    delta = [a - b for a, b in zip(first, second)]
+    return -sum(delta[i] * delta[j] * sum((vertices[i][k] - vertices[j][k]) ** 2 for k in range(3))
+                for i in range(3) for j in range(i + 1, 3))
+
+
+def bezier_cubic(points, t):
+    if (len(points) != 4 or any(len(p) != 3 for p in points)
+            or not math.isfinite(t) or not 0 <= t <= 1
+            or any(not math.isfinite(v) for p in points for v in p)):
+        raise ValueError('Courbe invalide')
+    weights = [(1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3]
+    return [sum(w * p[axis] for w, p in zip(weights, points)) for axis in range(3)]
+
+
+def sggx_diagonal(diagonal, normal, view):
+    if (any(len(v) != 3 for v in [diagonal, normal, view])
+            or any(not math.isfinite(v) for row in [diagonal, normal, view] for v in row)
+            or min(diagonal) <= 0 or not math.isclose(norm(normal), 1)
+            or not math.isclose(norm(view), 1)):
+        raise ValueError('SGGX exige une matrice positive et des directions unitaires')
+    sigma = math.sqrt(sum(s * w * w for s, w in zip(diagonal, view)))
+    denominator = sum(n * n / s for s, n in zip(diagonal, normal))
+    distribution = 1 / (math.pi * math.sqrt(math.prod(diagonal)) * denominator ** 2)
+    return sigma, distribution, max(0, dot(view, normal)) * distribution / sigma
+
+
+def transmittance(extinction, length):
+    if any(not math.isfinite(v) or v < 0 for v in [extinction, length]):
+        raise ValueError('Extinction et longueur finies non negatives requises')
+    return math.exp(-extinction * length)
 ```
 
 ## Tests indépendants et contre-exemples
@@ -632,6 +731,183 @@ class MathematicalContractTests(unittest.TestCase):
         for maximum in [0, -1, 1.5]:
             with self.assertRaises(ValueError):
                 reference.packed_weights([1], maximum)
+
+
+    def test_sphere_bounds_contain_sampled_surface(self):
+        generator = random.Random(650)
+        for center, radius in [([0, 0, 3], 1), ([13, -7, 4], 2), ([-8, 2, 10], 0.1)]:
+            bounds = reference.sphere_ratio_bounds(center, radius, 0.1)
+            for _ in range(1500):
+                z = generator.uniform(-1, 1)
+                phi = generator.random() * math.tau
+                point = [center[0] + radius * math.sqrt(1 - z * z) * math.cos(phi),
+                         center[1] + radius * math.sqrt(1 - z * z) * math.sin(phi), center[2] + radius * z]
+                for axis in range(2):
+                    self.assertLessEqual(bounds[axis][0] - 1e-12, point[axis] / point[2])
+                    self.assertLessEqual(point[axis] / point[2], bounds[axis][1] + 1e-12)
+
+    def test_sphere_bound_ray_is_tangent(self):
+        for x, z, radius in [(2, 5, 1), (-13, 3, 2), (0, 8, 4)]:
+            for slope in reference.sphere_ratio_bounds([x, 0, z], radius, 0.1)[0]:
+                distance_to_line = abs(x - slope * z) / math.sqrt(1 + slope * slope)
+                self.assertAlmostEqual(distance_to_line, radius, places=12)
+
+    def test_sphere_zero_and_clipped_domain(self):
+        self.assertEqual(reference.sphere_ratio_bounds([2, 4, 8], 0, 1), [(0.25, 0.25), (0.5, 0.5)])
+        for center, radius, near in [([0, 0, 2], 1, 1), ([0, 0, 0], 1, 0.1), ([0, 0, 3], -1, 1), ([math.nan, 0, 3], 1, 1)]:
+            with self.assertRaises(ValueError):
+                reference.sphere_ratio_bounds(center, radius, near)
+
+    def test_finite_depth_endpoints_and_roundtrip(self):
+        for near, far in [(0.1, 100), (1, 10000), (2, 3)]:
+            for reverse in [False, True]:
+                self.assertAlmostEqual(reference.depth_encode(near, near, far, reverse), int(reverse))
+                self.assertAlmostEqual(reference.depth_encode(far, near, far, reverse), int(not reverse))
+                for distance in [near, math.sqrt(near * far), far]:
+                    q = reference.depth_encode(distance, near, far, reverse)
+                    self.assertTrue(math.isclose(reference.depth_decode(q, near, far, reverse), distance, rel_tol=1e-10))
+
+    def test_infinite_depth_and_background(self):
+        for reverse in [False, True]:
+            for distance in [0.1, 1, 1000]:
+                q = reference.depth_encode(distance, 0.1, reversed_z=reverse)
+                self.assertTrue(math.isclose(reference.depth_decode(q, 0.1, reversed_z=reverse), distance, rel_tol=1e-10))
+            self.assertEqual(reference.depth_decode(int(not reverse), 0.1, reversed_z=reverse), math.inf)
+
+    def test_depth_derivative_matches_difference(self):
+        near, far, distance = 1, 100, 7
+        q = reference.depth_encode(distance, near, far)
+        step = 1e-7
+        numerical = (reference.depth_decode(q + step, near, far) - reference.depth_decode(q - step, near, far)) / (2 * step)
+        self.assertAlmostEqual(numerical, distance * distance * (far - near) / (near * far), places=6)
+
+    def test_depth_invalid_domain(self):
+        for q, near, far in [(math.nan, 1, 2), (-0.1, 1, 2), (0.5, 0, 2), (0.5, 2, 1)]:
+            with self.assertRaises(ValueError):
+                reference.depth_decode(q, near, far)
+
+    def test_dispatch_ranges_cover_once(self):
+        for count in [0, 1, 7, 64, 65, 1001]:
+            for workers in [1, 3, 16, 128]:
+                visited = [i for w in range(workers) for i in range(*reference.dispatch_range(count, workers, w))]
+                self.assertEqual(visited, list(range(count)))
+
+    def test_dispatch_exact_large_integer_boundaries(self):
+        count, workers = 2**64 - 1, 7
+        intervals = [reference.dispatch_range(count, workers, i) for i in range(workers)]
+        self.assertEqual(intervals[0][0], 0)
+        self.assertEqual(intervals[-1][1], count)
+        self.assertTrue(all(a[1] == b[0] for a, b in zip(intervals, intervals[1:])))
+        self.assertLessEqual(max(b - a for a, b in intervals) - min(b - a for a, b in intervals), 1)
+
+    def test_dispatch_rejects_invalid_ranges(self):
+        for values in [(-1, 1, 0), (3, 0, 0), (3, 2, 2), (3, 2, -1), (3.5, 2, 0)]:
+            with self.assertRaises(ValueError):
+                reference.dispatch_range(*values)
+
+    def test_affine_rectangle_extrema_match_corners(self):
+        generator = random.Random(777)
+        for _ in range(1000):
+            a, b, c, x, y = [generator.uniform(-9, 9) for _ in range(5)]
+            hx, hy = generator.random(), generator.random()
+            corners = [a * (x + sx * hx) + b * (y + sy * hy) + c for sx in [-1, 1] for sy in [-1, 1]]
+            low, high = reference.affine_rectangle_range([a, b, c], [x, y], [hx, hy])
+            self.assertAlmostEqual(low, min(corners), places=11)
+            self.assertAlmostEqual(high, max(corners), places=11)
+
+    def test_outer_coverage_does_not_prove_inner_coverage(self):
+        for coefficients in [[1, 0, 0], [0, 1, 0], [-1, -1, 0.1]]:
+            low, high = reference.affine_rectangle_range(coefficients, [0, 0], [0.5, 0.5])
+            self.assertGreaterEqual(high, 0)
+            self.assertLess(low, 0)
+
+    def test_bit_patch_composition_exhaustive_two_bits(self):
+        for a1 in range(4):
+            for o1 in range(4):
+                for a2 in range(4):
+                    for o2 in range(4):
+                        a, o = reference.compose_bit_patches((a1, o1), (a2, o2))
+                        for value in range(4):
+                            self.assertEqual((value & a) | o, (((value & a1) | o1) & a2) | o2)
+
+    def test_bit_patch_order_matters(self):
+        set_bit, clear_bit = (3, 1), (2, 0)
+        self.assertNotEqual(reference.compose_bit_patches(set_bit, clear_bit), reference.compose_bit_patches(clear_bit, set_bit))
+
+    def test_barycentric_distance_matches_cartesian(self):
+        generator = random.Random(322)
+        for _ in range(500):
+            vertices = [[generator.uniform(-10, 10) for _ in range(3)] for _ in range(3)]
+            first, second = [[generator.random() for _ in range(3)] for _ in range(2)]
+            first, second = [v / sum(first) for v in first], [v / sum(second) for v in second]
+            p, q = [[sum(w * point[k] for w, point in zip(weights, vertices)) for k in range(3)] for weights in [first, second]]
+            self.assertAlmostEqual(reference.barycentric_distance_squared(vertices, first, second), sum((a - b) ** 2 for a, b in zip(p, q)), places=10)
+
+    def test_weight_truncation_bound_under_divergent_poses(self):
+        generator = random.Random(181)
+        for _ in range(500):
+            weights = [generator.random() for _ in range(5)]
+            weights = [w / sum(weights) for w in weights]
+            positions = [[generator.uniform(-10, 10) for _ in range(3)] for _ in weights]
+            removed = sum(weights[3:])
+            original = [sum(w * p[k] for w, p in zip(weights, positions)) for k in range(3)]
+            reduced = [sum(w * p[k] / (1 - removed) for w, p in zip(weights[:3], positions[:3])) for k in range(3)]
+            diameter = max(reference.norm([a - b for a, b in zip(p, q)]) for p in positions for q in positions)
+            self.assertLessEqual(reference.norm([a - b for a, b in zip(original, reduced)]), removed * diameter + 1e-12)
+
+    def test_bezier_endpoints_and_de_casteljau(self):
+        points = [[0, 0, 0], [3, -1, 2], [-2, 4, 5], [1, 0, 0]]
+        self.assertEqual(reference.bezier_cubic(points, 0), points[0])
+        self.assertEqual(reference.bezier_cubic(points, 1), points[-1])
+        for step in range(101):
+            t, layer = step / 100, points
+            for _ in range(3):
+                layer = [[(1 - t) * a + t * b for a, b in zip(p, q)] for p, q in zip(layer, layer[1:])]
+            for a, b in zip(reference.bezier_cubic(points, t), layer[0]):
+                self.assertAlmostEqual(a, b, places=13)
+
+    def test_bezier_uniform_parameter_is_not_uniform_length(self):
+        points = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [8, 0, 0]]
+        self.assertEqual(reference.bezier_cubic(points, 0.5), [1, 0, 0])
+
+    def test_sggx_isotropic_reference(self):
+        sigma, distribution, pdf = reference.sggx_diagonal([1, 1, 1], [0, 0, 1], [0, 0, 1])
+        self.assertEqual(sigma, 1)
+        self.assertAlmostEqual(distribution, 1 / math.pi)
+        self.assertEqual(pdf, distribution)
+
+    def test_sggx_visible_pdf_quadrature(self):
+        nz, nphi = 160, 160
+        integral = 0.0
+        for iz in range(nz):
+            z = -1 + (iz + 0.5) * 2 / nz
+            for iphi in range(nphi):
+                phi = (iphi + 0.5) * math.tau / nphi
+                normal = [math.sqrt(1 - z * z) * math.cos(phi), math.sqrt(1 - z * z) * math.sin(phi), z]
+                integral += reference.sggx_diagonal([0.5, 1, 2], normal, [0, 0, 1])[2]
+        self.assertAlmostEqual(integral * 4 * math.pi / (nz * nphi), 1, delta=0.002)
+
+    def test_sggx_rejects_singular_matrix_and_nonunit_directions(self):
+        for diagonal, direction in [([1, 1, 0], [0, 0, 1]), ([1, 1, -1], [0, 0, 1]), ([1, 1, 1], [0, 0, 2])]:
+            with self.assertRaises(ValueError):
+                reference.sggx_diagonal(diagonal, direction, [0, 0, 1])
+
+    def test_transmittance_segmentation_invariance(self):
+        expected = reference.transmittance(2, 0.5)
+        self.assertAlmostEqual(expected, math.exp(-1))
+        for count in [1, 2, 32, 100]:
+            self.assertAlmostEqual(reference.transmittance(2, 0.5 / count) ** count, expected, places=13)
+        self.assertEqual(reference.transmittance(0, 5), 1)
+
+    def test_transmittance_rejects_invalid_domain(self):
+        for extinction, length in [(-1, 2), (2, -1), (math.nan, 1), (1, math.inf)]:
+            with self.assertRaises(ValueError):
+                reference.transmittance(extinction, length)
+
+    def test_perspective_uniform_object_split_is_not_screen_uniform(self):
+        start, middle, end = 0 / 1, 1 / 1.5, 2 / 2
+        self.assertEqual(math.ceil((end - start) / 0.5), 2)
+        self.assertGreater(middle - start, 0.5)
 
 
 if __name__ == '__main__':

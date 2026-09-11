@@ -1,6 +1,6 @@
 # Rapport du Banc : 13-full-gpu-driven (Architecture Complète Unifiée)
 
-**Date :** 2026-09-11T19:56:56.615Z  
+**Date :** 2026-09-11T20:01:18.455Z  
 **Statut :** `INTEGRATE`  
 **Scène de stress :** 100,000 instances ($38{,}400{,}000$ triangles)
 
