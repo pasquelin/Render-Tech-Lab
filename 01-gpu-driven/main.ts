@@ -1,4 +1,5 @@
 import { BenchmarkRunner } from './benchmark/runner.ts';
+import { formatMarkdownReport } from './benchmark/reporter.ts';
 import type { FrameMeasurement, CrossoverReport } from './types.ts';
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -61,12 +62,26 @@ window.addEventListener('DOMContentLoaded', async () => {
     benchStatus.style.color = '#38bdf8';
   };
 
-  runner.onBenchmarkComplete = (report: CrossoverReport) => {
+  runner.onBenchmarkComplete = async (report: CrossoverReport) => {
+    const mdReport = formatMarkdownReport(report, '01-gpu-driven');
     benchStatus.innerText = `🏁 Benchmark terminé ! Crossover : ${
       report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
     }`;
     benchStatus.style.color = '#10b981';
-    resultsJson.innerText = JSON.stringify(report, null, 2);
+    resultsJson.innerText = mdReport;
+
+    try {
+      const res = await fetch('/api/save-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId: '01-gpu-driven', markdown: mdReport }),
+      });
+      if (res.ok) {
+        benchStatus.innerText += ' | 💾 REPORT.md sauvegardé sur disque';
+      }
+    } catch {
+      // Ignore si exécuté hors du serveur de dev Vite
+    }
   };
 
   // Interactions boutons

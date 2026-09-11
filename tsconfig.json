@@ -14,7 +14,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["@webgpu/types"]
+    "types": ["@webgpu/types", "node"]
   },
   "include": ["01-gpu-driven", "benchmarks", "src"]
 }

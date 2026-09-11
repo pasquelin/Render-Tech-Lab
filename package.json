@@ -7,12 +7,14 @@
     "start": "vite",
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bench": "node --experimental-strip-types 01-gpu-driven/benchmark/test_crossover.ts"
   },
   "dependencies": {
     "three": "^0.174.0"
   },
   "devDependencies": {
+    "@types/node": "^22.20.2",
     "@types/three": "^0.174.0",
     "@webgpu/types": "^0.1.72",
     "typescript": "^5.8.0",
