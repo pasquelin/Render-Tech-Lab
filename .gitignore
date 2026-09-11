@@ -17,3 +17,5 @@ pnpm-debug.log*
 # Environment
 .env
 .env.local
+
+files_local

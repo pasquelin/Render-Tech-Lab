@@ -1,0 +1,236 @@
+[
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 10,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  },
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 25,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  },
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 50,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  },
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 75,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  },
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 90,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  },
+  {
+    "timestamp": "2026-09-11T17:19:28.839Z",
+    "test": "08-occlusion-culling",
+    "commit": "302760b",
+    "status": "not-run",
+    "verdict": "not-yet-decided",
+    "environment": {
+      "gpu": null,
+      "browser": null,
+      "threeVersion": "0.174.0",
+      "webgpuFeatures": null
+    },
+    "scene": {
+      "objects": 99,
+      "triangles": null,
+      "materials": null,
+      "lights": null
+    },
+    "cpu": {
+      "frameMs": null,
+      "submitMs": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "fps": null
+    },
+    "gpu": {
+      "frameMs": null
+    },
+    "memory": {
+      "gpuBytes": null
+    },
+    "draw": {
+      "submitted": null,
+      "visible": null
+    },
+    "customMetrics": {
+      "reason": "bench-not-executed"
+    }
+  }
+]

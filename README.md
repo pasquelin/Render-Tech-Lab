@@ -54,21 +54,33 @@ To guarantee mathematical and scientific rigor across reports, the laboratory st
 
 ## The R&D Progression
 
-Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively:
+Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively. The table below reflects the **actual** state of the repository and the governing statuses, kept in sync with [`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md).
+
+> **Status legend (honest by construction):**
+> - **[VALIDATED]** — benchmark executed and archived (`results/REPORT.md`), verdict recorded.
+> - **[IMPLEMENTED]** — prototype + benchmark code present, campaign measured (not yet a cross-bench verdict).
+> - **[NOT IMPLEMENTED / NOT RUN]** — structure, contracts and fixtures present; **no benchmark executed, no number claimed** (`results/latest.json` = `status: "not-run"`).
 
 | Module | Research subject | Status | Protocol |
 |---|---|---|---|
-| [**00-baseline**](00-baseline/README.md) | Baseline Spec 13 Witness — S0–S5 load curve, reference floor | **Validé** | [hypothesis.md](00-baseline/hypothesis.md) |
-| [**01-gpu-driven**](01-gpu-driven/README.md) | GPU-Driven Indirect Draw & Frustum Culling Compute WGSL (1 draw call) | **Validé** | [hypothesis.md](01-gpu-driven/hypothesis.md) |
-| [**02-gpu-scene**](02-gpu-scene/README.md) | Heterogeneous GPU Scene (`Object`, `Geometry`, `Material`, `Draw` buffers, 4D stress) | **En cours (Actif)** | [hypothesis.md](02-gpu-scene/hypothesis.md) |
-| **03-gpu-lod** | GPU LOD selection by screen-space projected error in compute | *Prévu* | hypothesis.md |
-| **04-meshlets** | Meshlet hierarchy (meshoptimizer), cluster-level culling & compaction | *Prévu* | hypothesis.md |
-| **05-hiz** | Hi-Z depth pyramid & two-phase occlusion culling (90% occlusion stress) | *Prévu* | hypothesis.md |
-| **06-gpu-material** | Visibility buffer & deferred material shading | *Prévu* | hypothesis.md |
+| [**00-baseline**](00-baseline/README.md) | Spec 13 Witness — S0–S5 load curve, reference floor | **[VALIDATED]** | [hypothesis.md](00-baseline/hypothesis.md) |
+| [**01-indirect-draw**](01-indirect-draw/README.md) | Indirect Draw (1 draw call) + baseline crossover | **[VALIDATED]** | [hypothesis.md](01-indirect-draw/hypothesis.md) |
+| [**02-gpu-frustum-culling**](02-gpu-frustum-culling/README.md) | Compute WGSL frustum culling (plan/sphere) | **[NOT IMPLEMENTED / NOT RUN]** | [hypothesis.md](02-gpu-frustum-culling/hypothesis.md) |
+| [**03-gpu-scene**](03-gpu-scene/README.md) | Heterogeneous GPU scene (Object/Geometry/Material/Draw buffers, 4D stress) | **[VALIDATED]** | [hypothesis.md](03-gpu-scene/hypothesis.md) |
+| [**04-gpu-lod**](04-gpu-lod/README.md) | Screen-Space Error LOD, decimation (meshoptimizer) + CPU/GPU selection | **[VALIDATED]** 04A/04B · 04C not run | [hypothesis.md](04-gpu-lod/hypothesis.md) |
+| [**05-meshlets**](05-meshlets/README.md) | Cluster partitioning (64/128/256/512 tris) & overhead | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](05-meshlets/types.ts) |
+| [**06-meshlet-culling**](06-meshlet-culling/README.md) | Frustum / backface / sub-pixel cluster culling & reject rate | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](06-meshlet-culling/types.ts) |
+| [**07-hiz**](07-hiz/README.md) | Hi-Z depth pyramid (mip 0 → N) & generation cost | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](07-hiz/types.ts) |
+| [**08-occlusion-culling**](08-occlusion-culling/README.md) | Hi-Z occlusion under 10%–99% & net-gain equation | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](08-occlusion-culling/types.ts) |
+| [**09-gpu-compaction**](09-gpu-compaction/README.md) | Visible-list compaction (1-thread / atomic / scan) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](09-gpu-compaction/types.ts) |
+| [**10-material-batching**](10-material-batching/README.md) | Materialisation (switch / storage / texture-array) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](10-material-batching/types.ts) |
+| [**11-geometry-streaming**](11-geometry-streaming/README.md) | VRAM residency & memory-pressure lifecycle | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](11-geometry-streaming/types.ts) |
+| [**12-visibility-buffer**](12-visibility-buffer/README.md) | Visibility buffer & deferred shading | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](12-visibility-buffer/types.ts) |
+| [**13-full-gpu-driven**](13-full-gpu-driven/README.md) | Assembled pipeline & systemic cost/gain balance | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](13-full-gpu-driven/types.ts) |
 
-Each module holds the same five drawers: `hypothesis.md` (scoping sheet and final verdict), `baseline/` (the current engine, without the technique), `implementation/` (the experimental prototype), `benchmark/` (automated, reproducible load scenarios) and `results/` (captures, figures, visual comparisons).
+Each module holds the same drawers: `hypothesis.md` (scoping sheet and final verdict), `baseline/` (reference engine, without the technique), `implementation/` (the experimental prototype), `benchmark/` (automated, reproducible load scenarios) and `results/` (captures, figures, comparisons, and `latest.json`).
 
-**Cross-cutting:** [`benchmarks/`](benchmarks/README.md) holds the shared metric harnesses (`cpu`, `gpu`, `memory`, `image-quality`); [`reports/`](reports/README.md) holds the consolidated arbitration reports.
+**Cross-cutting:** [`shared/`](shared/) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses; [`reports/`](reports/README.md) holds the consolidated arbitration reports.
 
 ## The three independent gates
 
@@ -101,25 +113,20 @@ Recorded on every run: `CPU frame`, `GPU frame`, `submitMs`, `P95`, `P99`, `firs
 ## Execution roadmap
 
 ```text
-00-baseline (Spec 13 S0–S5)          ← VALIDÉ (Knee at S3 / 3.35 ms)
-     │
-     ▼
-01-gpu-driven (Indirect Draw WGSL)   ← VALIDÉ (1 draw call, crossover ~500 obj)
-     │
-     ▼
-02-gpu-scene (Heterogeneous Scene)   ← BANC ACTIF (Object, Geometry, Material, Draw Buffers, 4D stress)
-     │
-     ▼
-03-gpu-lod (Screen-Space Error)      ← Prochaine étape
-     │
-     ▼
-04-meshlets (Cluster Culling)        ← Échelle Nanite
-     │
-     ▼
-05-hiz (Occlusion Pyramid)           ← Occlusion 90%
-     │
-     ▼
-06-gpu-material / visibility         ← Visibility Buffer
+ 0   00-baseline            (Spec 13 S0–S5)            ← [VALIDATED]
+ 1   01-indirect-draw       (Indirect Draw, 1 call)    ← [VALIDATED]
+ 2   02-gpu-frustum-culling (Compute WGSL culling)     ← [NOT IMPLEMENTED / NOT RUN]
+ 3   03-gpu-scene           (Heterogeneous scene)      ← [VALIDATED]
+ 4   04-gpu-lod             (Screen-Space Error LOD)   ← [VALIDATED]
+ 5   05-meshlets            (Cluster partitioning)     ← [NOT IMPLEMENTED / NOT RUN]
+ 6   06-meshlet-culling     (Frustum / cone / sub-pix) ← [NOT IMPLEMENTED / NOT RUN]
+ 7   07-hiz                 (Hi-Z depth pyramid)       ← [NOT IMPLEMENTED / NOT RUN]
+ 8   08-occlusion-culling   (Hi-Z occlusion 10%–99%)   ← [NOT IMPLEMENTED / NOT RUN]
+ 9   09-gpu-compaction      (Visible-list compaction)  ← [NOT IMPLEMENTED / NOT RUN]
+10   10-material-batching   (switch / storage / array) ← [NOT IMPLEMENTED / NOT RUN]
+11   11-geometry-streaming  (VRAM residency pressure)  ← [NOT IMPLEMENTED / NOT RUN]
+12   12-visibility-buffer   (Visibility + deferred)    ← [NOT IMPLEMENTED / NOT RUN]
+13   13-full-gpu-driven     (Assembled pipeline)       ← [NOT IMPLEMENTED / NOT RUN]
 ```
 
 ## Conditional watchlist
@@ -142,7 +149,9 @@ These subjects are neither rejected nor scheduled. They stay dormant and only op
 ```bash
 pnpm install
 pnpm dev       # interactive lab viewer (Vite)
-pnpm bench     # crossover benchmark, 01-gpu-driven
+pnpm bench     # crossover benchmark, 01-indirect-draw
+pnpm bench:lod # LOD suite, 04-gpu-lod
+pnpm test      # unit tests (SSE / LOD / random / meshlet / schema)
 pnpm build     # type-check + production build
 ```
 

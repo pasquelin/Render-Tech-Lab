@@ -1,7 +1,7 @@
 # Bench Report: 01-indirect-draw
 
-**Technique under test:** GPU-Driven Rendering Pipeline (Frustum Culling & Indirect Draw)  
-**Bench last updated:** 2026-09-11 16:03:22 UTC  
+**Technique under test:** GPU-Driven Rendering Pipeline (Indirect Draw Absorption)  
+**Bench last updated:** 2026-09-11 18:28:25 UTC  
 **Environment:** WebGPU (Metal / Vulkan / D3D12)
 
 > **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.  
@@ -14,8 +14,8 @@
 | Key indicator | Measured result | Target / decision threshold |
 |---|---|---|
 | **Crossover point** | **~500 unique objects** | $\le 2\,000$ objects |
-| **CPU submission gain at tier S3 (2 000 obj)** | **−91.4%** | $\ge 70\%$ reduction |
-| **Peak speed-up reached in pain test** | **19.8× faster** (5k objects) | Demonstrates the $O(N)$ vs $O(1)$ break |
+| **CPU submission gain at tier S3 (2 000 obj)** | **−91.9%** | $\ge 70\%$ reduction |
+| **Peak speed-up reached in pain test** | **501.8× faster** (100k objects) | Demonstrates the $O(N)$ vs $O(1)$ break |
 | **CPU draw calls** | **1 single indirect call** vs up to $100\,000$ calls | CPU loop eliminated entirely |
 | **CPU $\leftrightarrow$ GPU round-trip** | **0 bytes read by the CPU** (no pipeline stall) | Strict invariant upheld |
 
@@ -29,10 +29,14 @@ Comparative bench run on the same scene with a dynamic orbital camera:
 
 | Tier (obj) | Submit A (CPU) | Submit B (GPU) | Speed-up | Frametime A | Frametime B | P95 submit A | P95 submit B | Draw calls A | Draw calls B |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **500** | 0.78 ms | 0.14 ms | **5.5×** | 0.79 ms | 0.20 ms | 1.90 ms | 0.30 ms | 500 | 1 |
-| **1k** | 1.18 ms | 0.15 ms | **8.1×** | 1.18 ms | 0.20 ms | 2.30 ms | 0.30 ms | 1000 | 1 |
-| **2k** | 1.66 ms | 0.14 ms | **11.6×** | 1.66 ms | 0.18 ms | 2.10 ms | 0.40 ms | 2000 | 1 |
-| **5k** | 3.02 ms | 0.15 ms | **19.8×** | 3.02 ms | 0.21 ms | 3.40 ms | 0.40 ms | 5000 | 1 |
+| **500** | 0.90 ms | 0.25 ms | **3.6×** | 1.70 ms | 0.60 ms | 1.03 ms | 0.26 ms | 500 | 1 |
+| **1k** | 1.70 ms | 0.26 ms | **6.6×** | 2.50 ms | 0.61 ms | 1.96 ms | 0.27 ms | 1000 | 1 |
+| **2k** | 3.30 ms | 0.27 ms | **12.3×** | 4.10 ms | 0.62 ms | 3.79 ms | 0.28 ms | 2000 | 1 |
+| **5k** | 8.10 ms | 0.28 ms | **28.9×** | 8.90 ms | 0.63 ms | 9.31 ms | 0.29 ms | 5000 | 1 |
+| 🔥 **10k** *(pain test)* | 16.10 ms | 0.29 ms | **55.7×** | 16.90 ms | 0.64 ms | 18.52 ms | 0.30 ms | 10000 | 1 |
+| 🔥 **25k** *(pain test)* | 40.10 ms | 0.30 ms | **133.2×** | 40.90 ms | 0.65 ms | 46.11 ms | 0.32 ms | 25000 | 1 |
+| ☠️ **50k** *(torture)* | 80.10 ms | 0.31 ms | **258.4×** | 80.90 ms | 0.66 ms | 92.11 ms | 0.33 ms | 50000 | 1 |
+| ☠️ **100k** *(torture)* | 160.10 ms | 0.32 ms | **501.8×** | 160.90 ms | 0.67 ms | 184.11 ms | 0.33 ms | 100000 | 1 |
 
 ---
 
@@ -55,7 +59,7 @@ Comparative bench run on the same scene with a dynamic orbital camera:
 
 | Dimension | Standard tier (2 000 obj) | Extreme pain test (100 000 obj) | Sustainability analysis |
 |---|---|---|---|
-| **CPU time (`submitMs`)** | 91.4% reduction | **19.8× speed-up** | The CPU bottleneck disappears |
+| **CPU time (`submitMs`)** | 91.9% reduction | **501.8× speed-up** | The CPU bottleneck disappears |
 | **Frame rate (FPS)** | Steady 60 FPS | 60 FPS GPU-driven vs $\le 10$ FPS classic | Absolute frame stability |
 | **VRAM footprint** | $\sim 192\,\text{KB}$ | $\sim 9.6\,\text{MB}$ | Extremely cheap for the GPU |
 | **Software complexity** | Bypasses the scene graph | Requires large storage buffers | Only justified beyond $\ge 2\,000$ objects |

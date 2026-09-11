@@ -111,9 +111,16 @@ Chaque banc d'essai enregistre obligatoirement ses résultats bruts dans `result
   "timestamp": "2026-09-11T17:30:00.000Z",
   "test": "04-gpu-lod",
   "commit": "d2eb71a",
-  "gpu": "Apple M-Series GPU (WebGPU)",
-  "browser": "Chrome 128 / macOS",
-  "threeVersion": "0.174.0",
+
+  "status": "measured",
+  "verdict": "INTEGRATE",
+
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0",
+    "webgpuFeatures": ["indirect-first-instance"]
+  },
 
   "scene": {
     "objects": 10000,
@@ -142,7 +149,12 @@ Chaque banc d'essai enregistre obligatoirement ses résultats bruts dans `result
 }
 ```
 
-Les métriques spécifiques au banc (ex: taux de rejet, coût Hi-Z, niveaux LOD) sont ajoutées dans un bloc dédié sous la clé `customMetrics`.
+**Contraintes obligatoires :**
+- `status` est `"measured"` uniquement si un échantillon réel a été recueilli, sinon `"not-run"`.
+- Toute métrique non mesurée vaut `null` (jamais `0`) — ne jamais fabriquer de valeur de repli.
+- `verdict` est `INTEGRATE` / `REJECT` / `WATCHLIST` / `not-yet-decided`.
+- Les métriques spécifiques au banc (taux de rejet, coût Hi-Z, niveaux LOD…) sont ajoutées sous la clé `customMetrics`.
+- Un banc non exécuté (05→13 au moment de cette passe) porte donc `status: "not-run"` et des champs `null`.
 
 ---
 
@@ -154,20 +166,20 @@ render-tech-lab/
 ├── MASTER_TEST_PLAN.md      # Contrat maître gouvernant
 │
 ├── tests/ (ou modules unitaires standardisés)
-│   ├── 00-baseline/         [VALIDÉ] Three.js standard (Spec 13 S0–S5, coude S3 à 2 000 objets)
-│   ├── 01-indirect-draw/    [VALIDÉ] Capacité d'absorption WebGPU drawIndexedIndirect sans culling
-│   ├── 02-gpu-frustum-culling/ [VALIDÉ] Compute shader WGSL culling atomique vs CPU culling
-│   ├── 03-gpu-scene/        [VALIDÉ] Scène hétérogène plate, ObjectBuffer, multi-topologies
-│   ├── 04-gpu-lod/          [ACTIF] LODs automatiques meshoptimizer + Screen-Space Error (04A/B/C)
-│   ├── 05-meshlets/         Partitionnement clusters (64/128/256/512 triangles) & overhead
-│   ├── 06-meshlet-culling/  Culling cluster (frustum, cône de normale, backface) & taux de rejet
-│   ├── 07-hiz/              Pyramide de profondeur Hi-Z GPU mip-map & coût générationnel
-│   ├── 08-occlusion-culling/ Frustum + Hi-Z sous 10% à 99% d'occlusion & équation de gain net
-│   ├── 09-gpu-compaction/   Compaction multi-échelles (1 thread vs atomic vs parallel scan)
-│   ├── 10-material-batching/ Matérialisation (switch vs storage buffer vs texture array)
-│   ├── 11-geometry-streaming/ Résidence VRAM & cycle de vie complet de pression mémoire
-│   ├── 12-visibility-buffer/ Découplage passe visibilité (IDs) & shading différé
-│   └── 13-full-gpu-driven/  Pipeline complet unifié assemblé & bilan coût/gain systémique
+│   ├── 00-baseline/         [VALIDÉ]         Three.js standard (Spec 13 S0–S5, coude S3 à 2 000 objets)
+│   ├── 01-indirect-draw/    [VALIDÉ]         Capacité d'absorption WebGPU drawIndexedIndirect sans culling
+│   ├── 02-gpu-frustum-culling/ [NON EXÉCUTÉ] Compute shader WGSL culling atomique vs CPU culling
+│   ├── 03-gpu-scene/        [VALIDÉ]         Scène hétérogène plate, ObjectBuffer, multi-topologies
+│   ├── 04-gpu-lod/          [VALIDÉ]         LODs automatiques meshoptimizer + Screen-Space Error (04A/B/C)
+│   ├── 05-meshlets/         [NON EXÉCUTÉ]    Partitionnement clusters (64/128/256/512 triangles) & overhead
+│   ├── 06-meshlet-culling/  [NON EXÉCUTÉ]    Culling cluster (frustum, cône de normale, backface) & taux de rejet
+│   ├── 07-hiz/              [NON EXÉCUTÉ]    Pyramide de profondeur Hi-Z GPU mip-map & coût générationnel
+│   ├── 08-occlusion-culling/ [NON EXÉCUTÉ]  Frustum + Hi-Z sous 10% à 99% d'occlusion & équation de gain net
+│   ├── 09-gpu-compaction/   [NON EXÉCUTÉ]    Compaction multi-échelles (1 thread vs atomic vs parallel scan)
+│   ├── 10-material-batching/ [NON EXÉCUTÉ]  Matérialisation (switch vs storage buffer vs texture array)
+│   ├── 11-geometry-streaming/ [NON EXÉCUTÉ] Résidence VRAM & cycle de vie complet de pression mémoire
+│   ├── 12-visibility-buffer/ [NON EXÉCUTÉ]  Découplage passe visibilité (IDs) & shading différé
+│   └── 13-full-gpu-driven/  [NON EXÉCUTÉ]    Pipeline complet unifié assemblé & bilan coût/gain systémique
 │
 ├── shared/                  # Primitives communes strictement neutres (zéro optimisation)
 │   ├── benchmark/           # Outils d'échantillonnage et de capture de métriques
@@ -198,7 +210,7 @@ render-tech-lab/
 ---
 
 ### Test 01 — Indirect Draw
-- **Statut :** `INTEGRATE` (Validé dans `01-gpu-driven`).
+- **Statut :** `INTEGRATE` (Validé dans `01-indirect-draw`).
 - **Question gouvernante :** Est-ce que WebGPU peut absorber instantanément une commande indirecte pré-générée sans aucun culling ?
 - **Architecture :** `CPU Setup ──► GPU Buffer ──► drawIndexedIndirect (1 draw call)`.
 - **Scénarios de charge :** 1, 10, 100, 1 000, 10 000, 100 000 instances.
@@ -207,15 +219,15 @@ render-tech-lab/
 ---
 
 ### Test 02 — GPU Frustum Culling
-- **Statut :** `INTEGRATE` (Validé dans `01-gpu-driven`).
+- **Statut :** `not-run` — le banc autonome `02-gpu-frustum-culling/` est préparé (structure + types), mais **aucun benchmark réel n'a été exécuté**. La technique a néanmoins été observée et validée dans le banc `01-indirect-draw` (culling WGSL + indirect draw), qui reste la référence mesurée.
 - **Question gouvernante :** Quel gain apporte l'externalisation du test d'intersection plan/sphère sur Compute Shader WGSL ?
 - **Architecture :** `ObjectBuffer ──► Compute Shader WGSL ──► atomicAdd drawIndirectBuffer ──► drawIndexedIndirect`.
-- **Résultat étalon :** −92,7% de soumission CPU à 2 000 objets (0,25 ms vs 3,35 ms), crossover rentable dès 1 000 objets.
+- **Référence mesurée (banc 01) :** −92,7% de soumission CPU à 2 000 objets (0,25 ms vs 3,35 ms), crossover rentable dès 1 000 objets.
 
 ---
 
 ### Test 03 — GPU Scene (Scène Hétérogène)
-- **Statut :** `INTEGRATE` (Validé dans `02-gpu-scene`).
+- **Statut :** `INTEGRATE` (Validé dans `03-gpu-scene`).
 - **Question gouvernante :** Quel est le surcoût de gestion d'une scène hétérogène (multi-géométries, multi-matériaux, transformations dynamiques) en mémoire GPU plate ?
 - **Architecture :** Mega-buffers plats (`ObjectBuffer`, `GeometryBuffer`, `MaterialBuffer`, `DrawBuffer`).
 - **Résultat étalon :** −93,2% de temps CPU sous charge dynamique 4D (100 topologies, 100 matériaux).
@@ -223,7 +235,7 @@ render-tech-lab/
 ---
 
 ### Test 04 — GPU LOD & Screen-Space Error (Décomposition Tripartite)
-- **Statut :** En cours (Actif — Lot D1).
+- **Statut :** `INTEGRATE` pour **04A** (décimation meshoptimizer, mesurée) et **04B** (sélection SSE CPU, mesurée) — `not-run` pour **04C** (sélection SSE GPU : shader écrit, non dispatché, non instrumenté).
 - **Question gouvernante :** La sélection LOD sur GPU apporte-t-elle un gain net par rapport à la sélection LOD sur CPU une fois la décimation géométrique réalisée ?
 
 Ce banc sépare rigoureusement la **génération** et la **sélection** :

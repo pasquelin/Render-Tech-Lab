@@ -73,6 +73,20 @@ export function evaluateLodTier(
 }
 
 /**
+ * Sélectionne la valeur de LOD (0/1/2) à partir de la projection en pixels.
+ *
+ * Équivalent canonique de `evaluateLodTier` : exposé sous ce nom car il est
+ * référencé directement par le Master Test Plan, et attendu par les futurs
+ * bancs (04, 05, 06, …). Signatures identiques.
+ */
+export function selectLODFromScreenPixels(
+  projectedPixels: number,
+  thresholds: LodThresholds = DEFAULT_LOD_THRESHOLDS
+): number {
+  return evaluateLodTier(projectedPixels, thresholds);
+}
+
+/**
  * Projette l'erreur géométrique de décimation (en unités monde) en pixels à l'écran.
  *
  * @param geometricErrorWorld Erreur géométrique en unités monde produite par le simplificateur

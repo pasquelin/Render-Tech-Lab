@@ -8,6 +8,7 @@
 import {
   calculateScreenSpacePixels,
   evaluateLodTier,
+  selectLODFromScreenPixels,
   calculateProjectedGeometricError,
   isGeometricErrorAcceptable,
   DEFAULT_LOD_THRESHOLDS,
@@ -72,6 +73,39 @@ function runTests() {
   assert(calculateScreenSpacePixels(objectDiameter, 0, screenHeight, fovRad) === Infinity, 'Distance nulle doit retourner Infinity');
   assert(calculateScreenSpacePixels(0, 10, screenHeight, fovRad) === 0, 'Diamètre nul doit retourner 0');
   assert(calculateScreenSpacePixels(objectDiameter, 10, 0, fovRad) === 0, 'Hauteur écran nulle doit retourner 0');
+
+  // 5. FOV différent
+  // Formule : pixels = (D * H) / (2 * d * tan(FOV/2)). tan(FOV/2) est croissant,
+  // donc FOV plus grand -> dénominateur plus grand -> pixels plus petits.
+  const fovNarrow = (30 * Math.PI) / 180;
+  const fovWide = (90 * Math.PI) / 180;
+  const dRef = 10.0;
+  const pxNarrow = calculateScreenSpacePixels(objectDiameter, dRef, screenHeight, fovNarrow);
+  const pxWide = calculateScreenSpacePixels(objectDiameter, dRef, screenHeight, fovWide);
+  console.log(`  FOV 30° (resserré)  : ${pxNarrow.toFixed(1)} px`);
+  console.log(`  FOV 90° (large)     : ${pxWide.toFixed(1)} px`);
+  assert(pxNarrow > pxWide, "FOV resserré doit produire une projection plus grande en px");
+
+  // 6. Viewport différent : pixels est proportionnelle à la hauteur d'écran.
+  const hRef = 1080;
+  const hLow = 540;
+  const dConst = 5.0;
+  const pxH1080 = calculateScreenSpacePixels(objectDiameter, dConst, hRef, fovRad);
+  const pxH540 = calculateScreenSpacePixels(objectDiameter, dConst, hLow, fovRad);
+  console.log(`  Height 1080 : ${pxH1080.toFixed(1)} px`);
+  console.log(`  Height  540 : ${pxH540.toFixed(1)} px`);
+  assert(Math.abs(pxH1080 - pxH540 * 2) < 0.001, 'Hauteur écran x2 doit doubler la projection en px');
+
+  // 7. Alias canonique selectLODFromScreenPixels : équivalent à evaluateLodTier.
+  for (const px of [0, 10, 60, 60.1, 150, 250, 250.1, 1000]) {
+    assert(
+      selectLODFromScreenPixels(px) === evaluateLodTier(px),
+      `selectLODFromScreenPixels(${px}) doit être équivalent à evaluateLodTier(${px})`
+    );
+  }
+  assert(selectLODFromScreenPixels(300) === 0, 'selectLODFromScreenPixels(300) doit retourner LOD 0');
+  assert(selectLODFromScreenPixels(100) === 1, 'selectLODFromScreenPixels(100) doit retourner LOD 1');
+  assert(selectLODFromScreenPixels(10) === 2, 'selectLODFromScreenPixels(10) doit retourner LOD 2');
 
   console.log('✅ Tous les tests unitaires mathématiques SSE sont validés avec succès !');
 }
