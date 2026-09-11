@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /**
- * Scénarios de charge normalisés de la Spec 13 :
+ * Normalised S0–S5 load scenarios:
  * S0 : Baseline minimale (1 cube, 1 lumière)
  * S1 : 500 objets instanciés (InstancedMesh)
  * S2 : 1 000 objets instanciés
