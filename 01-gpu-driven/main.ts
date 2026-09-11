@@ -46,15 +46,43 @@ window.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('resize', onResize);
   onResize();
 
-  // Mise à jour de l'UI
+  // Lissage et stabilisation des métriques (mise à jour toutes les 350ms pour éliminer le clignotement)
+  let lastUiUpdate = 0;
+  let sumSubmit = 0;
+  let sumCpu = 0;
+  let sumFps = 0;
+  let sampleCount = 0;
+
   runner.onMetricsUpdate = (m: FrameMeasurement, mode: string, count: number) => {
-    statMode.innerText = mode === 'classic' ? 'Test A (Three.js Classique)' : 'Test B (GPU-Driven Indirect)';
-    statMode.style.color = mode === 'classic' ? '#ef4444' : '#06b6d4';
-    statObjects.innerText = count.toString();
-    statSubmit.innerText = `${m.submitMs.toFixed(2)} ms`;
-    statCpuFrame.innerText = `${m.cpuFrameMs.toFixed(2)} ms`;
-    statFps.innerText = `${Math.round(m.fps)} FPS`;
-    statDrawCalls.innerText = m.drawCalls.toString();
+    sumSubmit += m.submitMs;
+    sumCpu += m.cpuFrameMs;
+    sumFps += m.fps;
+    sampleCount++;
+
+    const now = performance.now();
+    // Mise à jour de l'affichage toutes les 350ms au lieu de 60 fois par seconde
+    if (now - lastUiUpdate >= 350) {
+      const avgSubmit = sumSubmit / sampleCount;
+      const avgCpu = sumCpu / sampleCount;
+      const avgFps = Math.round(sumFps / sampleCount);
+
+      statMode.innerText = mode === 'classic' ? 'Test A (Three.js Classique)' : 'Test B (GPU-Driven Indirect)';
+      statMode.style.color = mode === 'classic' ? '#ef4444' : '#06b6d4';
+      statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
+
+      // Arrondis stables et lisibles
+      statSubmit.innerText = avgSubmit < 0.05 ? '< 0.1 ms' : `${avgSubmit.toFixed(1)} ms`;
+      statCpuFrame.innerText = avgCpu < 0.05 ? '< 0.1 ms' : `${avgCpu.toFixed(1)} ms`;
+      statFps.innerText = `${Math.min(avgFps, 120)} FPS`;
+      statDrawCalls.innerText = m.drawCalls.toLocaleString('fr-FR');
+
+      // Réinitialisation des accumulateurs
+      sumSubmit = 0;
+      sumCpu = 0;
+      sumFps = 0;
+      sampleCount = 0;
+      lastUiUpdate = now;
+    }
   };
 
   runner.onBenchmarkProgress = (stage: string, progress: number) => {
