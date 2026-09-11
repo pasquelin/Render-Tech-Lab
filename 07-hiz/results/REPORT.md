@@ -1,6 +1,6 @@
 # Rapport du Banc : 07-hiz (Hierarchical-Z Depth Pyramid)
 
-**Date :** 2026-09-11T19:42:41.301Z  
+**Date :** 2026-09-11T19:56:56.546Z  
 **Statut :** `INTEGRATE`  
 **Technique :** Réduction pyramidale 2x2 conservatrice (Math.max) pour culling d'occlusion.
 
@@ -10,9 +10,9 @@
 
 | Résolution Base | Niveaux Mip | Mémoire VRAM | Temps Génération CPU/Sim |
 |:---:|:---:|:---:|:---:|
-| 256x256 | 9 | 0.33 Mo | 2.20 ms |
-| 512x512 | 10 | 1.33 Mo | 6.20 ms |
-| 1024x1024 | 11 | 5.33 Mo | 18.95 ms |
+| 256x256 | 9 | 0.33 Mo | 1.84 ms |
+| 512x512 | 10 | 1.33 Mo | 6.56 ms |
+| 1024x1024 | 11 | 5.33 Mo | 19.98 ms |
 
 
 ---

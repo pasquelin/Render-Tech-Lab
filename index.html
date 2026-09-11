@@ -72,49 +72,80 @@
             <!-- Canvas WebGPU pour Test B -->
             <canvas id="canvas-webgpu" class="absolute inset-0 w-full h-full block" style="display: none;"></canvas>
 
-            <!-- Console d'administration & pilotage R&D (Bancs algorithmiques et analytiques) -->
-            <div id="viewport-empty" class="absolute inset-0 hidden flex-col items-center justify-center p-6 text-center z-10 overflow-y-auto">
-              <div class="card max-w-2xl w-full bg-base-200/95 border border-base-content/15 shadow-2xl p-6 space-y-4 backdrop-blur-md">
-                <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="inline-block w-2 h-2 rounded-full bg-success"></span>
-                    <span id="viewport-empty-badge" class="badge badge-success badge-sm font-mono text-[10px]">INTEGRATE · VALIDÉ</span>
+            <!-- Espace Central de Travail R&D (Atelier plein écran avec schémas, métriques, terminal et rapport in-situ) -->
+            <div id="viewport-workbench" class="absolute inset-0 w-full h-full bg-base-100 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 z-10 hidden flex-col">
+              <div class="max-w-7xl mx-auto w-full space-y-6">
+                <!-- 1. En-tête du banc d'essai & formule directrice -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-base-content/10 pb-4">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      <span class="inline-block w-2.5 h-2.5 rounded-full bg-success"></span>
+                      <h1 class="text-xl md:text-2xl font-bold tracking-tight text-base-content" id="workbench-title">06 · Meshlet Culling &amp; Taux de Rejet</h1>
+                      <span id="workbench-badge" class="badge badge-success badge-sm font-mono text-[10px]">INTEGRATE · VALIDÉ</span>
+                      <span id="workbench-id" class="badge badge-outline badge-sm font-mono text-[10px] text-base-content/60">Module R&amp;D 06</span>
+                    </div>
+                    <p class="text-xs text-base-content/70 max-w-4xl leading-relaxed" id="workbench-desc">
+                      Culling de cône normalisé + frustum par cluster pré-rastérisation. Rejet précoce des meshlets avant émission de primitives graphiques.
+                    </p>
                   </div>
-                  <span id="viewport-empty-id" class="text-xs font-mono text-base-content/50">Module R&amp;D</span>
-                </div>
-                
-                <div class="space-y-1.5 text-left">
-                  <h2 class="text-base sm:text-lg font-bold text-base-content" id="viewport-empty-title">Console d'Administration R&amp;D</h2>
-                  <p class="text-xs text-base-content/70 leading-relaxed" id="viewport-empty-desc">
-                    Banc d'essai algorithmique avec oracles de conformité et calcul en direct.
-                  </p>
+                  <div class="shrink-0 bg-base-200/80 border border-base-content/10 px-3 py-2 rounded-box text-right self-start sm:self-auto">
+                    <div class="text-[9px] uppercase font-mono text-base-content/50 font-bold">Principe Mathématique</div>
+                    <div id="workbench-principle" class="font-mono text-xs text-primary font-bold">dot(N, V) &gt; sin(alpha)</div>
+                  </div>
                 </div>
 
-                <div id="viewport-empty-metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-left">
-                  <!-- Peuplé dynamiquement par main.ts -->
+                <!-- 2. Schéma Architectural du Pipeline GPU -->
+                <div class="card bg-base-200/70 border border-base-content/10 p-4 md:p-5 shadow-xs space-y-3">
+                  <div class="flex items-center justify-between border-b border-base-content/10 pb-2.5">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-2">
+                      <i data-lucide="zap" class="w-3.5 h-3.5 text-primary"></i>
+                      <span>Schéma Architectural du Pipeline GPU &amp; Flux de Données</span>
+                    </div>
+                    <span class="text-[10px] font-mono text-base-content/50">Flux temps réel WGSL</span>
+                  </div>
+                  <div id="workbench-schema" class="overflow-x-auto py-2">
+                    <!-- Schéma généré dynamiquement par main.ts -->
+                  </div>
                 </div>
 
-                <!-- Console d'exécution & Terminal en direct -->
-                <div class="space-y-1.5 text-left pt-1">
-                  <div class="flex items-center justify-between text-[10px] font-mono text-base-content/60 uppercase tracking-wider">
-                    <span class="flex items-center gap-1.5">
+                <!-- 3. Cartes Métriques Clés du Banc (Données réactives) -->
+                <div class="space-y-2">
+                  <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center justify-between">
+                    <span>Métriques Clés &amp; Oracles Contractuels de la Configuration Active :</span>
+                    <span class="text-[10px] font-mono text-primary font-medium">Actualisé en direct</span>
+                  </div>
+                  <div id="workbench-metrics" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Peuplé dynamiquement par main.ts -->
+                  </div>
+                </div>
+
+                <!-- 4. Console d'Exécution & Terminal en Direct (Sans bouton doublon : pilotage à droite) -->
+                <div class="card bg-base-200/80 border border-base-content/10 p-4 shadow-xs space-y-2.5">
+                  <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+                    <div class="flex items-center gap-2">
                       <span id="terminal-spinner" class="inline-block w-2 h-2 rounded-full bg-success"></span>
-                      <span id="terminal-label">Console d'exécution du banc &amp; oracles</span>
-                    </span>
-                    <span id="terminal-duration" class="text-primary font-bold"></span>
+                      <span id="terminal-label" class="text-[11px] font-bold uppercase tracking-wider text-base-content/70 font-mono">Console d'exécution du banc &amp; oracles de conformité</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] text-base-content/50 font-mono">Commandes d'exécution dans le panneau de droite 👉</span>
+                      <span id="terminal-duration" class="badge badge-sm badge-neutral font-mono text-[10px] text-primary"></span>
+                    </div>
                   </div>
-                  <pre id="viewport-terminal-output" class="bg-base-300/90 border border-base-content/10 p-3 rounded-box font-mono text-[11px] text-base-content/90 max-h-40 overflow-y-auto whitespace-pre-wrap select-text leading-relaxed">Prêt. Sélectionnez une configuration ou cliquez sur « Exécuter le banc en direct » pour tester l'algorithme.</pre>
+                  <pre id="viewport-terminal-output" class="bg-base-300/90 border border-base-content/10 p-3.5 rounded-box font-mono text-[11px] text-base-content/90 max-h-48 overflow-y-auto whitespace-pre-wrap select-text leading-relaxed">Prêt. Modifiez la charge dans le panneau de droite ou cliquez sur « Benchmark » pour exécuter le banc.</pre>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-base-content/10">
-                  <button id="btn-viewport-report" class="btn btn-sm btn-lab-secondary gap-1.5 shadow-xs">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>Consulter le Rapport</span>
-                  </button>
-                  <button id="btn-viewport-run" class="btn btn-sm btn-lab-primary gap-1.5 shadow-xs">
-                    <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                    <span id="btn-viewport-run-text">Exécuter le banc en direct</span>
-                  </button>
+                <!-- 5. Analyse Technique Approfondie & Rapport de Conformité In-Situ (Sans modal) -->
+                <div class="card bg-base-200/70 border border-base-content/10 p-4 md:p-6 shadow-xs space-y-4">
+                  <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="file-text" class="w-4 h-4 text-primary"></i>
+                      <h2 class="text-sm md:text-base font-bold text-base-content">Analyse Technique Approfondie &amp; Rapport de Conformité (REPORT.md)</h2>
+                    </div>
+                    <span id="workbench-report-path" class="text-[10px] font-mono text-base-content/50">reports/06-meshlet-culling.md</span>
+                  </div>
+                  <div id="workbench-report-body" class="space-y-4 text-xs sm:text-sm font-sans text-base-content/90 leading-relaxed bg-base-100/70 p-4 md:p-6 rounded-box border border-base-content/10 overflow-x-auto">
+                    <div class="text-xs text-primary font-mono animate-pulse">Chargement de l'analyse technique...</div>
+                  </div>
                 </div>
               </div>
             </div>

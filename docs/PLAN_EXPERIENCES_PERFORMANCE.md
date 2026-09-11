@@ -97,3 +97,11 @@ Un verdict `INTEGRATE` exige correction, domaine de support, fallback, mémoire 
 Une mesure constante utilisée en fallback, une sélection CPU étiquetée GPU, une fonction async exécutant le calcul dans le thread UI, des courbes venant de scènes différentes, une erreur relative traitée comme longueur monde, un readback bloquant caché, ou une image dégradée : chacun invalide l'interprétation d'un gain.
 
 Avant chaque campagne, vérifier le chemin réellement exécuté et les unités de chaque compteur. Cette documentation ne modifie pas le code du laboratoire ni le moteur.
+
+## 9. Comparer les représentations avancées
+
+Les [stratégies avancées](STRATEGIES_AVANCEES.md) et le [pipeline GPU](PIPELINE_GPU_ET_EXTENSIONS.md) fournissent des expériences séparées : imposteurs, hiérarchie d’instances, ombres paginées, lots à taille fixe, réservations groupées, couverture programmable, rayons, courbes et cellules. Garder pour chaque expérience les mêmes vues, matériaux, trajectoires et budgets de qualité.
+
+Séparer géométrie importée, examinée, retenue, effectivement rasterisée et remplacée par des images ; les triangles source d’un imposteur ne sont pas des triangles rasterisés. Compter captures, listes transitoires, scratch et pages en vol dans la mémoire totale. Comparer scènes pleines et ajourées, proches et dispersées, avec et sans plan de fond : une grille clairsemée peut empêcher l’occlusion qu’autorise un mur dense.
+
+La cadence de présentation peut être plafonnée par l’écran et inclure des attentes. Mesurer séparément CPU, GPU par passe et latence globale. Des timestamps indisponibles restent indisponibles, jamais zéro. Lire les statistiques hors fenêtre de mesure, conserver plusieurs frames et fournir une mesure sans instrumentation. Un accord CPU/GPU peut reproduire la même erreur ; les cas analytiques et contre-exemples indépendants restent nécessaires.

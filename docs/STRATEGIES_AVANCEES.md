@@ -41,7 +41,7 @@ Pour une direction de capture, définir une base orthonormale `(right,up,forward
 
 Une profondeur capturée permet de reconstruire `P=C+x*right+y*up+z*forward`, puis de la projeter avec les matrices courantes de l'instance et de la vue. Un texel vide est identifié par un masque ou une sentinelle explicite, jamais par une profondeur valide ambiguë. L'identité discrète d'une primitive ne s'interpole pas entre texels.
 
-La vue locale d'une instance affine s'obtient en transformant la caméra par l'inverse de la transform d'instance avant de former sa direction vers l'objet. Ne pas utiliser la transform de normales pour transformer cette direction de position. Une matrice singulière rend ce chemin indisponible. La normale reconstruite utilise l'inverse-transposée avant normalisation.
+En perspective, la vue locale d'une instance affine s'obtient en transformant la position caméra par l'inverse de la transform d'instance avant de former sa direction vers l'objet. En orthographique, transformer la direction des rayons par l'inverse de la partie linéaire, sans translation, puis normaliser : déplacer latéralement la caméra sans la tourner ne change pas la direction de capture. Le signe objet-vers-caméra ou caméra-vers-objet doit correspondre à celui des captures. Ne pas utiliser la transform de normales pour transformer un rayon. Une matrice singulière rend ce chemin indisponible. La normale reconstruite utilise l'inverse-transposée avant normalisation.
 
 Pour choisir entre des captures voisines, trois stratégies sont possibles : choisir la direction la plus proche, reconstruire plusieurs échantillons puis choisir une surface cohérente, ou distribuer les directions par tramage. Le tramage peut conserver une moyenne mais ajoute bruit et instabilité temporelle ; il ne garantit pas une silhouette exacte. Les IDs de primitive et les profondeurs de surfaces différentes ne se mélangent pas comme des couleurs.
 
@@ -92,6 +92,8 @@ Pour une page de côté `P`, le texel entier `(i,j)` donne page `(floor(i/P),flo
 Une lumière ponctuelle utilise plusieurs directions, une lumière directionnelle peut employer des zones emboîtées autour de la caméra. Stabiliser leurs origines sur la grille limite les changements inutiles ; tout recyclage de page reste protégé par génération. Les dimensions, nombres de zones et biais sont des paramètres, pas des constantes héritées d'une autre réalisation.
 
 Le cache est invalidé par modification de lumière/projection, mouvement d'un occluder, déformation, masque alpha, matériau de couverture, génération d'asset ou représentation géométrique pertinente. Pour un mouvement, invalider les pages recouvertes par les anciennes et nouvelles bornes conservatrices. Ne considérer que les objets visibles dans l'image manquerait des ombres.
+
+Une page nouvelle, recyclée ou invalidée est remise à la profondeur de fond de sa convention, puis reconstruite avec tous les occluders actuels pertinents. Un nouveau depth test seul ne retire pas l'ancienne profondeur d'un objet disparu. La page devient valide après achèvement, avec sa génération ; tester la disparition de son unique occluder et la réaffectation du slot à une autre page virtuelle.
 
 Le culling peut tester le recouvrement entre la borne projetée d'un cluster et le masque des pages demandées. Pour le raster, soit traduire chaque pixel virtuel vers sa page physique, soit produire un travail par page recouverte avec un rectangle de clipping. La duplication de géométrie et la traduction par pixel ont des coûts différents à mesurer.
 

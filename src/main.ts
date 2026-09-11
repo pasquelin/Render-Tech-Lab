@@ -1619,57 +1619,448 @@ const MODULE_DESCRIPTORS: Record<string, ModuleDescriptor> = {
   },
 };
 
+// Schémas architecturaux détaillés des pipelines GPU pour chaque brique R&D
+const MODULE_SCHEMAS: Record<string, string> = {
+  '00-baseline': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Scène Graph</div>
+        <div class="font-bold text-base-content text-xs">Traversée CPU O(N)</div>
+        <div class="text-[10px] text-primary">Boucle JS Three.js</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">2. Frustum CPU</div>
+        <div class="font-bold text-base-content text-xs">Raycasting Caméra</div>
+        <div class="text-[10px] text-base-content/70">Test bounding box</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-error/10 border border-error/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-error uppercase font-bold">3. Coude CPU S3</div>
+        <div class="font-bold text-error text-xs">2 000 Draw Calls</div>
+        <div class="text-[10px] text-error/90 font-bold">3.35 ms / frame</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">4. Driver GPU</div>
+        <div class="font-bold text-base-content text-xs">gl.drawElements()</div>
+        <div class="text-[10px] text-base-content/70">Saturation pipeline</div>
+      </div>
+    </div>
+  `,
+  '01-indirect-draw': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. CPU Encodage</div>
+        <div class="font-bold text-base-content text-xs">1 Dispatch Unique</div>
+        <div class="text-[10px] text-primary">Latence &lt; 0.27 ms</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. DrawIndirectBuffer</div>
+        <div class="font-bold text-primary text-xs">5x uint32 (20 octets)</div>
+        <div class="text-[10px] text-primary/80">[idxCount, instCount, ...]</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. GPU Exécution</div>
+        <div class="font-bold text-success text-xs">drawIndexedIndirect()</div>
+        <div class="text-[10px] text-success/90 font-bold">O(1) constant</div>
+      </div>
+    </div>
+  `,
+  '02-gpu-frustum-culling': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Caméra &amp; Frustum</div>
+        <div class="font-bold text-base-content text-xs">Matrice VP</div>
+        <div class="text-[10px] text-primary">6 Plans normalisés</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Compute WGSL</div>
+        <div class="font-bold text-primary text-xs">d(C, P) &lt; -r</div>
+        <div class="text-[10px] text-primary/80">Test sphère 6 plans</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">3. Compaction</div>
+        <div class="font-bold text-base-content text-xs">atomicAdd()</div>
+        <div class="text-[10px] text-success">Indices visibles</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">4. Rendu O(1)</div>
+        <div class="font-bold text-success text-xs">DrawIndirect O(1)</div>
+        <div class="text-[10px] text-success/90 font-bold">40% triangles éliminés</div>
+      </div>
+    </div>
+  `,
+  '03-gpu-scene': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Instance SSBO</div>
+        <div class="font-bold text-base-content text-xs">64B Matrix + BBox</div>
+        <div class="text-[10px] text-primary">100 000 instances</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Mega-Buffers</div>
+        <div class="font-bold text-primary text-xs">Géométrie + Matériaux</div>
+        <div class="text-[10px] text-primary/80">Tables SSBO unifiées</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. Multi-Draw O(1)</div>
+        <div class="font-bold text-success text-xs">multiDrawIndexedIndirect</div>
+        <div class="text-[10px] text-success/90 font-bold">Gain 93.2% CPU</div>
+      </div>
+    </div>
+  `,
+  '04-gpu-lod': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Décimation Quadrique</div>
+        <div class="font-bold text-base-content text-xs">Meshoptimizer</div>
+        <div class="text-[10px] text-primary">LOD0 → LOD1 → LOD2</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Erreur Écran SSE</div>
+        <div class="font-bold text-primary text-xs">SSE = (r · δ · H) / (2d · tan)</div>
+        <div class="text-[10px] text-primary/80">Seuil contractuel 2.0 px</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. Économie VRAM</div>
+        <div class="font-bold text-success text-xs">−75% Triangles</div>
+        <div class="text-[10px] text-success/90 font-bold">Zéro pop visuel</div>
+      </div>
+    </div>
+  `,
+  '05-meshlets': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Maillage Dense</div>
+        <div class="font-bold text-base-content text-xs">Topologie continue</div>
+        <div class="text-[10px] text-primary">Indices 32-bit</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. METIS / Clusters</div>
+        <div class="font-bold text-primary text-xs">64 Sommets / 126 Tris</div>
+        <div class="text-[10px] text-primary/80">Indexation locale 8-bit</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. Bounding Bounds</div>
+        <div class="font-bold text-success text-xs">Cône N + Sphère C</div>
+        <div class="text-[10px] text-success/90 font-bold">0 fissure topologique</div>
+      </div>
+    </div>
+  `,
+  '06-meshlet-culling': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Meshlets</div>
+        <div class="font-bold text-base-content text-xs">Grappes 126 tris</div>
+        <div class="text-[10px] text-primary">Cône N + Sphère C</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Frustum Cluster</div>
+        <div class="font-bold text-primary text-xs">6 Plans Caméra</div>
+        <div class="text-[10px] text-primary/80">Élimine hors-champ</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">3. Cône Normales</div>
+        <div class="font-bold text-primary text-xs">dot(N, V) &gt; sin(alpha)</div>
+        <div class="text-[10px] text-primary/80">Rejet 50% dos à vue</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">4. Rendu O(1)</div>
+        <div class="font-bold text-success text-xs">DrawIndirect O(1)</div>
+        <div class="text-[10px] text-success/90 font-bold">0.12 ms pour 40k clusters</div>
+      </div>
+    </div>
+  `,
+  '07-hiz': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Depth Buffer</div>
+        <div class="font-bold text-base-content text-xs">Mip 0 (1080p)</div>
+        <div class="text-[10px] text-primary">Profondeur géométrie</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Min-Reduction WGSL</div>
+        <div class="font-bold text-primary text-xs">min(z0, z1, z2, z3)</div>
+        <div class="text-[10px] text-primary/80">Sous-échantillonnage x2</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">3. Pyramide 11 Mips</div>
+        <div class="font-bold text-primary text-xs">1024x1024 → 1x1</div>
+        <div class="text-[10px] text-primary/80">Empreinte 5.59 MB</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">4. Prêt Occlusion</div>
+        <div class="font-bold text-success text-xs">Oracle Conservateur</div>
+        <div class="text-[10px] text-success/90 font-bold">100% sans faux rejet</div>
+      </div>
+    </div>
+  `,
+  '08-occlusion-culling': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Passe 1 (Early)</div>
+        <div class="font-bold text-base-content text-xs">Objets visibles N-1</div>
+        <div class="text-[10px] text-primary">Rendu + Hi-Z Gen</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Test Hi-Z AABB</div>
+        <div class="font-bold text-primary text-xs">dmax(AABB) &lt; dmin(HiZ)</div>
+        <div class="text-[10px] text-primary/80">Mip sélectionné en O(1)</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. Passe 2 (Late)</div>
+        <div class="font-bold text-success text-xs">Objets réapparus</div>
+        <div class="text-[10px] text-success/90 font-bold">50% à 90% d'overdraw évité</div>
+      </div>
+    </div>
+  `,
+  '09-gpu-compaction': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Liste Visible</div>
+        <div class="font-bold text-base-content text-xs">Masque booléen</div>
+        <div class="text-[10px] text-primary">100k threads</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Up-Sweep (Réduction)</div>
+        <div class="font-bold text-primary text-xs">Arbre binaire local</div>
+        <div class="text-[10px] text-primary/80">256 threads / workgroup</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">3. Down-Sweep (Scan)</div>
+        <div class="font-bold text-primary text-xs">Propagation globale</div>
+        <div class="text-[10px] text-primary/80">Zéro lock atomique</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">4. Buffer Dense</div>
+        <div class="font-bold text-success text-xs">Indices Continus</div>
+        <div class="text-[10px] text-success/90 font-bold">Prêt pour DrawIndirect</div>
+      </div>
+    </div>
+  `,
+  '10-material-batching': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Scène Hétérogène</div>
+        <div class="font-bold text-base-content text-xs">100 Matériaux Différents</div>
+        <div class="text-[10px] text-primary">Albedo, PBR, Roughness</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. MaterialTable SSBO</div>
+        <div class="font-bold text-primary text-xs">32 octets / matériau</div>
+        <div class="text-[10px] text-primary/80">Indexé par materialID</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. 1 Seul Draw Call</div>
+        <div class="font-bold text-success text-xs">Zero State Switch</div>
+        <div class="text-[10px] text-success/90 font-bold">0.08 ms submit CPU</div>
+      </div>
+    </div>
+  `,
+  '11-geometry-streaming': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">1. Requête Caméra</div>
+        <div class="font-bold text-base-content text-xs">Meshlets Visibles</div>
+        <div class="text-[10px] text-primary">Distance &amp; Frustum</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">2. Ring Buffer VRAM</div>
+        <div class="font-bold text-primary text-xs">Budget Fixe 64 MB</div>
+        <div class="text-[10px] text-primary/80">Upload O(1) sans blocage</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">3. Éviction LRU</div>
+        <div class="font-bold text-success text-xs">Plafond Strict Garanti</div>
+        <div class="text-[10px] text-success/90 font-bold">Zéro crash OOM / Stutter</div>
+      </div>
+    </div>
+  `,
+  '12-visibility-buffer': `
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-2.5 text-xs font-mono">
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">1. Raster Compact</div>
+        <div class="font-bold text-primary text-xs">8 Octets / Pixel</div>
+        <div class="text-[10px] text-primary/80">InstID (16b) + TriID (16b)</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-base-300/80 border border-base-content/15 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-base-content/50 uppercase font-bold">2. VRAM Économisée</div>
+        <div class="font-bold text-base-content text-xs">15.8 MB vs 55.4 MB</div>
+        <div class="text-[10px] text-success font-bold">−71.5% bande passante</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-primary/10 border border-primary/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-primary uppercase font-bold">3. Compute Shading</div>
+        <div class="font-bold text-primary text-xs">Barycentriques Exacts</div>
+        <div class="text-[10px] text-primary/80">Interpolation sommets</div>
+      </div>
+      <div class="hidden md:flex items-center text-base-content/30 font-bold">→</div>
+      <div class="bg-success/10 border border-success/40 p-3 rounded-box text-center flex-1 space-y-1">
+        <div class="text-[10px] text-success uppercase font-bold">4. Shading Découplé</div>
+        <div class="font-bold text-success text-xs">1x Shading Exact</div>
+        <div class="text-[10px] text-success/90 font-bold">Zéro overdraw matière</div>
+      </div>
+    </div>
+  `,
+  '13-full-gpu-driven': `
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">1. Scene</div>
+        <div class="font-bold">Instances</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">2. Frustum</div>
+        <div class="font-bold">6 Plans</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">3. LOD</div>
+        <div class="font-bold">SSE Pixel</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">4. Clusters</div>
+        <div class="font-bold">Meshlets</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">5. Culling</div>
+        <div class="font-bold">Cône N</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">6. Hi-Z</div>
+        <div class="font-bold">Pyramide</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">7. Occlusion</div>
+        <div class="font-bold">2 Passes</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">8. Compact</div>
+        <div class="font-bold">Prefix-Sum</div>
+      </div>
+      <div class="bg-base-300/80 p-2.5 rounded-box border border-base-content/10 text-center">
+        <div class="text-[9px] text-base-content/50 uppercase">9. MultiDraw</div>
+        <div class="font-bold">Indirect O(1)</div>
+      </div>
+      <div class="bg-primary/10 border border-primary/40 text-primary font-bold p-2.5 rounded-box text-center">
+        <div class="text-[9px] uppercase">10. Shading</div>
+        <div class="font-bold">0.25 ms (640x)</div>
+      </div>
+    </div>
+  `,
+};
+
+
 window.addEventListener('DOMContentLoaded', async () => {
   const canvasWebGpu = document.getElementById('canvas-webgpu') as HTMLCanvasElement;
   const canvasWebGL = document.getElementById('canvas-webgl') as HTMLCanvasElement;
   const chartCanvas = document.getElementById('canvas-chart') as HTMLCanvasElement;
   const viewBaseline = document.getElementById('view-baseline') as HTMLElement | null;
-  const viewportEmpty = document.getElementById('viewport-empty') as HTMLElement | null;
+  const viewportWorkbench = document.getElementById('viewport-workbench') as HTMLElement | null;
 
-  /** Affiche l'état vide du viewport (module sans rendu temps réel / banc analytique). */
-  function setViewportEmpty(
+  async function loadWorkbenchReport(moduleId: string) {
+    const reportBody = document.getElementById('workbench-report-body');
+    const reportPath = document.getElementById('workbench-report-path');
+    if (!reportBody) return;
+    if (reportPath) {
+      reportPath.innerText = `reports/${moduleId}.md & ${moduleId}/results/REPORT.md`;
+    }
+    reportBody.innerHTML = '<div class="text-xs text-primary font-mono animate-pulse">⏳ Chargement de l\'analyse technique in-situ...</div>';
+    try {
+      const res = await fetch(`/api/read-report?testId=${encodeURIComponent(moduleId)}`);
+      if (res.ok) {
+        const text = await res.text();
+        reportBody.innerHTML = parseMarkdownToHtml(text);
+      } else {
+        reportBody.innerHTML = `<div class="text-xs text-base-content/60 font-mono">Rapport archivé dans <code>reports/${moduleId}.md</code>.</div>`;
+      }
+    } catch {
+      reportBody.innerHTML = `<div class="text-xs text-base-content/60 font-mono">Rapport archivé dans <code>reports/${moduleId}.md</code>.</div>`;
+    }
+    refreshIcons();
+  }
+
+  function setWorkbench(
     visible: boolean,
     title?: string,
     desc?: string,
     options?: {
       badge?: string;
       idLabel?: string;
+      principle?: string;
+      schemaHtml?: string;
       metrics?: { label: string; val: string; desc?: string }[];
     }
   ) {
-    if (!viewportEmpty) return;
-    viewportEmpty.classList.toggle('hidden', !visible);
-    viewportEmpty.classList.toggle('flex', visible);
+    if (!viewportWorkbench) return;
+    viewportWorkbench.classList.toggle('hidden', !visible);
+    viewportWorkbench.classList.toggle('flex', visible);
+
     if (title) {
-      const t = document.getElementById('viewport-empty-title');
+      const t = document.getElementById('workbench-title');
       if (t) t.innerText = title;
     }
     if (desc) {
-      const d = document.getElementById('viewport-empty-desc');
+      const d = document.getElementById('workbench-desc');
       if (d) d.innerText = desc;
     }
-    const badgeEl = document.getElementById('viewport-empty-badge');
+    const badgeEl = document.getElementById('workbench-badge');
     if (badgeEl && options?.badge) {
       badgeEl.innerText = options.badge;
     }
-    const idEl = document.getElementById('viewport-empty-id');
+    const idEl = document.getElementById('workbench-id');
     if (idEl && options?.idLabel) {
       idEl.innerText = options.idLabel;
     }
-    const metricsContainer = document.getElementById('viewport-empty-metrics');
+    const princEl = document.getElementById('workbench-principle');
+    if (princEl && options?.principle) {
+      princEl.innerText = options.principle;
+    }
+    const schemaContainer = document.getElementById('workbench-schema');
+    if (schemaContainer && options?.schemaHtml) {
+      schemaContainer.innerHTML = options.schemaHtml;
+    }
+    const metricsContainer = document.getElementById('workbench-metrics');
     if (metricsContainer && options?.metrics) {
       metricsContainer.innerHTML = options.metrics
         .map(
           (m) => `
-          <div class="bg-base-100 p-2.5 rounded-box border border-base-content/10 shadow-2xs">
-            <div class="text-[10px] uppercase font-semibold text-base-content/50">${m.label}</div>
-            <div class="font-mono font-bold text-sm text-primary">${m.val}</div>
-            ${m.desc ? `<div class="text-[9px] text-base-content/40 font-mono">${m.desc}</div>` : ''}
+          <div class="card bg-base-200/80 border border-base-content/10 p-3.5 shadow-xs flex flex-col justify-between">
+            <div class="text-[10px] uppercase font-semibold text-base-content/50 font-mono">${m.label}</div>
+            <div class="font-mono font-bold text-lg md:text-xl text-primary my-1">${m.val}</div>
+            ${m.desc ? `<div class="text-[10px] text-base-content/60 font-mono">${m.desc}</div>` : ''}
           </div>`
         )
         .join('');
     }
   }
+
 
   const selectModule = document.getElementById('select-module') as HTMLSelectElement | null;
   const btnBaselineReportView = document.getElementById('btn-baseline-report-view') as HTMLButtonElement | null;
@@ -1697,7 +2088,7 @@ window.addEventListener('DOMContentLoaded', async () => {
    */
   function applyLodSummary(summary: LodBenchmarkSummary) {
     lastLodSummary = summary;
-    setViewportEmpty(
+    setWorkbench(
       true,
       '04 · GPU LOD — campagne mesurée',
       `Décimation meshoptimizer : ${summary.generation.originalTriangles.toLocaleString('fr-FR')} triangles → ` +
@@ -1768,13 +2159,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (moduleId !== '01-indirect-draw' && moduleId !== '03-gpu-scene' && moduleId !== '04-gpu-lod') {
-      setViewportEmpty(
+      setWorkbench(
         true,
         `${desc.number} · ${desc.name}`,
         `${desc.subtitle}. ${desc.description}`,
         {
           badge: desc.badge,
-          idLabel: `${desc.number} · ${desc.name}`,
+          idLabel: `Banc R&D ${desc.number}`,
+          principle: desc.technicalPrinciple.split('.')[0],
+          schemaHtml: MODULE_SCHEMAS[moduleId] || '',
           metrics: pills,
         }
       );
@@ -1966,7 +2359,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (moduleId === '00-baseline') {
       canvasWebGpu.style.display = 'none';
       canvasWebGL.style.display = 'none';
-      setViewportEmpty(false);
+      setWorkbench(false);
       if (viewBaseline) viewBaseline.classList.remove('hidden');
       runner01.chart.setActive(false);
       chart02?.setActive(false);
@@ -1988,7 +2381,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (moduleId === '01-indirect-draw') {
       canvasWebGpu.style.display = '';
       canvasWebGL.style.display = '';
-      setViewportEmpty(false);
+      setWorkbench(false);
       runner01.chart.setActive(true);
       genericChart?.setActive(false);
       chart02?.setActive(false);
@@ -2004,7 +2397,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (moduleId === '03-gpu-scene') {
       canvasWebGpu.style.display = '';
       canvasWebGL.style.display = '';
-      setViewportEmpty(false);
+      setWorkbench(false);
       runner01.chart.setActive(false);
       chart04?.setActive(false);
       populateSelectorForModule('03-gpu-scene');
@@ -2064,6 +2457,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const defaultScenario = desc.options.find((o) => o.selected)?.val || desc.options[0]?.val || '';
     applyScenario(moduleId, defaultScenario, 'gpu-driven');
+    loadWorkbenchReport(moduleId);
 
     if (moduleId === '04-gpu-lod' && lastLodSummary) {
       applyLodSummary(lastLodSummary);
@@ -2072,7 +2466,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Réinitialise le message console du terminal
     const termOutput = document.getElementById('viewport-terminal-output');
     if (termOutput) {
-      termOutput.innerText = `[${desc.number} · ${desc.name}] Prêt pour l'évaluation.\nSélectionnez une charge ou cliquez sur « Exécuter le banc en direct » pour mesurer la latence et valider les oracles.`;
+      termOutput.innerText = `[${desc.number} · ${desc.name}] Prêt pour l'évaluation.\nSélectionnez une charge ou cliquez sur « Benchmark » dans le panneau de droite pour exécuter le banc en direct.`;
     }
 
     refreshIcons();

@@ -92,7 +92,7 @@ Le score directionnel est `projected(direction)=sqrt(max(0,directionᵀ*S*direct
 
 Une diagonalisation symétrique fournit axes propres et échelles `sqrt(eigenvalue)`. Référence de Jacobi : choisir le plus grand coefficient hors diagonale, effectuer une rotation plane annulant ce coefficient, accumuler les rotations ; arrêter quand la norme hors diagonale passe sous le seuil relatif ou à la limite d'itérations. Une petite valeur propre négative due aux arrondis se traite sous tolérance ; une valeur fortement négative indique une entrée invalide.
 
-Cette statistique ne définit ni occupancy, ni densité, ni shader volumétrique, ni format de streaming. Pour un futur banc voxel, ajouter grille/hiérarchie, règle de couverture, matériaux, intégration d'opacité et erreur de silhouette. Garder le rendu triangulé comme référence.
+Cette statistique ne définit ni occupancy, ni densité, ni shader volumétrique, ni format de streaming. Elle n'est pas la matrice de distribution SGGX : ce chapitre la note `S` comme moment, tandis que le [chapitre cellules et courbes](DEFORMATION_CELLULES_ET_COURBES.md) la nomme `C` et distingue explicitement le fitting de la distribution. Ce dernier précise voxelisation, échantillonnage, densité et courbes ; le [pipeline GPU](PIPELINE_GPU_ET_EXTENSIONS.md) précise traversée et intégration d'opacité. Garder le rendu triangulé comme référence.
 
 ## 9. Courbes et autres représentations
 

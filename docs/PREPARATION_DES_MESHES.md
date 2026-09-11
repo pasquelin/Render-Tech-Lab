@@ -1,5 +1,7 @@
 # Préparation des meshes
 
+Les variantes de partition, de réduction multiattribut et d'encodage sont précisées dans [construction et compression avancées](CONSTRUCTION_ET_COMPRESSION_AVANCEES.md).
+
 ## 1. Objectif et résultat
 
 Transformer un mesh triangulé en représentations de détail sélectionnables, avec une erreur explicite et des blocs chargeables. Le travail lourd se fait à l'import ou dans un cache de compilation, pas à chaque image.
@@ -21,6 +23,8 @@ Trois identités distinctes :
 - primitive éditable : sert à retrouver l'objet ou la face de travail après compilation.
 
 Deux sommets peuvent partager la même position tout en gardant des UV différents. Les fusionner sur la seule position efface une couture. Une égalité exacte normalise les zéros signés avant hash et vérifie ensuite les valeurs ; le hash seul n'est pas une preuve d'égalité. Une soudure avec tolérance est une autre opération, désactivée par défaut et mesurée séparément.
+
+Si des normales lissées doivent être reconstruites, sommer les produits vectoriels orientés des faces incidentes dans chaque domaine de lissage, puis normaliser. Cette référence pondère par aire ; une pondération par angle est une autre variante. Les dégénérés ne contribuent pas ; une somme nulle impose diagnostic ou repli explicite. Préserver les copies de coutures et les UV répétés sans les ramener automatiquement dans [0,1].
 
 ## 3. Adjacence et frontières
 
