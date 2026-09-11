@@ -68,7 +68,7 @@ export class BenchmarkRunner {
     this.classicRenderer.setSize(this.canvasWebGL.clientWidth, this.canvasWebGL.clientHeight, false);
 
     this.resize(this.canvasWebGpu.clientWidth, this.canvasWebGpu.clientHeight);
-    await this.setupPalier(this.currentCount);
+    await this.setupTier(this.currentCount);
 
     return !!this.device;
   }
@@ -86,7 +86,7 @@ export class BenchmarkRunner {
     }
   }
 
-  public async setupPalier(count: number) {
+  public async setupTier(count: number) {
     this.currentCount = count;
 
     // Libération précédente
@@ -159,20 +159,20 @@ export class BenchmarkRunner {
   }
 
   /**
-   * Lance la campagne de banc automatisée incluant les paliers standards et les tests de douleur
+   * Lance la campagne de banc automatisée incluant les tiers standards et les tests de douleur
    * (500, 1 000, 2 000, 5 000, 10 000, 25 000, 50 000, 100 000 objets)
    */
-  public async runAutomatedBenchmark(customPaliers?: number[]): Promise<CrossoverReport> {
+  public async runAutomatedBenchmark(customTiers?: number[]): Promise<CrossoverReport> {
     this.isBenchmarking = true;
-    const paliers = customPaliers || [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
+    const tiers = customTiers || [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
     const classicResults: BenchmarkResult[] = [];
     const gpuDrivenResults: BenchmarkResult[] = [];
 
-    for (let pIdx = 0; pIdx < paliers.length; pIdx++) {
-      const count = paliers[pIdx];
-      await this.setupPalier(count);
+    for (let pIdx = 0; pIdx < tiers.length; pIdx++) {
+      const count = tiers[pIdx];
+      await this.setupTier(count);
 
-      // Échantillonnage adaptatif pour les paliers extrêmes (évite le freeze CPU sur Test A)
+      // Échantillonnage adaptatif pour les tiers extrêmes (évite le freeze CPU sur Test A)
       const WARMUP_FRAMES = count >= 25000 ? 5 : 15;
       const SAMPLE_FRAMES = count >= 50000 ? 10 : count >= 25000 ? 20 : 40;
 
@@ -181,7 +181,7 @@ export class BenchmarkRunner {
       if (this.onBenchmarkProgress) {
         this.onBenchmarkProgress(
           `Test A (Classic) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
-          (pIdx * 2) / (paliers.length * 2)
+          (pIdx * 2) / (tiers.length * 2)
         );
       }
 
@@ -225,7 +225,7 @@ export class BenchmarkRunner {
       if (this.onBenchmarkProgress) {
         this.onBenchmarkProgress(
           `Test B (GPU-Driven) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
-          (pIdx * 2 + 1) / (paliers.length * 2)
+          (pIdx * 2 + 1) / (tiers.length * 2)
         );
       }
 
@@ -276,7 +276,7 @@ export class BenchmarkRunner {
 
     // Calcul du point de croisement (Crossover point)
     let crossoverCount: number | null = null;
-    for (let i = 0; i < paliers.length - 1; i++) {
+    for (let i = 0; i < tiers.length - 1; i++) {
       const c1 = classicResults[i].avgSubmitMs;
       const c2 = classicResults[i + 1].avgSubmitMs;
       const g1 = gpuDrivenResults[i].avgSubmitMs;
@@ -285,13 +285,13 @@ export class BenchmarkRunner {
       // Si au début classic < gpu et ensuite classic > gpu
       if (c1 <= g1 && c2 >= g2) {
         // Interpolation linéaire
-        const p1 = paliers[i];
-        const p2 = paliers[i + 1];
+        const p1 = tiers[i];
+        const p2 = tiers[i + 1];
         const t = (g1 - c1) / ((c2 - c1) - (g2 - g1));
         crossoverCount = p1 + t * (p2 - p1);
         break;
       } else if (c1 > g1 && crossoverCount === null) {
-        crossoverCount = paliers[0];
+        crossoverCount = tiers[0];
       }
     }
 
@@ -299,13 +299,13 @@ export class BenchmarkRunner {
 
     const report: CrossoverReport = {
       timestamp: new Date().toISOString(),
-      paliers,
+      tiers,
       classicResults,
       gpuDrivenResults,
       crossoverObjectCount: crossoverCount,
       analysis: crossoverCount
         ? `Le point de croisement mesuré se situe à environ ${Math.round(crossoverCount)} objets. Au-delà de ce seuil, la soumission CPU de Three.js diverge ($O(N)$) tandis que le pipeline GPU-driven conserve un coût d'encodage constant ($O(1)$).`
-        : `L'architecture GPU-driven démontre un gain dès le premier palier de test.`,
+        : `L'architecture GPU-driven démontre un gain dès le premier tier de test.`,
     };
 
     this.isBenchmarking = false;

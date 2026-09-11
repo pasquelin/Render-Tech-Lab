@@ -23,7 +23,7 @@ export interface DrawIndexedIndirectCommand {
   firstInstance: number;
 }
 
-export interface BenchmarkPalier {
+export interface BenchmarkTier {
   objectCount: number;
   label: string;
 }
@@ -52,7 +52,7 @@ export interface BenchmarkResult {
 
 export interface CrossoverReport {
   timestamp: string;
-  paliers: number[];
+  tiers: number[];
   classicResults: BenchmarkResult[];
   gpuDrivenResults: BenchmarkResult[];
   crossoverObjectCount: number | null;

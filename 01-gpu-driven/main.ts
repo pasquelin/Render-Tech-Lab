@@ -392,7 +392,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   selectCount.addEventListener('change', async (e) => {
     const val = parseInt((e.target as HTMLSelectElement).value, 10);
     benchStatus.innerText = `Génération de la scène avec ${val} objets...`;
-    await runner.setupPalier(val);
+    await runner.setupTier(val);
     benchStatus.innerText = `Prêt (${val} objets).`;
   });
 

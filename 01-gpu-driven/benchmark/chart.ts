@@ -30,12 +30,12 @@ export class CrossoverChart {
     const plotW = w - padLeft - padRight;
     const plotH = h - padTop - padBottom;
 
-    // Extraction dynamique des paliers testés
-    const paliersSet = new Set<number>();
-    classicResults.forEach((r) => paliersSet.add(r.objectCount));
-    gpuDrivenResults.forEach((r) => paliersSet.add(r.objectCount));
-    const paliers = Array.from(paliersSet).sort((a, b) => a - b);
-    const maxObjects = paliers.length > 0 ? Math.max(...paliers) : 5000;
+    // Extraction dynamique des tiers testés
+    const tiersSet = new Set<number>();
+    classicResults.forEach((r) => tiersSet.add(r.objectCount));
+    gpuDrivenResults.forEach((r) => tiersSet.add(r.objectCount));
+    const tiers = Array.from(tiersSet).sort((a, b) => a - b);
+    const maxObjects = tiers.length > 0 ? Math.max(...tiers) : 5000;
 
     // Calcul du Y max
     let maxSubmit = 5.0; // minimum 5ms
@@ -65,7 +65,7 @@ export class CrossoverChart {
 
     // Grille verticale & labels X
     ctx.textAlign = 'center';
-    for (const p of paliers) {
+    for (const p of tiers) {
       const x = padLeft + (p / maxObjects) * plotW;
       ctx.beginPath();
       ctx.moveTo(x, padTop);

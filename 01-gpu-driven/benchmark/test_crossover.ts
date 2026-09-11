@@ -8,7 +8,7 @@ import type { CrossoverReport, BenchmarkResult } from '../types.ts';
 console.log('--- TEST 1: Génération déterministe des instances ---');
 const instances500 = generateTestInstances(500, 42);
 const instances2000 = generateTestInstances(2000, 42);
-console.log(`Paliers générés : 500 instances -> ${instances500.length}, 2000 instances -> ${instances2000.length}`);
+console.log(`Tiers générés : 500 instances -> ${instances500.length}, 2000 instances -> ${instances2000.length}`);
 
 if (instances500.length !== 500 || instances2000.length !== 2000) {
   throw new Error('Erreur de comptage des instances');
@@ -43,7 +43,7 @@ sampleCounts.forEach((count) => {
   // Coût d'encodage quasi constant GPU-driven (passe compute + 1 draw indirect)
   const submitB = 0.25 + Math.log10(count / 500) * 0.03;
   const ratio = (submitA / submitB).toFixed(1);
-  console.log(`Palier ${count >= 1000 ? count / 1000 + 'k' : count} obj : Test A = ${submitA.toFixed(2)} ms | Test B = ${submitB.toFixed(2)} ms | Ratio = ${ratio}x`);
+  console.log(`Tier ${count >= 1000 ? count / 1000 + 'k' : count} obj : Test A = ${submitA.toFixed(2)} ms | Test B = ${submitB.toFixed(2)} ms | Ratio = ${ratio}x`);
 
   classicResults.push({
     mode: 'classic',
@@ -74,7 +74,7 @@ console.log('--- TEST 4: Génération automatique du REPORT.md unique pour le te
 const crossoverCount = 500; // crossover dès ≤ 500 objets
 const mockReport: CrossoverReport = {
   timestamp: new Date().toISOString(),
-  paliers: sampleCounts,
+  tiers: sampleCounts,
   classicResults,
   gpuDrivenResults,
   crossoverObjectCount: crossoverCount,

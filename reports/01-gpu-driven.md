@@ -1,10 +1,10 @@
 # Bench Report: 01-gpu-driven
 
-**Technique under test:** GPU-driven rendering pipeline (frustum culling & indirect draw)
-**Bench last updated:** 2026-09-11 16:43:25
+**Technique under test:** GPU-Driven Rendering Pipeline (Frustum Culling & Indirect Draw)  
+**Bench last updated:** 2026-09-11 16:43:25 UTC  
 **Environment:** WebGPU (Metal / Vulkan / D3D12)
 
-> **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.
+> **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.  
 > *Governance note: this file is the single living report for this test — no date-stamped duplicates.*
 
 ---

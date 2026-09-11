@@ -20,7 +20,7 @@ export function formatMarkdownReport(
   let maxRatio = 1.0;
   let maxRatioCount = 0;
 
-  report.paliers.forEach((p) => {
+  report.tiers.forEach((p) => {
     const c = classicMap.get(p);
     const g = gpuMap.get(p);
 
@@ -39,14 +39,14 @@ export function formatMarkdownReport(
     const callsA = c ? `${c.drawCalls}` : 'N/A';
     const callsB = g ? `${g.drawCalls}` : 'N/A';
 
-    const palierLabel =
+    const tierLabel =
       p >= 50000
         ? `☠️ **${p / 1000}k** *(torture)*`
         : p >= 10000
         ? `🔥 **${p / 1000}k** *(pain test)*`
         : `**${p >= 1000 ? p / 1000 + 'k' : p}**`;
 
-    tableRows += `| ${palierLabel} | ${submitA} | ${submitB} | **${ratioStr}** | ${cpuFrameA} | ${cpuFrameB} | ${p95A} | ${p95B} | ${callsA} | ${callsB} |\n`;
+    tableRows += `| ${tierLabel} | ${submitA} | ${submitB} | **${ratioStr}** | ${cpuFrameA} | ${cpuFrameB} | ${p95A} | ${p95B} | ${callsA} | ${callsB} |\n`;
   });
 
   // Gain at the 2 000-object tier (S3)
@@ -123,5 +123,5 @@ ${tableRows}
 - [x] **Trigger crossed:** the crossover shows up from the very first tier, and the gap becomes enormous ($> 15\\times$ to $30\\times$) on the pain tiers.
 - [ ] **Phase 3:** introduce GPU LOD selection (*screen-space error*) to cut rasterization load on distant objects at the 100k tier.
 - [ ] **Phase 5:** Hi-Z occlusion culling to reject hidden objects in heavily occluded scenes.
-\`;
+`;
 }
