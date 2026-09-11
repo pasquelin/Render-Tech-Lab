@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>render-tech-lab — 01-gpu-driven Benchmark</title>
+    <style>
+      :root {
+        --bg-main: #0a0c10;
+        --bg-panel: #121721;
+        --border-color: #1e2638;
+        --text-main: #f1f5f9;
+        --text-dim: #94a3b8;
+        --accent-cyan: #06b6d4;
+        --accent-red: #ef4444;
+        --accent-amber: #f59e0b;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-main);
+        color: var(--text-main);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .logo {
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .logo span {
+        color: var(--accent-cyan);
+      }
+      .badge {
+        font-size: 0.75rem;
+        background: #1e293b;
+        color: #38bdf8;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        border: 1px solid #0284c7;
+      }
+      main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        overflow: hidden;
+      }
+      #viewport-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      canvas.render-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #sidebar {
+        background: var(--bg-panel);
+        border-left: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 18px;
+        gap: 16px;
+      }
+      .panel-section {
+        background: #0c1017;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 14px;
+      }
+      .panel-title {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-dim);
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .btn-group {
+        display: flex;
+        gap: 8px;
+      }
+      button {
+        flex: 1;
+        background: #1e293b;
+        color: #f1f5f9;
+        border: 1px solid #334155;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.15s ease;
+      }
+      button:hover {
+        background: #334155;
+      }
+      button.active#btn-classic {
+        background: #7f1d1d;
+        border-color: var(--accent-red);
+        color: #fecaca;
+      }
+      button.active#btn-gpu-driven {
+        background: #0e3b43;
+        border-color: var(--accent-cyan);
+        color: #a5f3fc;
+      }
+      button.primary {
+        background: #0284c7;
+        border-color: #38bdf8;
+        color: white;
+        padding: 10px;
+        font-size: 0.9rem;
+      }
+      button.primary:hover {
+        background: #0369a1;
+      }
+      select {
+        width: 100%;
+        background: #1e293b;
+        color: #f1f5f9;
+        border: 1px solid #334155;
+        padding: 8px;
+        border-radius: 6px;
+        margin-top: 6px;
+        outline: none;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .stat-card {
+        background: #111827;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #1f2937;
+      }
+      .stat-label {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+      }
+      .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      #chart-container {
+        width: 100%;
+        height: 220px;
+        background: #11151c;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+      }
+      #canvas-chart {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #bench-status {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+        border-radius: 4px;
+        background: #0b1320;
+        border: 1px solid #1e293b;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+      }
+      pre#results-json {
+        max-height: 140px;
+        overflow: auto;
+        font-family: monospace;
+        font-size: 0.72rem;
+        color: #94a3b8;
+        background: #05070a;
+        padding: 8px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <span>render-tech-lab</span> / 01-gpu-driven
+        <div class="badge">Protocole R&D</div>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-dim);">
+        Cycle gouvernant : Hypothèse → Prototype → Benchmark → Crossover
+      </div>
+    </header>
+
+    <main>
+      <div id="viewport-container">
+        <!-- Canvas WebGL pour Test A -->
+        <canvas id="canvas-webgl" class="render-canvas" style="display: none;"></canvas>
+        <!-- Canvas WebGPU pour Test B -->
+        <canvas id="canvas-webgpu" class="render-canvas"></canvas>
+      </div>
+
+      <div id="sidebar">
+        <!-- Contrôles Mode -->
+        <div class="panel-section">
+          <div class="panel-title">Mode d'exécution</div>
+          <div class="btn-group">
+            <button id="btn-classic">Test A (Three.js)</button>
+            <button id="btn-gpu-driven" class="active">Test B (GPU-Driven)</button>
+          </div>
+          <div style="margin-top: 10px;">
+            <label style="font-size: 0.75rem; color: var(--text-dim);">Palier d'objets uniques</label>
+            <select id="select-count">
+              <option value="500">500 objets</option>
+              <option value="1000">1 000 objets</option>
+              <option value="2000" selected>2 000 objets (S3 Stress CPU)</option>
+              <option value="5000">5 000 objets</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Métriques en direct -->
+        <div class="panel-section">
+          <div class="panel-title">Métriques en Direct (Frame)</div>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label">CPU Submit Time</div>
+              <div class="stat-value" id="stat-submit" style="color: var(--accent-cyan);">-- ms</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">CPU Frametime</div>
+              <div class="stat-value" id="stat-cpuframe">-- ms</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Taux d'images</div>
+              <div class="stat-value" id="stat-fps">-- FPS</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Draw Calls CPU</div>
+              <div class="stat-value" id="stat-drawcalls">--</div>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 0.78rem; color: var(--text-dim);">
+            Pipeline actif : <strong id="stat-mode" style="color: var(--accent-cyan);">Test B (GPU-Driven)</strong> (<span id="stat-objects">2000</span> objets)
+          </div>
+        </div>
+
+        <!-- Courbe Crossover -->
+        <div class="panel-section">
+          <div class="panel-title">Courbe de Croisement (Crossover)</div>
+          <div id="chart-container">
+            <canvas id="canvas-chart" width="380" height="220"></canvas>
+          </div>
+          <div style="margin-top: 10px;">
+            <button id="btn-benchmark" class="primary" style="width: 100%;">
+              ▶ Lancer le Benchmark Automatisé (500 → 5k)
+            </button>
+          </div>
+          <div id="bench-status" style="margin-top: 8px;">
+            Prêt pour la campagne de mesure.
+          </div>
+        </div>
+
+        <!-- Rapport JSON -->
+        <div class="panel-section">
+          <div class="panel-title">Export Résultats (JSON)</div>
+          <pre id="results-json">{ "status": "En attente du benchmark" }</pre>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/01-gpu-driven/main.ts"></script>
+  </body>
+</html>
