@@ -45,4 +45,5 @@ export interface GpuSceneBenchResult {
   culledObjects: number | null;
   visibleObjects: number | null;
   gpuMemoryBytes: number | null;
+  gpuFrameMs?: number | null;
 }

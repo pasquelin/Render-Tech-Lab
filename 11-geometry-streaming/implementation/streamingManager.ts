@@ -118,7 +118,7 @@ export class GeometryStreamingManager {
       residentBytes: this.residentBytes,
       uploadedBytes,
       evictedBytes,
-      uploadTimeMs: Number((uploadedBytes / (1024 * 1024) * 2.0).toFixed(3)), // Estimation ~2ms par Mo PCIe
+      uploadTimeMs: null, // No transfer was executed on a GPU.
       frameTimeMs: Number(duration.toFixed(3)),
       stalls,
     };

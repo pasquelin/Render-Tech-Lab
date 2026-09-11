@@ -5,7 +5,7 @@
  * Réutilise l'oracle hizReduceCeil de shared/math/hiz.ts.
  */
 
-import { hizReduceCeil } from '../../shared/math/hiz.ts';
+import { hizReduceInto } from '../../shared/math/hiz.ts';
 import type {
   HiZPyramid,
   HiZMip,
@@ -16,7 +16,7 @@ import type {
 export interface HiZPyramidData {
   pyramid: HiZPyramid;
   cost: HiZCost;
-  mipBuffers: number[][][]; // Niveaux de profondeur CPU mips 0..depth-1
+  mipBuffers: Float32Array[]; // Niveaux de profondeur CPU mips 0..depth-1
 }
 
 /**
@@ -37,25 +37,37 @@ export function buildHiZPyramid(
   }
 
   const mips: HiZMip[] = [];
-  const mipBuffers: number[][][] = [];
+  const mipBuffers: Float32Array[] = [];
   const perMipMs: number[] = [];
 
   // Mip 0 : Pleine résolution
   mips.push({ level: 0, width, height, format });
-  mipBuffers.push(baseDepth);
+  const flat = new Float32Array(width * height);
+  for (let y = 0; y < height; y++) {
+    if (baseDepth[y].length !== width) throw new Error('Profondeur non rectangulaire');
+    for (let x = 0; x < width; x++) {
+      const value = baseDepth[y][x];
+      if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('Profondeur invalide');
+      flat[y * width + x] = value;
+    }
+  }
+  mipBuffers.push(flat);
 
-  let currentBuffer = baseDepth;
+  let currentBuffer = flat;
+  let currentW = width, currentH = height;
   let currentLevel = 0;
   let totalBytes = width * height * 4; // 4 octets par texel en r32float
 
-  while (currentBuffer.length > 1 || currentBuffer[0].length > 1) {
+  while (currentW > 1 || currentH > 1) {
     const mipStartTime = performance.now();
-    currentBuffer = hizReduceCeil(currentBuffer, reversedZ);
+    const mipW = Math.ceil(currentW / 2), mipH = Math.ceil(currentH / 2);
+    const next = new Float32Array(mipW * mipH);
+    hizReduceInto(currentBuffer, currentW, currentH, next, reversedZ);
+    currentBuffer = next;
+    currentW = mipW; currentH = mipH;
     const mipDuration = performance.now() - mipStartTime;
 
     currentLevel++;
-    const mipH = currentBuffer.length;
-    const mipW = currentBuffer[0].length;
 
     mips.push({ level: currentLevel, width: mipW, height: mipH, format });
     mipBuffers.push(currentBuffer);
@@ -102,8 +114,8 @@ export function queryHiZ(
   const buffer = pyramidData.mipBuffers[targetMip];
 
   // Conversion des coordonnées écran en coordonnées texels du mip
-  const scaleX = mip.width / mips[0].width;
-  const scaleY = mip.height / mips[0].height;
+  const scaleX = 1 / (2 ** targetMip);
+  const scaleY = scaleX;
 
   const tx0 = Math.max(0, Math.min(mip.width - 1, Math.floor(box.x0 * scaleX)));
   const ty0 = Math.max(0, Math.min(mip.height - 1, Math.floor(box.y0 * scaleY)));
@@ -113,7 +125,7 @@ export function queryHiZ(
   let maxDepthInFootprint = reversedZ ? 1.0 : 0.0;
   for (let y = ty0; y <= ty1; y++) {
     for (let x = tx0; x <= tx1; x++) {
-      const d = buffer[y][x];
+      const d = buffer[y * mip.width + x];
       if (reversedZ) {
         if (d < maxDepthInFootprint) maxDepthInFootprint = d;
       } else {
@@ -124,8 +136,8 @@ export function queryHiZ(
 
   // Occlus si la profondeur du candidat est plus lointaine que la profondeur conservatrice maximale du Hi-Z
   const occluded = reversedZ
-    ? testDepth <= maxDepthInFootprint
-    : testDepth >= maxDepthInFootprint;
+    ? testDepth < maxDepthInFootprint - 1e-6
+    : testDepth > maxDepthInFootprint + 1e-6;
 
   return {
     occluded,
@@ -142,6 +154,7 @@ export const WGSL_HIZ_REDUCE = /* wgsl */ `
 
 @compute @workgroup_size(8, 8)
 fn main(@builtin(global_invocation_id) id : vec3<u32>) {
+  if (any(id.xy >= textureDimensions(destDepth))) { return; }
   let dstCoord = vec2<i32>(id.xy);
   let srcCoord = dstCoord * 2;
   let dims = textureDimensions(sourceDepth);

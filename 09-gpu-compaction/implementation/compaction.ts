@@ -9,12 +9,10 @@
  * Réutilise l'oracle exclusiveScan de shared/math/compaction.ts.
  */
 
-import { exclusiveScan, compact } from '../../shared/math/compaction.ts';
+import { exclusiveScan } from '../../shared/math/compaction.ts';
 import type {
-  CompactionVariant,
   CompactionInput,
   CompactionOutput,
-  CompactionBenchmarkRow,
 } from '../types.ts';
 
 /**

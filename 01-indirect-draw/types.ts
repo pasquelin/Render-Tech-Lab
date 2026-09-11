@@ -32,7 +32,7 @@ export interface FrameMeasurement {
   frameIndex: number;
   cpuFrameMs: number;
   submitMs: number;
-  fps: number;
+  fps: number | null;
   drawCalls: number;
   triangles: number;
   visibleCountEstimated?: number;
@@ -46,7 +46,9 @@ export interface BenchmarkResult {
   avgSubmitMs: number;
   p95SubmitMs: number;
   p99SubmitMs: number;
-  avgFps: number;
+  avgFps: number | null;
+  gpuFrameMs?: number | null;
+  queueCompletionMs?: number | null;
   drawCalls: number;
 }
 

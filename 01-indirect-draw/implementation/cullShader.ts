@@ -1,3 +1,4 @@
+import { LOCAL_SCAN_SCATTER } from '../../shared/gpu/localScan.ts';
 /**
  * Shaders WGSL pour le Culling Frustum GPU et l'écriture des commandes DrawIndexedIndirect
  */
@@ -19,14 +20,25 @@ fn main(@builtin(global_invocation_id) id : vec3<u32>) {
 }
 `;
 
-export const CULL_COMPUTE_WGSL = /* wgsl */ `
-struct CameraUniforms {
+export type CullingVariant = 'atomic' | 'workgroup';
+export function createCullingShader(variant: CullingVariant): string {
+  const shared = variant === 'workgroup'
+    ? 'var<workgroup> prefix: array<u32, 128>; var<workgroup> blockBase: u32;' : '';
+  const scatter = variant === 'atomic' ? `    if (visible) {
+      let slot = atomicAdd(&indirectArgs.instanceCount, 1u);
+      visibleIndices[slot] = instanceId;
+    }
+` : `
+    let flag = select(0u, 1u, visible);
+${LOCAL_SCAN_SCATTER}`;
+  return /* wgsl */ `struct CameraUniforms {
     viewProj : mat4x4<f32>,
     camPos : vec4<f32>,
     totalInstances : u32,
     _pad0 : u32,
     _pad1 : u32,
     _pad2 : u32,
+    planes : array<vec4<f32>, 6>,
 };
 
 struct InstanceData {
@@ -51,57 +63,28 @@ struct IndirectDrawArgs {
 @group(0) @binding(2) var<storage, read_write> indirectArgs : IndirectDrawArgs;
 @group(0) @binding(3) var<storage, read_write> visibleIndices : array<u32>;
 
-// Extraction d'un plan à partir des lignes de la matrice ViewProjection
-fn extractPlane(rowA : vec4<f32>, rowB : vec4<f32>, sign : f32) -> vec4<f32> {
-    let p = rowA + sign * rowB;
-    let len = length(p.xyz);
-    if (len > 0.0) {
-        return p / len;
-    }
-    return p;
-}
 
-@compute @workgroup_size(64)
-fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
-    let instanceId = global_id.x;
-    if (instanceId >= camera.totalInstances) {
-        return;
-    }
-
-    let inst = instances[instanceId];
-    let center = inst.sphere.xyz;
-    let radius = inst.sphere.w;
-
-    // Lignes de la matrice ViewProj (Three.js WebGPU clip space Z: [0, 1])
-    let row0 = vec4<f32>(camera.viewProj[0][0], camera.viewProj[1][0], camera.viewProj[2][0], camera.viewProj[3][0]);
-    let row1 = vec4<f32>(camera.viewProj[0][1], camera.viewProj[1][1], camera.viewProj[2][1], camera.viewProj[3][1]);
-    let row2 = vec4<f32>(camera.viewProj[0][2], camera.viewProj[1][2], camera.viewProj[2][2], camera.viewProj[3][2]);
-    let row3 = vec4<f32>(camera.viewProj[0][3], camera.viewProj[1][3], camera.viewProj[2][3], camera.viewProj[3][3]);
-
-    // 6 plans du Frustum
-    var planes : array<vec4<f32>, 6>;
-    planes[0] = extractPlane(row3, row0, 1.0);  // Gauche
-    planes[1] = extractPlane(row3, row0, -1.0); // Droite
-    planes[2] = extractPlane(row3, row1, 1.0);  // Bas
-    planes[3] = extractPlane(row3, row1, -1.0); // Haut
-    planes[4] = extractPlane(row2, vec4<f32>(0.0), 0.0); // Proche (Near WebGPU [0, 1]: row2 >= 0)
-    planes[5] = extractPlane(row3, row2, -1.0); // Lointain (Far: row3 - row2 >= 0)
-
-    var isVisible = true;
-    for (var i = 0; i < 6; i++) {
-        let dist = dot(planes[i].xyz, center) + planes[i].w;
-        if (dist < -radius) {
-            isVisible = false;
-            break;
-        }
+${shared}
+@compute @workgroup_size(128)
+fn main(@builtin(global_invocation_id) id: vec3<u32>,
+        @builtin(local_invocation_index) lane: u32) {
+    let instanceId = id.x;
+    var visible = false;
+    if (instanceId < camera.totalInstances) {
+      let sphere = instances[instanceId].sphere;
+      visible = true;
+      for (var p = 0u; p < 6u; p++) {
+        let plane = camera.planes[p];
+        if (dot(plane.xyz, sphere.xyz) + plane.w < -sphere.w) { visible = false; }
+      }
     }
 
-    if (isVisible) {
-        let slot = atomicAdd(&indirectArgs.instanceCount, 1u);
-        visibleIndices[slot] = instanceId;
-    }
+${scatter}
 }
 `;
+}
+export const CULL_COMPUTE_WGSL = createCullingShader('atomic');
+export const WORKGROUP_CULL_COMPUTE_WGSL = createCullingShader('workgroup');
 
 export const RENDER_RASTER_WGSL = /* wgsl */ `
 struct CameraUniforms {
@@ -111,6 +94,7 @@ struct CameraUniforms {
     _pad0 : u32,
     _pad1 : u32,
     _pad2 : u32,
+    planes : array<vec4<f32>, 6>,
 };
 
 struct InstanceData {

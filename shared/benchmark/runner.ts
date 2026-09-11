@@ -71,7 +71,7 @@ function baseTimestamp(): string {
 /** Renvoie `null` si la valeur n'est ni un fini ni un nombre (règle pas de 0 inventé). */
 function fin(x: number | null | undefined): number | null {
   if (x === null || x === undefined) return null;
-  if (!Number.isFinite(x)) return null;
+  if (!Number.isFinite(x) || x < 0) return null;
   return x;
 }
 
@@ -95,7 +95,9 @@ export function createBenchRunner(config: BenchRunnerConfig): BenchRunner {
         sample = null;
       }
 
-      if (!sample) {
+      const observed = sample && [sample.cpuFrameMs, sample.submitMs, sample.gpuFrameMs]
+        .some(value => typeof value === 'number' && Number.isFinite(value) && value >= 0);
+      if (!sample || !observed) {
         // Règle absolue : aucune valeur inventée, champ null, statut not-run.
         const record: BenchResultRecord = {
           timestamp: baseTimestamp(),

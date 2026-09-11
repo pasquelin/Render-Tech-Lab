@@ -43,6 +43,7 @@
               <option value="11-geometry-streaming">11 · Geometry Streaming &amp; Résidence VRAM</option>
               <option value="12-visibility-buffer">12 · Visibility Buffer &amp; Shading Différé</option>
               <option value="13-full-gpu-driven">13 · Full GPU-Driven Architecture</option>
+              <option value="14-open-world">14 · Monde ouvert sous pression</option>
             </select>
           </div>
 
@@ -212,7 +213,7 @@
                     <h2 class="text-xs font-bold uppercase tracking-wider text-base-content/70">
                       État d'avancement des briques &amp; arbitrages validés :
                     </h2>
-                    <span class="text-[10px] font-mono text-base-content/50">14 / 14 briques actives</span>
+                    <span class="text-[10px] font-mono text-base-content/50">14 briques · banc extrême 14 disponible</span>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -495,7 +496,19 @@
                       </button>
                     </div>
 
-                    <!-- Carte Phase 2 (Slot 15) -->
+                    <div class="card bg-base-200 border border-primary/50 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between gap-1">
+                          <span class="font-mono text-xs font-bold text-primary">14 · Monde ouvert</span>
+                          <span class="badge badge-xs badge-outline">Comparatif</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">Décor Bistro réel, quartiers répétés, images contrôlées et rapports A/B.</div>
+                        <div class="font-mono text-[11px] text-primary pt-1">Jusqu’à 70,73 M de triangles source · 4K</div>
+                      </div>
+                      <a href="/?test=14-open-world" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">Lancer 14 · scène extrême</a>
+                    </div>
+
+                    <!-- Carte Phase 2 -->
                     <div class="card bg-base-200/50 border border-dashed border-primary/40 p-3.5 flex flex-col justify-between shadow-xs">
                       <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
@@ -619,7 +632,7 @@
         <aside id="sidebar" class="w-80 xl:w-96 h-full bg-base-200 p-3.5 overflow-y-auto space-y-3 shrink-0 flex flex-col justify-between">
           <div class="space-y-3">
             <!-- Bloc 1 : Mode d'exécution & Paramètres de charge -->
-            <div class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
+            <div id="lab-mode-card" class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
               <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center justify-between">
                 <span>1. Mode d'exécution</span>
                 <span class="badge badge-ghost badge-xs font-mono text-[10px]">Bascule</span>
@@ -645,7 +658,7 @@
             </div>
 
             <!-- Bloc 2 : Métriques en Direct (Composant officiel daisyUI stats / stat) -->
-            <div class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
+            <div id="lab-metrics-card" class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
               <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60 flex items-center justify-between">
                 <span>2. Métriques en Direct</span>
                 <span class="badge badge-xs badge-neutral font-mono text-[10px]">350ms MA</span>
@@ -686,7 +699,7 @@
             </div>
 
             <!-- Bloc 3 : Campagne de Mesure & Courbe de Croisement -->
-            <div class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
+            <div id="lab-run-card" class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
               <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
                 3. Courbe de Croisement &amp; Douleur
               </div>
@@ -696,6 +709,8 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
+                <a href="/?test=14-open-world" class="btn btn-sm btn-outline w-full">14 · Monde ouvert sous pression</a>
+                <a id="btn-lod-comparison" href="/04-gpu-lod/comparison.html" class="btn btn-sm btn-outline w-full hidden">Comparer les calculs sur une scène détaillée</a>
                 <button id="btn-benchmark" class="btn btn-sm btn-lab-primary w-full shadow-xs gap-2">
                   <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
                   <span>Benchmark Standard (500 → 5k)</span>
@@ -712,7 +727,7 @@
             </div>
 
             <!-- Bloc 4 : Rapports & Suivi R&D -->
-            <div class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
+            <div id="lab-report-card" class="card bg-base-300/80 border border-base-content/10 shadow-xs p-3.5 gap-2.5">
               <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
                 4. Rapports &amp; Suivi R&D
               </div>

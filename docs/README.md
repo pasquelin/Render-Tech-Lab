@@ -4,6 +4,10 @@ Cette documentation définit un sous-système de préparation et de rendu de gé
 
 Les exemples sont des algorithmes pédagogiques, pas un moteur livré et compilable. Les variantes de performance doivent être mesurées. Une propriété mathématique, une décision de conception et une fonctionnalité testée sont trois choses différentes.
 
+**Acceptation des optimisations :** un remplacement exige une preuve comparative de gain net, de fluidité et de conservation des fonctionnalités et de l'image sur le domaine annoncé. Une équivalence algébrique ou un microbenchmark positif ne suffit pas. La [campagne comparative du 11 septembre 2026](PREUVES_COMPARATIVES_OPTIMISATION.md) mesure deux variantes et conserve les données et sources reproductibles ; aucune ne satisfait encore l'ensemble de ces conditions. Les calculs de référence restent en vigueur.
+
+**Bancs visuels du projet :** le [comparatif LOD sur scène détaillée](../04-gpu-lod/comparison.html) dispose de [douze campagnes documentées](preuves/2026-09-11-scene-projet.md). Le [banc 14 — monde ouvert sous pression](../14-open-world/README.md) utilise le décor réel Bistro et conserve séparément les images contrôlées, la géométrie soumise, les résolutions et les rapports A/B. Ces expériences n'accordent aucune certification globale automatique.
+
 ## Parcours de lecture
 
 | Étape | Document | Ce qu'il apporte |
@@ -28,6 +32,7 @@ Les exemples sont des algorithmes pédagogiques, pas un moteur livré et compila
 | 18 | [Déformation, cellules et courbes](DEFORMATION_CELLULES_ET_COURBES.md) | déplacement borné, BVH, voxelisation, échantillonnage, SGGX et fibres |
 | 19 | [Pipeline GPU et extensions](PIPELINE_GPU_ET_EXTENSIONS.md) | capacités, couverture, départage, shading, streaming, rayons, tessellation et opacité |
 | 20 | [Validation documentaire](VALIDATION_DOCUMENTAIRE.md) | comparaison des supports, couverture, exclusions et preuves d'autonomie |
+| 21 | [Preuves comparatives d'optimisation](PREUVES_COMPARATIVES_OPTIMISATION.md) | résultats A/B, limites, décisions et reproduction des mesures |
 
 ## Exemples complémentaires
 

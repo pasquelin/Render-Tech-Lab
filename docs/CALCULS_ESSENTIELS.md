@@ -182,7 +182,9 @@ La norme de la jacobienne est bornée par `L` sur toute cette boîte; le théor�
 
 **Transformations :** avec la partie linéaire `A` du modèle, `error_world <= ||A||₂ error_object`. Pour rotation + échelles orthogonales, utiliser la plus grande échelle absolue. Avec cisaillement, une borne sûre est `||A||F = sqrt(sum(Aij²))` ou `sqrt(||A||1 ||A||∞)`. Le maximum des longueurs des colonnes n'est pas une garantie générale sous cisaillement. Une matrice singulière nécessite un chemin explicite, en particulier pour les normales.
 
-**Optimisation mesurable :** précalculer focales, transformation et coefficient d'échelle par instance/vue. Comparer la borne AABB à une borne candidate plus serrée, avec un oracle de paires de points. Tester hors axe, near plane, caméra dans la borne, grandes coordonnées, orthographique, viewport non carré, jitter et échelle négative.
+**Statut des précalculs :** déplacer une opération hors d'une boucle n'est accepté qu'après mesure du coût complet, préparation et invalidation comprises. La [comparaison exécutée](PREUVES_COMPARATIVES_OPTIMISATION.md) trouve un gain CPU pour la tangente du prototype de diamètre radial, mais pas de gain établi de fluidité. Le cache de la borne AABB, testé dans une transcription JavaScript, ralentit le calcul lorsqu'il est reconstruit à chaque changement de vue. Aucun de ces résultats ne remplace cette borne ni son oracle Python.
+
+Toute future variante doit garder les conventions, l'ordre des opérations flottantes ou une preuve numérique adaptée, et les cas hors axe, near plane, caméra dans la borne, grandes coordonnées, orthographique, viewport non carré, jitter et échelle négative. Le coût d'un cache inclut ses octets supplémentaires et tous les changements qui l'invalident ; une mesure de réutilisation à vue fixe ne prouve pas un gain en déplacement.
 
 
 ## 8. M06 — La coupe LOD : choisir une représentation unique
@@ -404,6 +406,8 @@ Mesurer p50, p95 et p99 de frametime avec assez d'échantillons; ne pas moyenner
 
 **Priorité d'optimisation :** volume de travail → disposition mémoire/transferts → parallélisme borné → détails arithmétiques. Les variantes `f32`, `f64`, `f16`, SIMD et subgroups doivent repasser la recette numérique. Un résultat plus rapide qui casse une frontière, une coupe ou le picking ne valide pas le système.
 
+**Condition d'adoption pour ce projet :** les preuves de gain net, de fluidité, de correction et de conservation du rendu sont cumulatives. Un critère non mesuré reste non acquis. Le [registre comparatif](PREUVES_COMPARATIVES_OPTIMISATION.md) distingue explicitement le gain d'une fonction CPU et celui d'une scène ; il ne contient actuellement aucun remplacement validé de ces calculs.
+
 ## 18. Programme de travail mathématique
 
 1. Exécuter [l'oracle numérique](ORACLES_ET_TESTS.md) : ce sont des exemples vérifiables et des contre-exemples aux formules trop simples.
@@ -411,6 +415,6 @@ Mesurer p50, p95 et p99 de frametime avec assez d'échantillons; ne pas moyenner
 3. Implémenter une référence CPU indépendante pour le build et la sélection.
 4. Mesurer qualité des frontières, erreur géométrique et rendu avec les fixtures adversariales.
 5. Porter vers Rust/WASM puis GPU, fonction par fonction, en confrontant les sorties à la référence.
-6. Exécuter les bancs isolés; intégrer seulement les variantes qui gardent les invariants et améliorent un coût mesuré.
+6. Exécuter les bancs isolés puis la comparaison de scène ; intégrer seulement les variantes qui satisfont toutes les conditions d'adoption de M15 sur le matériel et les fonctionnalités annoncés.
 
 Les exemples courts sont développés dans [les algorithmes de base](ALGORITHMES_DE_BASE.md). Les calculs numériques exécutables et leurs tests sont intégrés dans [les oracles](ORACLES_ET_TESTS.md).

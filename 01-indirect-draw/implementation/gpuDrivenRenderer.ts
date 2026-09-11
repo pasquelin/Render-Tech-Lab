@@ -1,7 +1,8 @@
+import type { TimestampBatch } from '../../shared/gpu/timing.ts';
 import * as THREE from 'three';
 import type { MeshInstanceDef, FrameMeasurement } from '../types.ts';
 import { GpuSceneBuffer } from './gpuSceneBuffer.ts';
-import { RESET_COMPUTE_WGSL, CULL_COMPUTE_WGSL, RENDER_RASTER_WGSL } from './cullShader.ts';
+import { RESET_COMPUTE_WGSL, createCullingShader, RENDER_RASTER_WGSL, type CullingVariant } from './cullShader.ts';
 
 export class GpuDrivenRenderer {
   private device: GPUDevice;
@@ -32,6 +33,19 @@ export class GpuDrivenRenderer {
 
   private sceneBuffer: GpuSceneBuffer;
   private indexCount: number;
+  private readonly drawMode: 'direct' | 'indirect';
+  private readonly directIds: Uint32Array;
+  private readonly directCount = new Uint32Array(1);
+  private readonly viewProj = new THREE.Matrix4();
+  private readonly frustum = new THREE.Frustum();
+  private readonly uniformArray = new Float32Array(48);
+  private readonly uniformU32 = new Uint32Array(this.uniformArray.buffer);
+  private readonly computeDescriptor: GPUComputePassDescriptor = { label: 'Reset & Culling' };
+  private renderDescriptor!: GPURenderPassDescriptor;
+  private colorAttachment!: GPURenderPassColorAttachment;
+  private readonly submitList: GPUCommandBuffer[] = [];
+  private readonly measurement: FrameMeasurement = { frameIndex: 0, cpuFrameMs: 0,
+    submitMs: 0, fps: null, drawCalls: 1, triangles: 0 };
   public totalTriangles: number = 0;
 
   constructor(
@@ -39,8 +53,12 @@ export class GpuDrivenRenderer {
     context: GPUCanvasContext,
     format: GPUTextureFormat,
     instances: MeshInstanceDef[],
-    baseGeometry: THREE.BufferGeometry
+    baseGeometry: THREE.BufferGeometry,
+    variant: CullingVariant = 'atomic',
+    drawMode: 'direct' | 'indirect' = 'indirect'
   ) {
+    this.drawMode = drawMode;
+    this.directIds = new Uint32Array(instances.length);
     this.device = device;
     this.context = context;
     this.format = format;
@@ -52,7 +70,7 @@ export class GpuDrivenRenderer {
     this.totalTriangles = (this.indexCount / 3) * instances.length;
 
     this.initBuffers();
-    this.initPipelines();
+    this.initPipelines(variant);
   }
 
   private initBuffers() {
@@ -61,7 +79,7 @@ export class GpuDrivenRenderer {
     // 1. Instance Data Buffer (Storage Buffer)
     this.instanceBuffer = d.createBuffer({
       label: 'GPU-Driven Instance Storage',
-      size: this.sceneBuffer.instanceData.byteLength,
+      size: Math.max(96, this.sceneBuffer.instanceData.byteLength),
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
     d.queue.writeBuffer(this.instanceBuffer, 0, this.sceneBuffer.instanceData as unknown as BufferSource);
@@ -78,15 +96,15 @@ export class GpuDrivenRenderer {
     // 3. Buffer d'indices visibles compactés
     this.visibleIndicesBuffer = d.createBuffer({
       label: 'GPU-Driven Visible Indices',
-      size: this.instances.length * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      size: Math.max(4, this.instances.length * 4),
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
     });
 
     // 4. Uniform Camera (mat4x4 viewProj + vec4 camPos + totalInstances + pad)
     // 16 floats (mat4) + 4 floats (camPos) + 4 floats (meta) = 24 floats * 4 = 96 octets (aligné 16 = 96)
     this.cameraUniformBuffer = d.createBuffer({
       label: 'GPU-Driven Camera Uniforms',
-      size: 96,
+      size: 192,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -129,9 +147,13 @@ export class GpuDrivenRenderer {
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
+    this.colorAttachment = { view: this.depthTexture.createView(), clearValue: { r: 0.04, g: 0.05, b: 0.07, a: 1 }, loadOp: 'clear', storeOp: 'store' };
+    this.renderDescriptor = { label: 'Indirect Raster', colorAttachments: [this.colorAttachment],
+      depthStencilAttachment: { view: this.depthTexture.createView(), depthClearValue: 1,
+        depthLoadOp: 'clear', depthStoreOp: 'store' } };
   }
 
-  private initPipelines() {
+  private initPipelines(variant: CullingVariant) {
     const d = this.device;
 
     // --- Reset Pipeline ---
@@ -148,7 +170,7 @@ export class GpuDrivenRenderer {
     });
 
     // --- Cull Frustum Pipeline ---
-    const cullModule = d.createShaderModule({ code: CULL_COMPUTE_WGSL });
+    const cullModule = d.createShaderModule({ code: createCullingShader(variant) });
     this.cullPipeline = d.createComputePipeline({
       label: 'Frustum Cull Compute Pipeline',
       layout: 'auto',
@@ -212,26 +234,53 @@ export class GpuDrivenRenderer {
 
   public renderFrame(
     camera: THREE.PerspectiveCamera,
-    frameIndex: number
+    frameIndex: number, timer?: TimestampBatch, sample = 0
   ): FrameMeasurement {
     const tStartCpu = performance.now();
 
     // 1. Mise à jour de l'Uniform Camera (CPU -> Uniform Buffer)
-    const viewProj = new THREE.Matrix4();
+    const viewProj = this.viewProj;
+    if (camera.coordinateSystem !== THREE.WebGPUCoordinateSystem) {
+      camera.coordinateSystem = THREE.WebGPUCoordinateSystem;
+      camera.updateProjectionMatrix();
+    }
     camera.updateMatrixWorld();
     camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
     viewProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
 
-    const uniformArray = new Float32Array(24);
+    const uniformArray = this.uniformArray;
     viewProj.toArray(uniformArray, 0);
     uniformArray[16] = camera.position.x;
     uniformArray[17] = camera.position.y;
     uniformArray[18] = camera.position.z;
     uniformArray[19] = 1.0;
     // Métadonnées
-    new Uint32Array(uniformArray.buffer, 20 * 4, 1)[0] = this.instances.length;
+    this.uniformU32[20] = this.instances.length;
+    this.frustum.setFromProjectionMatrix(viewProj, THREE.WebGPUCoordinateSystem);
+    for (let i = 0; i < 6; i++) {
+      const plane = this.frustum.planes[i], offset = 24 + 4 * i;
+      uniformArray[offset] = plane.normal.x; uniformArray[offset + 1] = plane.normal.y;
+      uniformArray[offset + 2] = plane.normal.z; uniformArray[offset + 3] = plane.constant;
+    }
 
     this.device.queue.writeBuffer(this.cameraUniformBuffer, 0, uniformArray as unknown as BufferSource);
+
+    let directVisible = 0;
+    if (this.drawMode === 'direct') {
+      for (let i = 0; i < this.instances.length; i++) {
+        const offset = i * 24 + 16, data = this.sceneBuffer.instanceData;
+        let visible = true;
+        for (let p = 0; p < 6; p++) {
+          const o = 24 + p * 4;
+          if (uniformArray[o] * data[offset] + uniformArray[o + 1] * data[offset + 1]
+            + uniformArray[o + 2] * data[offset + 2] + uniformArray[o + 3] < -data[offset + 3]) visible = false;
+        }
+        if (visible) this.directIds[directVisible++] = i;
+      }
+      this.directCount[0] = directVisible;
+      this.device.queue.writeBuffer(this.indirectBuffer, 4, this.directCount);
+      if (directVisible) this.device.queue.writeBuffer(this.visibleIndicesBuffer, 0, this.directIds.buffer as ArrayBuffer, 0, directVisible * 4);
+    }
 
     // 2. Mesure isolée de la soumission GPU-driven
     // (encodage du compute reset + compute cull + 1 unique drawIndexedIndirect)
@@ -242,9 +291,9 @@ export class GpuDrivenRenderer {
     });
 
     // A. Étape Compute : Reset atomique du compteur de visibilité
-    const computePass = commandEncoder.beginComputePass({
-      label: 'Culling & Compaction Pass',
-    });
+    this.computeDescriptor.timestampWrites = timer?.writes(sample, 0);
+    const computePass = commandEncoder.beginComputePass(this.computeDescriptor);
+    if (this.drawMode === 'indirect') {
     computePass.setPipeline(this.resetPipeline);
     computePass.setBindGroup(0, this.resetBindGroup);
     computePass.dispatchWorkgroups(1);
@@ -252,29 +301,15 @@ export class GpuDrivenRenderer {
     // B. Étape Compute : Frustum Culling sur l'ensemble des 2 000 instances
     computePass.setPipeline(this.cullPipeline);
     computePass.setBindGroup(0, this.computeBindGroup);
-    const workgroups = Math.ceil(this.instances.length / 64);
-    computePass.dispatchWorkgroups(workgroups);
+    const workgroups = Math.ceil(this.instances.length / 128);
+    if (workgroups > 0) computePass.dispatchWorkgroups(workgroups);
+    }
     computePass.end();
 
     // C. Étape Raster : DrawIndexedIndirect
-    const currentTexture = this.context.getCurrentTexture();
-    const renderPass = commandEncoder.beginRenderPass({
-      label: 'Indirect Raster Pass',
-      colorAttachments: [
-        {
-          view: currentTexture.createView(),
-          clearValue: { r: 0.04, g: 0.05, b: 0.07, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-      depthStencilAttachment: {
-        view: this.depthTexture.createView(),
-        depthClearValue: 1.0,
-        depthLoadOp: 'clear',
-        depthStoreOp: 'store',
-      },
-    });
+    this.colorAttachment.view = this.context.getCurrentTexture().createView();
+    this.renderDescriptor.timestampWrites = timer?.writes(sample, 1);
+    const renderPass = commandEncoder.beginRenderPass(this.renderDescriptor);
 
     renderPass.setPipeline(this.renderPipeline);
     renderPass.setBindGroup(0, this.renderBindGroup);
@@ -283,12 +318,16 @@ export class GpuDrivenRenderer {
     renderPass.setIndexBuffer(this.indexBuffer, 'uint32');
 
     // EXÉCUTION INDIRECTE : 1 SEUL APPEL, ZÉRO RETOUR CPU
-    renderPass.drawIndexedIndirect(this.indirectBuffer, 0);
+    if (this.drawMode === 'indirect') renderPass.drawIndexedIndirect(this.indirectBuffer, 0);
+    else for (let i = 0; i < directVisible; i++) renderPass.drawIndexed(this.indexCount, 1, 0, 0, i);
 
     renderPass.end();
 
     // Soumission de la commande complète vers la queue WebGPU
-    this.device.queue.submit([commandEncoder.finish()]);
+    if (timer && sample === timer.capacity - 1) timer.resolve(commandEncoder);
+    this.submitList[0] = commandEncoder.finish();
+    this.device.queue.submit(this.submitList);
+    if (timer && sample === timer.capacity - 1) timer.submitted();
 
     const tEndSubmit = performance.now();
     const tEndCpu = performance.now();
@@ -296,14 +335,27 @@ export class GpuDrivenRenderer {
     const submitMs = tEndSubmit - tStartSubmit;
     const cpuFrameMs = tEndCpu - tStartCpu;
 
-    return {
-      frameIndex,
-      cpuFrameMs,
-      submitMs,
-      fps: cpuFrameMs > 0 ? 1000 / cpuFrameMs : 60,
-      drawCalls: 1, // 1 seul draw call indirect au lieu de 2 000 !
-      triangles: this.totalTriangles,
-    };
+    const m = this.measurement;
+    m.frameIndex = frameIndex; m.cpuFrameMs = cpuFrameMs; m.submitMs = submitMs;
+    m.triangles = this.totalTriangles; m.fps = null;
+    m.drawCalls = this.drawMode === 'indirect' ? 1 : directVisible;
+    return m;
+  }
+
+  public async readVisibleIds(): Promise<Uint32Array> {
+    const bytes = 4 + this.instances.length * 4;
+    const read = this.device.createBuffer({ size: Math.max(8, bytes), usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    try {
+      const encoder = this.device.createCommandEncoder();
+      encoder.copyBufferToBuffer(this.indirectBuffer, 4, read, 0, 4);
+      if (this.instances.length) encoder.copyBufferToBuffer(this.visibleIndicesBuffer, 0, read, 4, this.instances.length * 4);
+      this.device.queue.submit([encoder.finish()]);
+      await read.mapAsync(GPUMapMode.READ);
+      const words = new Uint32Array(read.getMappedRange());
+      const count = words[0];
+      if (count > this.instances.length) throw new Error('Visible count overflow');
+      return words.slice(1, count + 1);
+    } finally { if (read.mapState === 'mapped') read.unmap(); read.destroy(); }
   }
 
   public dispose() {

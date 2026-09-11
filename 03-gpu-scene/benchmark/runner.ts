@@ -1,3 +1,5 @@
+import { TimestampBatch } from '../../shared/gpu/timing.ts';
+import { runFrames } from '../../shared/benchmark/comparison.ts';
 import * as THREE from 'three';
 import { generateStressScene } from './stressScenarios.ts';
 import { ClassicMultiMeshScene } from '../baseline/classicMultiMeshScene.ts';
@@ -57,7 +59,9 @@ export class GPUSceneBenchmarkRunner {
   // Callbacks de progression et métriques
   public onProgress?: (msg: string, percent: number) => void;
   public onResult?: (result: GpuSceneBenchResult) => void;
-  public onMetricsUpdate?: (measurement: { submitMs: number; cpuFrameMs: number; fps: number; drawCalls: number }, mode: string, count: number) => void;
+  public onMetricsUpdate?: (measurement: { submitMs: number; cpuFrameMs: number; fps: number | null; drawCalls: number }, mode: string, count: number) => void;
+  private readonly measurement = { submitMs: 0, cpuFrameMs: 0, fps: null as number | null, drawCalls: 0 };
+  private readonly emptyMeasurement = { submitMs: 0, drawCalls: 0 };
   private lastFrameTime: number = 0;
 
   constructor(canvasWebGpu: HTMLCanvasElement, canvasWebGL: HTMLCanvasElement) {
@@ -134,7 +138,7 @@ export class GPUSceneBenchmarkRunner {
   }
 
   /** Rendu effectif d'une frame, appelé par le rAF comme par la boucle de mesure. */
-  private renderFrame(time: number): FrameSample {
+  private renderFrame(time: number, timer?: TimestampBatch, sample = 0): FrameSample {
     const tStart = performance.now();
 
     // Rotation orbitale douce de la caméra
@@ -145,37 +149,38 @@ export class GPUSceneBenchmarkRunner {
     this.camera.position.y = 35 + Math.sin(angle * 2) * 10;
     this.camera.lookAt(0, 0, 0);
 
-    let res = { submitMs: 0, drawCalls: 0 };
+    let res = this.emptyMeasurement;
 
     if (this.currentMode === 'classic' && this.classicScene) {
+      this.classicScene.camera.copy(this.camera);
+      this.classicScene.camera.coordinateSystem = THREE.WebGLCoordinateSystem;
+      this.classicScene.camera.updateProjectionMatrix();
       this.classicScene.updateDynamicObjects(time, this.currentConfig.dynamicRatio);
       res = this.classicScene.render();
     } else if (this.gpuSceneRenderer) {
       this.gpuSceneRenderer.updateCamera(this.camera);
       this.gpuSceneRenderer.updateDynamicObjects(time, this.currentConfig.dynamicRatio);
-      res = this.gpuSceneRenderer.render();
+      res = this.gpuSceneRenderer.render(timer, sample);
     }
 
     const now = performance.now();
-    const dt = this.lastFrameTime > 0 ? (now - this.lastFrameTime) : 16.6;
+    const dt = this.lastFrameTime > 0 ? (now - this.lastFrameTime) : 0;
     this.lastFrameTime = now;
-    const fps = dt > 0 ? Math.min(120, Math.round(1000 / dt)) : 60;
+    const fps = dt > 0 ? 1000 / dt : null;
     const cpuFrameMs = now - tStart;
 
-    if (this.onMetricsUpdate) {
+    const measurement = this.measurement;
+    measurement.submitMs = res.submitMs; measurement.cpuFrameMs = cpuFrameMs;
+    measurement.fps = fps; measurement.drawCalls = res.drawCalls;
+    if (this.onMetricsUpdate && !this.isBenchmarking) {
       this.onMetricsUpdate(
-        {
-          submitMs: res.submitMs,
-          cpuFrameMs,
-          fps,
-          drawCalls: res.drawCalls,
-        },
+        measurement,
         this.currentMode,
         this.currentConfig.objectCount
       );
     }
 
-    return { ...res, cpuFrameMs };
+    return measurement;
   }
 
   /** Campagne complète sur les 4 dimensions de stress. */
@@ -223,6 +228,7 @@ export class GPUSceneBenchmarkRunner {
         });
 
         // 2. Mesure Test B (GPU-Scene)
+        await this.applyConfig(config); // Reset mutable transforms before the second variant.
         const gpu = await this.measureMode('gpu-scene', WARMUP, SAMPLES);
         const counters = await this.gpuSceneRenderer?.readCullingCounters();
 
@@ -235,6 +241,7 @@ export class GPUSceneBenchmarkRunner {
           culledObjects: counters ? counters.culled : null,
           visibleObjects: counters ? counters.visible : null,
           gpuMemoryBytes: this.gpuSceneRenderer?.getSceneBufferBytes() ?? null,
+          gpuFrameMs: gpu.gpuFrameMs,
         };
 
         results.push(gpuRes);
@@ -256,35 +263,26 @@ export class GPUSceneBenchmarkRunner {
    * Partagé par Test A et Test B — les deux doivent suivre exactement le même
    * protocole pour rester comparables.
    */
-  private async measureMode(
-    mode: 'classic' | 'gpu-scene',
-    warmup: number,
-    samples: number
-  ): Promise<{ avgSubmitMs: number; avgFrameMs: number; drawCalls: number }> {
-    const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
-
+  private async measureMode(mode: 'classic' | 'gpu-scene', warmup: number, samples: number)
+    : Promise<{ avgSubmitMs: number; avgFrameMs: number; drawCalls: number; gpuFrameMs: number | null }> {
+    if (!this.device || !this.classicScene || !this.gpuSceneRenderer) throw new Error('Renderer indisponible');
     this.setMode(mode);
-    for (let w = 0; w < warmup; w++) {
-      this.renderFrame(performance.now());
-      await nextFrame();
-    }
-
-    let sumSubmit = 0;
-    let sumFrame = 0;
-    let drawCalls = 0;
-    for (let i = 0; i < samples; i++) {
-      const res = this.renderFrame(performance.now());
-      sumSubmit += res.submitMs;
-      sumFrame += res.cpuFrameMs;
-      drawCalls = res.drawCalls;
-      await nextFrame();
-    }
-
-    return {
-      avgSubmitMs: sumSubmit / samples,
-      avgFrameMs: sumFrame / samples,
-      drawCalls,
-    };
+    const timer = mode === 'gpu-scene' && this.device.features.has('timestamp-query')
+      ? new TimestampBatch(this.device, samples, 2) : undefined;
+    try {
+      await runFrames(warmup, i => { this.renderFrame(i * 16.6667); });
+      await this.device.queue.onSubmittedWorkDone();
+      let sumSubmit = 0, sumFrame = 0, drawCalls = 0;
+      timer?.begin(samples);
+      await runFrames(samples, i => {
+        const res = this.renderFrame((warmup + i) * 16.6667, timer, i);
+        sumSubmit += res.submitMs; sumFrame += res.cpuFrameMs; drawCalls = res.drawCalls;
+      });
+      if (timer) await timer.collect();
+      const gpuFrameMs = timer && timer.frameSpanMs.every(Number.isFinite)
+        ? timer.frameSpanMs.reduce((a, b) => a + b, 0) / samples : null;
+      return { avgSubmitMs: sumSubmit / samples, avgFrameMs: sumFrame / samples, drawCalls, gpuFrameMs };
+    } finally { timer?.destroy(); }
   }
 
   public resize(width: number, height: number) {

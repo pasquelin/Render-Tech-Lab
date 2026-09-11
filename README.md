@@ -46,33 +46,33 @@ To guarantee mathematical and scientific rigor across reports, the laboratory st
 
 1. **Official Baseline (Spec 13 Witness Floor)**:
    - Fixed, normalized witness matrix under frozen Spec 13 reference conditions (S0 to S5).
-   - Identifies the contractual bottleneck knee: scenario **S3 (2 000 unique meshes)** saturated CPU submission at **3.35 ms / 2 002 draw calls**, officially unlocking and requiring GPU-driven R&D.
+   - The former S3/S5 timings were hardcoded in Node. They are archived as unverified; the physical crossover must be remeasured.
 2. **Live Comparative A/B Benchmarks**:
    - Synchronous, side-by-side execution on the active testbench (Test A Three.js vs Test B Prototype).
    - Conducted under strictly identical realtime conditions: same browser instance, same GPU, same canvas resolution, same dynamic orbital camera, and identical warmup protocol.
-   - Measures direct speed-up ($O(N)$ vs $O(1)$) across live geometric and stress tiers.
+   - The native benchmark compares direct/indirect draws, atomic/workgroup culling and serial/atomic/workgroup compaction. Cross-engine WebGL/WebGPU timings do not isolate an algorithmic gain.
 
 ## The R&D Progression
 
 Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively. The table below reflects the **actual** state of the repository and the governing statuses, kept in sync with [`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md).
 
 > **Status legend (honest by construction):**
-> - **[VALIDATED]** — benchmark executed and archived (`results/REPORT.md`), verdict recorded.
-> - **[IMPLEMENTED]** — prototype + benchmark code present, campaign measured (not yet a cross-bench verdict).
+> - **[RE-MEASURE]** — historical verdict withdrawn pending a reproducible physical campaign.
+> - **[IMPLEMENTED]** — prototype code present; execution and evidence must be checked per module.
 > - **[NOT IMPLEMENTED / NOT RUN]** — structure, contracts and fixtures present; **no benchmark executed, no number claimed** (`results/latest.json` = `status: "not-run"`).
 
 | Module | Research subject | Status | Protocol |
 |---|---|---|---|
-| [**00-baseline**](00-baseline/README.md) | Spec 13 Witness — S0–S5 load curve, reference floor | **[VALIDATED]** | [hypothesis.md](00-baseline/hypothesis.md) |
-| [**01-indirect-draw**](01-indirect-draw/README.md) | Indirect Draw (1 draw call) + baseline crossover | **[VALIDATED]** | [hypothesis.md](01-indirect-draw/hypothesis.md) |
-| [**02-gpu-frustum-culling**](02-gpu-frustum-culling/README.md) | Compute WGSL frustum culling (plan/sphere) | **[NOT IMPLEMENTED / NOT RUN]** | [hypothesis.md](02-gpu-frustum-culling/hypothesis.md) |
-| [**03-gpu-scene**](03-gpu-scene/README.md) | Heterogeneous GPU scene (Object/Geometry/Material/Draw buffers, 4D stress) | **[VALIDATED]** | [hypothesis.md](03-gpu-scene/hypothesis.md) |
-| [**04-gpu-lod**](04-gpu-lod/README.md) | Screen-Space Error LOD, decimation (meshoptimizer) + CPU/GPU selection | **[VALIDATED]** 04A/04B · 04C not run | [hypothesis.md](04-gpu-lod/hypothesis.md) |
+| [**00-baseline**](00-baseline/README.md) | Spec 13 Witness — S0–S5 load curve, reference floor | **[RE-MEASURE]** | [hypothesis.md](00-baseline/hypothesis.md) |
+| [**01-indirect-draw**](01-indirect-draw/README.md) | Indirect Draw (1 draw call) + baseline crossover | **[RE-MEASURE]** | [hypothesis.md](01-indirect-draw/hypothesis.md) |
+| [**02-gpu-frustum-culling**](02-gpu-frustum-culling/README.md) | Compute WGSL frustum culling (plan/sphere) | **[IMPLEMENTED / RE-MEASURE]** | [hypothesis.md](02-gpu-frustum-culling/hypothesis.md) |
+| [**03-gpu-scene**](03-gpu-scene/README.md) | Heterogeneous GPU scene (Object/Geometry/Material/Draw buffers, 4D stress) | **[RE-MEASURE]** | [hypothesis.md](03-gpu-scene/hypothesis.md) |
+| [**04-gpu-lod**](04-gpu-lod/README.md) | Screen-Space Error LOD, decimation (meshoptimizer) + CPU/GPU selection | **[RE-MEASURE]** 04A/04B · 04C not run | [hypothesis.md](04-gpu-lod/hypothesis.md) |
 | [**05-meshlets**](05-meshlets/README.md) | Cluster partitioning (64/128/256/512 tris) & overhead | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](05-meshlets/types.ts) |
 | [**06-meshlet-culling**](06-meshlet-culling/README.md) | Frustum / backface / sub-pixel cluster culling & reject rate | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](06-meshlet-culling/types.ts) |
 | [**07-hiz**](07-hiz/README.md) | Hi-Z depth pyramid (mip 0 → N) & generation cost | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](07-hiz/types.ts) |
 | [**08-occlusion-culling**](08-occlusion-culling/README.md) | Hi-Z occlusion under 10%–99% & net-gain equation | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](08-occlusion-culling/types.ts) |
-| [**09-gpu-compaction**](09-gpu-compaction/README.md) | Visible-list compaction (1-thread / atomic / scan) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](09-gpu-compaction/types.ts) |
+| [**09-gpu-compaction**](09-gpu-compaction/README.md) | Visible-list compaction (1-thread / atomic / scan) | **[IMPLEMENTED / RE-MEASURE]** | [types.ts](09-gpu-compaction/types.ts) |
 | [**10-material-batching**](10-material-batching/README.md) | Materialisation (switch / storage / texture-array) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](10-material-batching/types.ts) |
 | [**11-geometry-streaming**](11-geometry-streaming/README.md) | VRAM residency & memory-pressure lifecycle | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](11-geometry-streaming/types.ts) |
 | [**12-visibility-buffer**](12-visibility-buffer/README.md) | Visibility buffer & deferred shading | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](12-visibility-buffer/types.ts) |
@@ -101,9 +101,9 @@ Instead of one comfortable benchmark, the harness runs a parameterised suite and
 | **S0** | Minimal baseline |
 | **S1** | 500 instanced objects |
 | **S2** | 1 000 instanced objects |
-| **S3** | 2 000 unique objects (CPU submission stress — **3.35 ms / 2 002 draw calls**) |
+| **S3** | 2 000 unique objects (CPU submission stress — timings to remeasure) |
 | **S4** | 30 dynamic lights (GPU pass stress) |
-| **S5** | Hostile (geometry, lights and shadows combined — **8.45 ms**) |
+| **S5** | Hostile (geometry, lights and shadows combined — timings to remeasure) |
 
 Recorded on every run: `CPU frame`, `GPU frame`, `submitMs`, `P95`, `P99`, `firstStillMs − stillMs`.
 
@@ -113,11 +113,11 @@ Recorded on every run: `CPU frame`, `GPU frame`, `submitMs`, `P95`, `P99`, `firs
 ## Execution roadmap
 
 ```text
- 0   00-baseline            (Spec 13 S0–S5)            ← [VALIDATED]
- 1   01-indirect-draw       (Indirect Draw, 1 call)    ← [VALIDATED]
+ 0   00-baseline            (Spec 13 S0–S5)            ← [RE-MEASURE]
+ 1   01-indirect-draw       (Indirect Draw, 1 call)    ← [RE-MEASURE]
  2   02-gpu-frustum-culling (Compute WGSL culling)     ← [NOT IMPLEMENTED / NOT RUN]
- 3   03-gpu-scene           (Heterogeneous scene)      ← [VALIDATED]
- 4   04-gpu-lod             (Screen-Space Error LOD)   ← [VALIDATED]
+ 3   03-gpu-scene           (Heterogeneous scene)      ← [RE-MEASURE]
+ 4   04-gpu-lod             (Screen-Space Error LOD)   ← [RE-MEASURE]
  5   05-meshlets            (Cluster partitioning)     ← [NOT IMPLEMENTED / NOT RUN]
  6   06-meshlet-culling     (Frustum / cone / sub-pix) ← [NOT IMPLEMENTED / NOT RUN]
  7   07-hiz                 (Hi-Z depth pyramid)       ← [NOT IMPLEMENTED / NOT RUN]
@@ -147,15 +147,16 @@ These subjects are neither rejected nor scheduled. They stay dormant and only op
 ## Running it
 
 ```bash
-pnpm install
+npx pnpm@12.4.1 install --frozen-lockfile
 pnpm dev       # interactive lab viewer (Vite)
-pnpm bench     # crossover benchmark, 01-indirect-draw
-pnpm bench:lod # LOD suite, 04-gpu-lod
-pnpm test      # unit tests (SSE / LOD / random / meshlet / schema)
+pnpm bench     # physical campaigns: 01, 02 and 09; raw data + Markdown + SVG
+pnpm bench:04  # CPU/WASM LOD suite; no GPU timing claimed
+pnpm test      # offline CPU math and regression tests; no benchmark files written
+pnpm test:webgpu # short physical GPU checks, not a performance verdict
 pnpm build     # type-check + production build
 ```
 
-Requires a browser with WebGPU enabled (Chrome/Edge 113+, Safari 18+). Reports are written next to each module in `results/` and mirrored into [`reports/`](reports/README.md).
+The CLI uses installed Chrome with a physical WebGPU adapter; it rejects software adapters and missing samples. Set `RTL_BROWSER_CHANNEL` to another installed Playwright channel if needed. `node bench/run.mjs --smoke --fallback` verifies queue-completion timing after building. Full campaigns write raw data, Markdown and SVG in `benchmark-runs/measurements/` and update `results/latest.json`. Smoke checks use `benchmark-runs/checks/` and never promote a performance result. Other GPU module commands fail explicitly with `not-run` until their physical runner exists. Historical reports and `results/legacy-unverified/` are not performance evidence.
 
 ## Status
 

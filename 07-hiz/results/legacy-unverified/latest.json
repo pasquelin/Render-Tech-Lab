@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-09-11T20:23:45.921Z",
+  "test": "07-hiz",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
+  },
+  "scene": {
+    "objects": 1,
+    "triangles": 2,
+    "materials": 1,
+    "lights": 0
+  },
+  "cpu": {
+    "frameMs": 1.527,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 5592404
+  },
+  "draw": {
+    "submitted": 1,
+    "visible": 1
+  },
+  "customMetrics": {
+    "measuredResolutions": [
+      {
+        "resolution": "256x256",
+        "mips": 9,
+        "vramBytes": 349524,
+        "timeMs": 2.14
+      },
+      {
+        "resolution": "512x512",
+        "mips": 10,
+        "vramBytes": 1398100,
+        "timeMs": 4.603
+      },
+      {
+        "resolution": "1024x1024",
+        "mips": 11,
+        "vramBytes": 5592404,
+        "timeMs": 19.83
+      }
+    ],
+    "pyramidMips1024": 11,
+    "generationTimeMs1024": 19.83,
+    "vramBytes1024": 5592404,
+    "conservativeReductionVerified": true
+  }
+}

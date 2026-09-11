@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 06-meshlet-culling
 
-**Date :** 2026-09-11T20:09:23.998Z  
+**Date :** 2026-09-11T20:23:45.852Z  
 **Statut :** `INTEGRATE`  
 **Meshlets soumis :** 8  
 **Meshlets visibles :** 4  

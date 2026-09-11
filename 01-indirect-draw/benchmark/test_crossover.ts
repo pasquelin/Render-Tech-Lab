@@ -1,9 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { generateTestInstances, createBaseGeometry } from '../common/sceneGenerator.ts';
 import { GpuSceneBuffer, FLOATS_PER_INSTANCE } from '../implementation/gpuSceneBuffer.ts';
-import { formatMarkdownReport } from './reporter.ts';
-import type { CrossoverReport, BenchmarkResult } from '../types.ts';
 
 export function runIndirectSuite() {
   console.log('--- TEST 1: Génération déterministe des instances ---');
@@ -33,122 +29,7 @@ export function runIndirectSuite() {
     throw new Error('instanceCount indirect initial doit être 0');
   }
 
-  console.log('--- TEST 3: Validation de la simulation mathématique Crossover (avec Tests de Douleur) ---');
-  const sampleCounts = [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
-  const classicResults: BenchmarkResult[] = [];
-  const gpuDrivenResults: BenchmarkResult[] = [];
-
-  sampleCounts.forEach((count) => {
-    // Dégradation linéaire CPU Three.js (1.6µs par objet + coût de base)
-    const submitA = 0.1 + count * 0.0016;
-    // Coût d'encodage quasi constant GPU-driven (passe compute + 1 draw indirect)
-    const submitB = 0.25 + Math.log10(count / 500) * 0.03;
-    const ratio = (submitA / submitB).toFixed(1);
-    console.log(`Tier ${count >= 1000 ? count / 1000 + 'k' : count} obj : Test A = ${submitA.toFixed(2)} ms | Test B = ${submitB.toFixed(2)} ms | Ratio = ${ratio}x`);
-
-    classicResults.push({
-      mode: 'classic',
-      objectCount: count,
-      samplesCount: 50,
-      avgCpuFrameMs: submitA + 0.8,
-      avgSubmitMs: submitA,
-      p95SubmitMs: submitA * 1.15,
-      p99SubmitMs: submitA * 1.3,
-      avgFps: 1000 / (submitA + 0.8),
-      drawCalls: count,
-    });
-
-    gpuDrivenResults.push({
-      mode: 'gpu-driven',
-      objectCount: count,
-      samplesCount: 50,
-      avgCpuFrameMs: submitB + 0.35,
-      avgSubmitMs: submitB,
-      p95SubmitMs: submitB * 1.05,
-      p99SubmitMs: submitB * 1.1,
-      avgFps: 1000 / (submitB + 0.35),
-      drawCalls: 1,
-    });
-  });
-
-  console.log('--- TEST 4: Génération automatique du REPORT.md et latest.json ---');
-  const crossoverCount = 500; // crossover dès ≤ 500 objets
-  const mockReport: CrossoverReport = {
-    timestamp: new Date().toISOString(),
-    tiers: sampleCounts,
-    classicResults,
-    gpuDrivenResults,
-    crossoverObjectCount: crossoverCount,
-    analysis: `Le point de croisement mesuré se situe dès ${crossoverCount} objets. Au-delà de ce seuil, la soumission CPU de Three.js diverge (O(N)) tandis que le pipeline GPU-driven conserve un coût d'encodage constant (O(1)).`,
-  };
-
-  const markdown = formatMarkdownReport(
-    mockReport,
-    '01-indirect-draw',
-    'GPU-Driven Rendering Pipeline (Indirect Draw Absorption)'
-  );
-
-  const resultsDir = path.resolve('01-indirect-draw', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  const reportPath = path.join(resultsDir, 'REPORT.md');
-  fs.writeFileSync(reportPath, markdown, 'utf-8');
-  console.log(`✅ Fichier de rapport généré : ${reportPath}`);
-
-  // 01-indirect-draw latest.json
-  const res2kGpu = gpuDrivenResults.find((r) => r.objectCount === 2000)!;
-  const res2kClassic = classicResults.find((r) => r.objectCount === 2000)!;
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '01-indirect-draw',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-      webgpuFeatures: ['indirect-first-instance'],
-    },
-    scene: {
-      objects: 2000,
-      triangles: 2000 * (geom.index!.count / 3),
-      materials: 1,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: res2kGpu.avgCpuFrameMs,
-      submitMs: res2kGpu.avgSubmitMs,
-    },
-    gpu: {
-      frameMs: null,
-    },
-    memory: {
-      gpuBytes: sceneBuffer.instanceData.byteLength + sceneBuffer.indirectData.byteLength,
-    },
-    draw: {
-      submitted: 2000,
-      visible: 2000,
-    },
-    customMetrics: {
-      crossoverThresholdObjects: crossoverCount,
-      classic2kSubmitMs: res2kClassic.avgSubmitMs,
-      gpuDriven2kSubmitMs: res2kGpu.avgSubmitMs,
-      submitReductionPercent: Number((((res2kClassic.avgSubmitMs - res2kGpu.avgSubmitMs) / res2kClassic.avgSubmitMs) * 100).toFixed(1)),
-      drawCallsClassic: 2000,
-      drawCallsGpuDriven: 1,
-    },
-  };
-
-  fs.writeFileSync(path.join(resultsDir, 'latest.json'), JSON.stringify(latestJson, null, 2), 'utf-8');
-  console.log(`✅ Fichier latest.json généré : ${path.join(resultsDir, 'latest.json')}`);
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  const globalReportPath = path.join(reportsDir, '01-indirect-draw.md');
-  fs.writeFileSync(globalReportPath, markdown, 'utf-8');
-  fs.writeFileSync(path.join(reportsDir, '01-gpu-driven.md'), markdown, 'utf-8');
-
-  console.log('✅ Tous les tests unitaires et de validation structurelle 01-indirect-draw ont réussi.');
-  return latestJson;
+  console.log('Tests CPU 01-indirect-draw réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

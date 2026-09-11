@@ -5,8 +5,6 @@
  * Valide les scénarios de stress contractuels : 10%, 25%, 50%, 75%, 90%, 99% d'occlusion.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { buildHiZPyramid } from '../../07-hiz/implementation/hizPyramid.ts';
 import {
   cullMeshletsByOcclusion,
@@ -40,7 +38,7 @@ export function runOcclusionSuite() {
   const hiZData = buildHiZPyramid(depthBuffer, false);
 
   // TEST 1 : Vérification d'occlusion géométrique sur un lot de meshlets synthétiques
-  const dummyMeshlet = (id: number): Meshlet => ({
+  const dummyMeshlet = (_id: number): Meshlet => ({
     boundingSphere: { center: [0, 0, 0], radius: 1 },
     normalCone: { apex: [0, 0, 0], axis: [0, 0, 1], cosHalfAngle: 0.5 },
     vertexOffset: 0,
@@ -106,91 +104,7 @@ export function runOcclusionSuite() {
     'Le gain net doit être strictement supérieur à 90% d occlusion vs 10%'
   );
 
-  // latest.json contractuel
-  const tier75 = gainReports.find((r) => r.occlusionPercent === 75)!;
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '08-occlusion-culling',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 2000,
-      triangles: totalTriangles,
-      materials: 10,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: 0.25,
-      submitMs: 0.15,
-    },
-    gpu: {
-      frameMs: tier75.equation.rasterCost,
-    },
-    memory: {
-      gpuBytes: 5592404, // Pyramide 1024x1024
-    },
-    draw: {
-      submitted: 2000,
-      visible: 500, // À 75% d'occlusion
-    },
-    customMetrics: {
-      stressTiers: gainReports,
-      netGainAt75PercentMs: tier75.equation.gainNet,
-      occlusionCrossoverThresholdPercent: 25,
-      trianglesCulledAt75Percent: 750000,
-    },
-  };
-
-  const resultsDir = path.resolve('08-occlusion-culling', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const r of gainReports) {
-    const eq = r.equation;
-    tableRows += `| **${r.occlusionPercent}%** | ${eq.baselineCost} ms | ${eq.hiZGenerationCost} ms | ${eq.cullingCost} ms | ${eq.rasterCost} ms | **+${eq.gainNet} ms** | \`${r.verdict}\` |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 08-occlusion-culling (Équation de Gain Net)
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Charge de référence :** 1 000 000 triangles sous charge Three.js S3  
-**Formule maîtresse :** $\\text{Gain}_{\\text{net}} = \\text{Coût}_{\\text{baseline}} - (\\text{Coût}_{\\text{HiZ}} + \\text{Coût}_{\\text{culling}} + \\text{Coût}_{\\text{raster résiduel}})$
-
----
-
-## 1. Campagne de Stress d'Occlusion (10% à 99%)
-
-| Taux Occlusion | Coût Baseline | Coût Hi-Z | Coût Culling | Raster Résiduel | Gain Net | Décision |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-${tableRows}
-
----
-
-## 2. Invariants & Arbitrage
-- **Point de rentabilité (Crossover) :** Le Hi-Z devient rentable dès 25% d'occlusion.
-- **Règle contractuelle :** Au-delà de 50% d'occlusion, le gain net dépasse 5.0 ms, justifiant pleinement l'intégration au pipeline unifié.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '08-occlusion-culling.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 08-occlusion-culling validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 08-occlusion-culling réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

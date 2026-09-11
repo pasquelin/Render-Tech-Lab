@@ -5,8 +5,6 @@
  * Valide l'encodage ID 32-bit, l'interpolation barycentrique et l'économie de bande passante VRAM.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   packVisibilityId,
   unpackVisibilityId,
@@ -103,97 +101,8 @@ export function runVisibilityBufferSuite() {
     );
   }
 
-  const out1080p = evaluateVisibilityBuffer({
-    sceneObjectCount: 2000,
-    viewportWidth: 1920,
-    viewportHeight: 1080,
-  });
 
-  // latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '12-visibility-buffer',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 2000,
-      triangles: 1250000,
-      materials: 10,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: 0.22,
-      submitMs: 0.12,
-    },
-    gpu: {
-      frameMs: out1080p.shadingCostMs,
-    },
-    memory: {
-      gpuBytes: out1080p.deferredBufferBytes,
-    },
-    draw: {
-      submitted: 2000,
-      visible: 1200,
-    },
-    customMetrics: {
-      measuredResolutions: benchRows,
-      vramSavings1080pRatio: 3.5,
-      visBufferBytes1080p: out1080p.deferredBufferBytes,
-      gbufferBytes1080p: out1080p.forwardBufferBytes,
-      overdrawAvoidedFactor: out1080p.overdrawAvoided,
-      shadingCostMs1080p: out1080p.shadingCostMs,
-    },
-  };
-
-  const resultsDir = path.resolve('12-visibility-buffer', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const r of benchRows) {
-    tableRows += `| **${r.resolution}** | ${(r.gbufferBytes / (1024 * 1024)).toFixed(1)} Mo | **${(r.visBufferBytes / (1024 * 1024)).toFixed(1)} Mo** | **${r.bandwidthRatio} plus léger** |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 12-visibility-buffer (Visibilité Découplée)
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Principe :** Passe 1 (Raster ID 32-bit + Depth) ──► Passe 2 (Compute Shading barycentrique sans surdessin)
-
----
-
-## 1. Empreinte Mémoire & Économie de Bande Passante VRAM
-
-| Résolution | G-Buffer Standard (Forward/Def) | Visibility Buffer (Passe 1) | Facteur d'Économie |
-|:---:|:---:|:---:|:---:|
-${tableRows}
-
----
-
-## 2. Invariants Validés
-- **Encodage réversible sans perte :** Mot 32-bit allouant 16 bits d'instance (65 536 objets) et 16 bits de primitive (65 536 triangles par cluster).
-- **Zéro overdraw de calcul :** Les fragments occlus ne consomment aucun cycle de shading complexe (BRDF, textures, ombres).
-- **Interpolation exacte :** Reconstruction mathématique analytique en perspective des attributs aux sommets ($U, V, N, T$).
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '12-visibility-buffer.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 12-visibility-buffer validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 12-visibility-buffer réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -1,6 +1,6 @@
 # Programme d'optimisation mesurable
 
-Toutes les expériences de ce document sont **not-run**. La passe documentaire a exécuté des oracles numériques, pas un benchmark GPU, un import natif ou une mesure de mémoire sur petite machine. Ce plan indique comment obtenir des résultats recevables ensuite.
+Les expériences générales de ce plan restent **not-run**, sauf les mesures explicitement décrites dans la [campagne comparative du 11 septembre 2026](PREUVES_COMPARATIVES_OPTIMISATION.md). Cette campagne couvre une fonction CPU du prototype, deux noyaux JavaScript et une scène de contrôle WebGL2. Elle ne valide ni le futur moteur GPU, ni un import natif, ni les performances sur petite machine.
 
 ## 1. Trois questions distinctes
 
@@ -23,7 +23,9 @@ Un compilateur plus lent peut produire des assets bien plus rapides à rendre. U
 | 7 | SIMD / précision / simplifications arithmétiques | accélérer un noyau identifié | tolérances et bornes |
 | 8 | Raster logiciel et stratégies avancées | traiter les microtriangles | cohérence depth/ID et progression |
 
-## 3. Optimisations arithmétiques exactes sous hypothèses
+## 3. Identités algébriques sans validation de performance
+
+Les transformations suivantes sont des hypothèses de recherche conservées pour leur explication mathématique. **Aucune n'est une optimisation adoptée.** Leur équivalence dans les réels ne prouve ni l'identité des décisions en flottants, ni un gain après compilation. Elles ne doivent pas remplacer les oracles sans comparaison recevable et sans respecter les conditions de la section 7.
 
 ### Projection centrale sans division
 
@@ -74,6 +76,39 @@ Taux d'occlusion proposés : 0/10/50/90/99 %. Densités de compaction : 0/1/10/5
 
 Présenter un graphe coût total en fonction de la charge, avec point de croisement et intervalle d'incertitude. Un gain à 1M éléments ne justifie pas d'activer le même chemin pour 100 éléments.
 
+### 5.1. Paramètres à couvrir avant toute validation
+
+Chaque proposition doit déclarer son domaine de validité **avant les mesures** : fonctions remplacées, entrées, fonctionnalités, scènes, affichages et machines visés. Établir la liste de ses dépendances et de ce qui peut invalider ses précalculs. La matrice suivante constitue le minimum commun ; ajouter les paramètres propres à l'algorithme. Elle ne représente pas une preuve exhaustive de toutes les combinaisons possibles.
+
+| Famille | Paramètres à enregistrer et cas à comparer |
+|---|---|
+| Affichage et résolution | Dimensions CSS de la vue, dimensions physiques réelles de chaque cible de rendu et de la sortie affichée, DPR/Retina effectif, facteur de résolution interne, upscaling, ratio largeur/hauteur, fréquence d'écran et plafond de cadence. Inclure 1280×720, 1920×1080, 2560×1440 et 3840×2160 physiques lorsque ces résolutions appartiennent au domaine annoncé, ainsi que redimensionnement et changement d'écran. |
+| Caméra et vues | Position, orientation, FOV, aspect, perspective/orthographique, projection décentrée, jitter, near/far, caméra dans une borne, passage du plan proche, zoom, travelling, téléportation et vues multiples. |
+| Géométrie et visibilité | Objets, instances, triangles source et effectivement soumis, taille des triangles à l'écran, niveaux LOD et transitions, distributions spatiales, recouvrement, taux d'occlusion, limites de capacité, géométrie dégénérée et coutures. |
+| Transformations et précision spatiale | Échelles uniformes/non uniformes/négatives, cisaillement, grandes coordonnées, changement d'origine, bornes après transformation, objets statiques et mobiles. |
+| Matériaux et passes | Matériaux et textures actifs, éclairage, ombres et tailles de leurs cibles, opacité/transparence/alpha test, anticrénelage, post-traitement, historique temporel et autres passes réellement utilisées. |
+| Fonctionnalités et changements d'état | Animation, skinning/morphs/déformation, picking et identités, édition, ajout/suppression, multi-vues, invalidation des caches, annulation, rechargement et perte/restauration du contexte. |
+| Résidence et mémoire | Scène résidente ou chargement progressif, cache froid/chaud, débit et latence d'entrée, RAM/VRAM disponibles et pics, staging, allocations temporaires, uploads et évictions pendant la navigation. |
+| Machine et environnement | Modèles CPU/GPU, mémoire et architecture unifiée/dédiée, OS/pilote, navigateur ou Electron, versions des bibliothèques, WebGL/WebGPU et extensions, alimentation secteur/batterie, état thermique et travail concurrent. |
+| Calcul numérique | Types et précision réellement exécutés, ordre des opérations, seuils et valeurs adjacentes, zéros, valeurs non finies, débordements/sous-flux, arrondis et invariants conservatifs. Un accord f64 ne valide pas automatiquement f32 ou un shader. |
+| Coût et qualité | Préparation, calcul, invalidation, synchronisation, transferts et soumission ; temps CPU/GPU disponibles, cadence, latence et pics ; sorties fonctionnelles, image et stabilité temporelle. Déclarer pour chaque métrique le périmètre, la résolution du compteur et la phase froid/chaud. |
+
+**Résolution effective :** le calcul en pixels emploie les dimensions physiques de la cible concernée. Déclarer si un seuil LOD est exprimé en pixels internes ou en pixels de sortie ; la projection de l'erreur et le seuil doivent utiliser la même unité. Ne pas déduire ces dimensions du seul DPR système : le renderer peut plafonner son ratio ou utiliser des cibles internes d'une autre taille. À vue CSS identique, doubler le ratio effectif sur les deux axes multiplie par quatre le nombre de pixels ; cela ne prédit pas un temps de rendu multiplié par quatre. LOD, culling et coût des passes doivent être mesurés avec les dimensions réellement utilisées, séparément pour chaque vue.
+
+**Interactions à couvrir :** résolution × DPR × FOV × LOD ; résolution × matériaux × transparence × anticrénelage ; résolution/FOV/jitter × historique temporel ; mouvement × invalidation × streaming ; ombres × vues multiples × animation ; alpha/déplacement × profondeur/Hi-Z ; charge × mémoire × matériel × chauffe. Des tests isolés de chaque paramètre ne prouvent pas leurs interactions. Choisir des scènes représentatives et des cas limites à partir des dépendances du calcul, et consigner les combinaisons non couvertes. Une combinaison susceptible de changer la conclusion reste une limite bloquante pour le domaine annoncé.
+
+### 5.2. Comparaison recevable et traçabilité
+
+Une paire A/B rejoue exactement les mêmes entrées, trajectoires, résolutions physiques, paramètres, seeds et fonctionnalités. Modifier un facteur entre séries permet d'en étudier l'effet ; si plusieurs changent ensemble, le résultat appartient à cette configuration combinée et ne doit pas être attribué à la seule résolution. Le coût des préparations, allocations et invalidations de la candidate reste dans le périmètre mesuré.
+
+Une résolution dynamique, un LOD automatique ou un effet adaptatif doit conserver la même politique et le même budget de qualité entre variantes. Pour isoler le calcul, rejouer la même séquence enregistrée de dimensions et d'états ; évaluer le contrôleur adaptatif séparément, puis dans la scène complète. Enregistrer les dimensions et états réellement obtenus au cours du temps. Baisser la résolution, désactiver une fonctionnalité ou réduire la qualité pour faire gagner B invalide une promesse de gain sans perte. Si un mécanisme adaptatif ne permet plus une comparaison à qualité équivalente, le gain sans perte reste non démontré.
+
+Pour chaque ligne de matrice, enregistrer `mesuré`, `non mesuré` ou `non applicable`, avec configuration et lien de preuve. `Non applicable` exige une justification liée au fonctionnement de la proposition ; il ne permet pas de retirer une fonctionnalité du produit pour faciliter l'acceptation. Conserver les résultats par configuration, y compris les régressions : une moyenne globale ne doit pas masquer une petite machine ou une résolution qui régresse.
+
+Fixer les critères numériques, fonctionnels, visuels et de fluidité avant la campagne. Les images fixes ne suffisent pas pour les transitions, désocclusions, scintillements ou effets temporels. Contrôler aussi les identités et sorties des fonctionnalités ; une image identique ne prouve pas le picking ou la résidence. Une métrique indisponible n'est pas remplacée par un chiffre déduit d'un autre compteur.
+
+Le dossier de validation contient la matrice couverte, les cas manquants, les sources et versions, les échantillons, les comparaisons de qualité et le verdict par configuration. Une preuve limitée ne devient pas une validation globale. Ne pas réduire rétroactivement le domaine promis pour masquer un échec ; une proposition de portée plus étroite doit être présentée explicitement comme telle.
+
 ## 6. Petites machines et concurrence
 
 Définir au minimum un profil à GPU intégré et mémoire limitée, un profil portable intermédiaire et un profil dédié. Les seuils précis dépendent des machines effectivement disponibles; aucune machine non testée ne reçoit une mention « supporté et performant ».
@@ -90,7 +125,19 @@ Conserver les échantillons bruts avec unités, timestamps et phases. Séparer f
 
 Les médianes et percentiles se calculent sur les durées, pas sur les FPS. Afficher différence absolue et relative, distribution des différences ou intervalle de confiance adapté. Un écart inférieur au bruit reste indéterminé.
 
-Un verdict `INTEGRATE` exige correction, domaine de support, fallback, mémoire acceptable et gain net reproductible dans une charge utile au produit. `WATCHLIST` décrit un gain limité à certaines charges. `REJECT` décrit une régression ou un coût non compensé. `not-run` reste un statut sans métriques et sans verdict.
+Un verdict `INTEGRATE` exige simultanément :
+
+- sorties et fonctionnalités conservées dans le domaine de support, avec les cas limites et le repli ;
+- aucune dégradation visuelle : mêmes scènes, trajectoires, résolution, matériaux, paramètres et critère d'image déclaré ;
+- gain net reproductible, préparation, invalidation, transferts et mémoire supplémentaire compris ;
+- fluidité améliorée dans la scène cible, au-delà du bruit, avec temps d'image et pics contrôlés ;
+- validation sur les classes de machines réellement annoncées.
+
+La matrice des sections 5.1 et 5.2 fait partie de ce verdict. Tous les paramètres pertinents et leurs interactions critiques doivent disposer d'une preuve dans le domaine annoncé ; une case pertinente non mesurée empêche de valider ce domaine.
+
+Un critère inconnu interdit `INTEGRATE`. `WATCHLIST` décrit seulement une observation locale à approfondir, sans autorisation de remplacement. `REJECT` décrit une régression ou un coût non compensé. `not-run` reste un statut sans métriques et sans verdict. Une augmentation de précision ou une formule plus courte ne remplit aucun critère de performance à elle seule.
+
+« Ordinateur de moins de cinq ans » n'est pas une classe de performance. Déclarer CPU, GPU intégré ou dédié, RAM, système, navigateur, résolution et mode d'alimentation. Le M2 Max de la campagne comparative ne valide pas les portables modestes ; leur statut reste `not-run`.
 
 ## 8. Cas qui interdisent de conclure
 

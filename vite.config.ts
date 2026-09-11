@@ -1,3 +1,4 @@
+import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
@@ -110,58 +111,11 @@ function saveReportPlugin(): Plugin {
         }
       });
 
-      // 4. Exécution du benchmark d'un module sur le serveur Node
-      server.middlewares.use('/api/run-bench', (req, res) => {
-        try {
-          const url = new URL(req.url || '', 'http://localhost');
-          const rawId = url.searchParams.get('testId') || '02-gpu-frustum-culling';
-          const testId = path.basename(rawId);
-          const benchDir = path.resolve(server.config.root, testId, 'benchmark');
-
-          if (!fs.existsSync(benchDir)) {
-            res.statusCode = 404;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: `Dossier benchmark introuvable pour ${testId}` }));
-            return;
-          }
-
-          const benchFiles = fs.readdirSync(benchDir).filter((f) => f.startsWith('test_') && f.endsWith('.ts'));
-          if (benchFiles.length === 0) {
-            res.statusCode = 404;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: `Aucun script test_*.ts trouvé pour ${testId}` }));
-            return;
-          }
-
-          const scriptPath = path.resolve(benchDir, benchFiles[0]);
-          import('node:child_process').then(({ exec }) => {
-            exec(`node --experimental-strip-types "${scriptPath}"`, { cwd: server.config.root }, (error, stdout, stderr) => {
-              if (error) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: error.message, stderr }));
-                return;
-              }
-
-              // Lecture du latest.json régénéré
-              const jsonPath = path.resolve(server.config.root, testId, 'results', 'latest.json');
-              let latestData = null;
-              if (fs.existsSync(jsonPath)) {
-                try {
-                  latestData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-                } catch {}
-              }
-
-              res.statusCode = 200;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, testId, output: stdout, latest: latestData }));
-            });
-          });
-        } catch (err: any) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: err.message }));
-        }
+      // A Node math test is not a physical GPU benchmark.
+      server.middlewares.use('/api/run-bench', (_req, res) => {
+        res.statusCode = 409;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ status: 'not-run', error: 'Utilisez le banc navigateur /bench/ ou npm run bench. Aucun résultat simulé.' }));
       });
 
       // 3. Révélation du dossier ou fichier dans le Finder / Explorer de l'OS
@@ -243,7 +197,8 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [tailwindcss(), saveReportPlugin()],
+  plugins: [tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  cacheDir: '.vite',
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
     open: false,
@@ -251,11 +206,12 @@ export default defineConfig({
       // Les campagnes écrivent leurs rapports dans l'arborescence surveillée.
       // Sans cette exclusion, /api/save-report déclenche un rechargement complet
       // à la fin de chaque benchmark et efface les résultats tout juste mesurés.
-      ignored: ['**/results/**', '**/reports/**'],
+      ignored: ['**/results/**', '**/reports/**', '**/public/benchmark-assets/**'],
     },
   },
   build: {
     target: 'esnext',
+    rollupOptions: { input: { app: path.resolve('index.html'), bench: path.resolve('bench/index.html'), lodComparison: path.resolve('04-gpu-lod/comparison.html'), worldComparison: path.resolve('14-open-world/index.html') } },
   },
   assetsInclude: ['**/*.wgsl'],
 });

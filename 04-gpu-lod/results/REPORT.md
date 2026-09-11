@@ -1,3 +1,5 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport de Banc R&D : 04-gpu-lod
 
 **Périmètre :** Niveaux de Détail (LOD) & Screen-Space Error (Spec 16 & Master Test Plan)  

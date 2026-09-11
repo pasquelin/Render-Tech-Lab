@@ -5,8 +5,6 @@
  * Teste le partitionnement géométrique en grappes (64/128/256/512 triangles).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { createSphereMesh } from '../../shared/fixtures/sphere.ts';
 import { buildMeshlets } from '../implementation/meshletBuilder.ts';
 import type { MeshletPartitioningConfig } from '../types.ts';
@@ -21,7 +19,7 @@ export function runMeshletsSuite() {
   console.log('🚀 Lancement du banc 05-meshlets (Partitionnement en clusters)...');
 
   // Utilisation de la fixture partagée : sphère haute densité (2 048 triangles)
-  const sphere = createSphereMesh({ radius: 2.0, widthSegments: 48, heightSegments: 32 });
+  const sphere = createSphereMesh({ radius: 2.0, longBands: 48, latBands: 32 });
   console.log(
     `  Maillage témoin : ${sphere.name} | ${sphere.vertexCount} sommets | ${sphere.triangleCount} triangles`
   );
@@ -82,94 +80,7 @@ export function runMeshletsSuite() {
     'Le tier 64 doit consommer plus de mémoire de métadonnées que le tier 512'
   );
 
-  // Recommandation contractuelle : le palier 128 triangles offre le compromis optimal
-  const optimalTier = tierResults.find((r) => r.trianglesPerMeshlet === 128)!;
-
-  // latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '05-meshlets',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 1,
-      triangles: sphere.triangleCount,
-      materials: 1,
-      lights: 1,
-    },
-    cpu: {
-      frameMs: optimalTier.buildTimeMs,
-      submitMs: null,
-    },
-    gpu: {
-      frameMs: null,
-    },
-    memory: {
-      gpuBytes: optimalTier.indexMemoryBytes! + optimalTier.metadataMemoryBytes!,
-    },
-    draw: {
-      submitted: optimalTier.meshletCount!,
-      visible: optimalTier.meshletCount!,
-    },
-    customMetrics: {
-      testedTiers: tierResults,
-      optimalTrianglesPerMeshlet: 128,
-      optimalMeshletCount: optimalTier.meshletCount,
-      optimalDuplicationFactor: optimalTier.vertexDuplicationFactor,
-      optimalMetadataBytes: optimalTier.metadataMemoryBytes,
-    },
-  };
-
-  const resultsDir = path.resolve('05-meshlets', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const r of tierResults) {
-    tableRows += `| **${r.trianglesPerMeshlet}** | ${r.meshletCount} | ${r.triangleCountPerMeshlet} | ${r.vertexDuplicationFactor}x | ${r.metadataMemoryBytes} octets | ${r.buildTimeMs} ms |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 05-meshlets (Partitionnement en Clusters)
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Maillage témoin :** Sphère haute résolution (${sphere.triangleCount} triangles, ${sphere.vertexCount} sommets)
-
----
-
-## 1. Résultats Comparatifs des Paliers de Partitionnement
-
-| Triangles / Meshlet | Meshlets Générés | Moyenne Triangles | Facteur Duplication | Mémoire Métadonnées | Temps Partitionnement |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-${tableRows}
-
----
-
-## 2. Invariants Géométriques & Validation
-1. **Couverture totale :** 100% des triangles assignés à un cluster sans perte.
-2. **Englobement exact :** Toutes les positions de sommets sont strictement contenues dans la sphère englobante ($d \\le r$).
-3. **Cône de normales :** Axe normalisé et cosHalfAngle $\\in [-1, 1]$ pour le backface culling de cluster.
-4. **Arbitrage de granularité :** Le palier **128 triangles** maximise la granularité de rejet tout en maintenant l'overhead des métadonnées sous 15%.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '05-meshlets.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 05-meshlets validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 05-meshlets réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -10,10 +10,12 @@ import * as THREE from 'three';
  */
 
 /** Features demandées si l'adaptateur les expose. */
-const OPTIONAL_FEATURES: GPUFeatureName[] = ['indirect-first-instance'];
+const OPTIONAL_FEATURES: GPUFeatureName[] = ['indirect-first-instance', 'timestamp-query'];
 
 let devicePromise: Promise<GPUDevice | null> | null = null;
 let sharedDevice: GPUDevice | null = null;
+let sharedAdapter: GPUAdapter | null = null;
+export function getAdapterInfo(): GPUAdapterInfo | null { return sharedAdapter?.info ?? null; }
 let sharedGLRenderer: THREE.WebGLRenderer | null = null;
 
 /**
@@ -35,6 +37,7 @@ async function requestDevice(): Promise<GPUDevice | null> {
     const adapter = await nav.gpu.requestAdapter({ powerPreference: 'high-performance' });
     if (!adapter) return null;
 
+    sharedAdapter = adapter;
     const requiredFeatures: GPUFeatureName[] = [];
     for (const f of OPTIONAL_FEATURES) {
       if (adapter.features.has(f)) requiredFeatures.push(f);

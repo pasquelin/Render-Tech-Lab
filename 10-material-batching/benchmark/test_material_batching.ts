@@ -5,8 +5,6 @@
  * Compare les 4 stratégies de gestion multi-matériaux (state-switch vs storage-buffer vs texture-array vs pseudo-bindless).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   generateMaterialPalette,
   packMaterialStorageBuffer,
@@ -102,99 +100,11 @@ export function runMaterialBatchingSuite() {
     'Storage buffer doit maintenir 1 seul changement de pipeline'
   );
   assert(
-    storageBuffer100.cpuFrameMs! < stateSwitch100.cpuFrameMs!,
-    'Le CPU frame time du Storage Buffer doit être strictement inférieur au State Switch'
+    storageBuffer100.cpuFrameMs === null && stateSwitch100.cpuFrameMs === null,
+    'Aucune durée CPU ne peut être déduite des changements d’état'
   );
 
-  // latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '10-material-batching',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 2000,
-      triangles: 2000 * 384,
-      materials: 100,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: storageBuffer100.cpuFrameMs,
-      submitMs: 0.08,
-    },
-    gpu: {
-      frameMs: storageBuffer100.gpuFrameMs,
-    },
-    memory: {
-      gpuBytes: storageBuffer100.materialTableBytes,
-    },
-    draw: {
-      submitted: 2000,
-      visible: 2000,
-    },
-    customMetrics: {
-      materialCount: 100,
-      selectedStrategy: 'storage-buffer',
-      pipelineSwitchesAvoided: stateSwitch100.pipelineStateChanges! - storageBuffer100.pipelineStateChanges!,
-      cpuGainVsStateSwitchMs: Number((stateSwitch100.cpuFrameMs! - storageBuffer100.cpuFrameMs!).toFixed(3)),
-      bytesPerMaterial: BYTES_PER_MATERIAL,
-    },
-  };
-
-  const resultsDir = path.resolve('10-material-batching', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const mCount of materialCounts) {
-    const sw = benchmarkMatrix.find((r) => r.strategy === 'state-switch' && r.materialCount === mCount)!;
-    const sb = benchmarkMatrix.find((r) => r.strategy === 'storage-buffer' && r.materialCount === mCount)!;
-    const ta = benchmarkMatrix.find((r) => r.strategy === 'texture-array' && r.materialCount === mCount)!;
-    const pb = benchmarkMatrix.find((r) => r.strategy === 'pseudo-bindless' && r.materialCount === mCount)!;
-
-    tableRows += `| **${mCount}** | ${sw.cpuFrameMs} ms (${sw.pipelineStateChanges} sw) | **${sb.cpuFrameMs} ms (1 sw)** | ${ta.cpuFrameMs} ms (1 sw) | ${pb.cpuFrameMs} ms (1 sw) |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 10-material-batching (Matérialisation Multi-Matériaux)
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Stratégie Retenue :** \`storage-buffer\` (Indexation dynamique via Material Storage Buffer)
-
----
-
-## 1. Comparatif des 4 Stratégies sous 2 000 Objets
-
-| Nb Matériaux | A: State-Switch | B: Storage-Buffer | C: Texture-Array | D: Pseudo-Bindless |
-|:---:|:---:|:---:|:---:|:---:|
-${tableRows}
-
----
-
-## 2. Invariants & Arbitrage
-- **Élimination des pipeline state changes :** Le tampon de stockage réduit le nombre de changements de pipeline de $M$ à **1 unique**, éliminant tout goulot CPU de soumission sous charge multi-matériaux.
-- **Empreinte VRAM minimale :** 32 octets par matériau, soit seulement 3,2 Ko pour 100 matériaux.
-- **latest.json conforme :** Enregistré dans \`10-material-batching/results/latest.json\`.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '10-material-batching.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 10-material-batching validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 10-material-batching réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

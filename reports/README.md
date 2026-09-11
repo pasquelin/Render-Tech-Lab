@@ -1,3 +1,5 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Reports & Arbitration Summaries
 
 This folder holds the consolidated findings, comparison charts and architecture decisions — accepted or rejected.

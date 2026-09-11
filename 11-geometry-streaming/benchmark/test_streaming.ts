@@ -5,8 +5,6 @@
  * Valide les 6 états contractuels : cold -> loading -> partially-resident -> fully-resident -> eviction -> re-request.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   GeometryStreamingManager,
 } from '../implementation/streamingManager.ts';
@@ -86,100 +84,7 @@ export function runStreamingSuite() {
     'Le budget VRAM doit toujours être strictement respecté'
   );
 
-  // latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '11-geometry-streaming',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 5000,
-      triangles: 2500000,
-      materials: 20,
-      lights: 4,
-    },
-    cpu: {
-      frameMs: f3.metrics.frameTimeMs,
-      submitMs: null,
-    },
-    gpu: {
-      frameMs: null,
-    },
-    memory: {
-      gpuBytes: manager.residentBytes,
-    },
-    draw: {
-      submitted: 5000,
-      visible: 2000,
-    },
-    customMetrics: {
-      vramBudgetBytes,
-      maxResidentBytesObserved: vramBudgetBytes,
-      budgetEnforcementStrict: true,
-      totalEvictedBytes: f3.metrics.evictedBytes! + f4.metrics.evictedBytes!,
-      totalUploadedBytes: f1.metrics.uploadedBytes! + f2.metrics.uploadedBytes! + f3.metrics.uploadedBytes! + f4.metrics.uploadedBytes!,
-      stallsCount: 0,
-      lifecycleCoverage: [
-        'cold',
-        'loading',
-        'partially-resident',
-        'fully-resident',
-        'eviction',
-        're-request',
-      ],
-    },
-  };
-
-  const resultsDir = path.resolve('11-geometry-streaming', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const log of frameLogs) {
-    const m = log.lifecycle.metrics;
-    tableRows += `| Trame ${log.frame} | ${log.description} | \`${log.lifecycle.state}\` | ${(m.residentBytes! / 1024).toFixed(0)} Ko | ${(m.uploadedBytes! / 1024).toFixed(0)} Ko | ${(m.evictedBytes! / 1024).toFixed(0)} Ko | ${m.stalls} |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 11-geometry-streaming (Résidence VRAM & Cycle LRU)
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Budget VRAM Alloué :** ${(vramBudgetBytes / (1024 * 1024)).toFixed(1)} Mo (Plafond infranchissable)
-
----
-
-## 1. Trace Temporelle du Cycle de Résidence
-
-| Trame | Action / Scénario | État Résidence | VRAM Résidente | Upload Trame | Éviction LRU | Stalls |
-|:---:|---|:---:|:---:|:---:|:---:|:---:|
-${tableRows}
-
----
-
-## 2. Invariants de Streaming Validés
-- **Plafond VRAM infranchissable :** Même sous demande à 100% de la scène (${(pageDefs.length * pageSizeBytes / (1024 * 1024)).toFixed(0)} Mo), la mémoire allouée en VRAM ne dépasse jamais les ${(vramBudgetBytes / (1024 * 1024)).toFixed(0)} Mo alloués.
-- **Politique LRU :** Éviction prioritaire des pages les plus anciennes non visibles cette trame.
-- **Réversibilité Re-request :** Rechargement fluide sans fuite de mémoire lorsque la caméra revisite un secteur.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '11-geometry-streaming.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 11-geometry-streaming validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 11-geometry-streaming réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

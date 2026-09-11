@@ -202,40 +202,40 @@ render-tech-lab/
 ---
 
 ### Test 00 — Baseline (Three.js Standard)
-- **Statut :** `INTEGRATE` (Témoin zéro validé).
+- **Statut :** `not-yet-decided` — verdict historique suspendu ; consulter les données brutes de la nouvelle campagne.
 - **Question gouvernante :** Quelle est la limite matérielle exacte du graphe de scène Three.js standard sans fork ?
 - **Architecture :** Parcours CPU récursif d'`Object3D`, frustum culling CPU Three.js, $N$ draw calls distincts.
-- **Résultat étalon :** Coude CPU identifié à S3 (2 000 objets uniques) : 3,35 ms de soumission CPU, 2 002 draw calls, 60 FPS. Décrochage à 8,45 ms à S5 (5 000 objets uniques).
+- **Résultat :** ancien chiffre retiré (provenance physique non vérifiée). Une campagne matérielle est requise avant toute décision de gain ou de crossover.
 
 ---
 
 ### Test 01 — Indirect Draw
-- **Statut :** `INTEGRATE` (Validé dans `01-indirect-draw`).
+- **Statut :** `not-yet-decided` — verdict historique suspendu ; consulter les données brutes de la nouvelle campagne.
 - **Question gouvernante :** Est-ce que WebGPU peut absorber instantanément une commande indirecte pré-générée sans aucun culling ?
 - **Architecture :** `CPU Setup ──► GPU Buffer ──► drawIndexedIndirect (1 draw call)`.
 - **Scénarios de charge :** 1, 10, 100, 1 000, 10 000, 100 000 instances.
-- **Résultat étalon :** Élimination de la boucle de soumission CPU. WebGPU absorbe $100\,000$ instances sans surcharge CPU ($submitMs < 0.1\,\text{ms}$).
+- **Résultat :** ancien chiffre retiré (provenance physique non vérifiée). Une campagne matérielle est requise avant toute décision de gain ou de crossover.
 
 ---
 
 ### Test 02 — GPU Frustum Culling
-- **Statut :** `not-run` — le banc autonome `02-gpu-frustum-culling/` est préparé (structure + types), mais **aucun benchmark réel n'a été exécuté**. La technique a néanmoins été observée et validée dans le banc `01-indirect-draw` (culling WGSL + indirect draw), qui reste la référence mesurée.
+- **Statut :** banc natif atomique/workgroup disponible via `npm run bench:02`. Verdict de performance à établir après campagne matérielle.
 - **Question gouvernante :** Quel gain apporte l'externalisation du test d'intersection plan/sphère sur Compute Shader WGSL ?
 - **Architecture :** `ObjectBuffer ──► Compute Shader WGSL ──► atomicAdd drawIndirectBuffer ──► drawIndexedIndirect`.
-- **Référence mesurée (banc 01) :** −92,7% de soumission CPU à 2 000 objets (0,25 ms vs 3,35 ms), crossover rentable dès 1 000 objets.
+- **Résultat :** ancien chiffre retiré (provenance physique non vérifiée). Une campagne matérielle est requise avant toute décision de gain ou de crossover.
 
 ---
 
 ### Test 03 — GPU Scene (Scène Hétérogène)
-- **Statut :** `INTEGRATE` (Validé dans `03-gpu-scene`).
+- **Statut :** `not-yet-decided` — verdict historique suspendu ; consulter les données brutes de la nouvelle campagne.
 - **Question gouvernante :** Quel est le surcoût de gestion d'une scène hétérogène (multi-géométries, multi-matériaux, transformations dynamiques) en mémoire GPU plate ?
 - **Architecture :** Mega-buffers plats (`ObjectBuffer`, `GeometryBuffer`, `MaterialBuffer`, `DrawBuffer`).
-- **Résultat étalon :** −93,2% de temps CPU sous charge dynamique 4D (100 topologies, 100 matériaux).
+- **Résultat :** ancien chiffre retiré (provenance physique non vérifiée). Une campagne matérielle est requise avant toute décision de gain ou de crossover.
 
 ---
 
 ### Test 04 — GPU LOD & Screen-Space Error (Décomposition Tripartite)
-- **Statut :** `INTEGRATE` pour **04A** (décimation meshoptimizer, mesurée) et **04B** (sélection SSE CPU, mesurée) — `not-run` pour **04C** (sélection SSE GPU : shader écrit, non dispatché, non instrumenté).
+- **Statut :** `not-yet-decided` — verdict historique suspendu ; consulter les données brutes de la nouvelle campagne.
 - **Question gouvernante :** La sélection LOD sur GPU apporte-t-elle un gain net par rapport à la sélection LOD sur CPU une fois la décimation géométrique réalisée ?
 
 Ce banc sépare rigoureusement la **génération** et la **sélection** :

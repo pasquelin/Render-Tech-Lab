@@ -1,42 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:01:18.267Z",
+  "timestamp": "2026-09-11T21:28:57.377056+00:00",
   "test": "03-gpu-scene",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0",
-    "webgpuFeatures": [
-      "indirect-first-instance"
-    ]
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 2000,
-    "triangles": 398,
-    "materials": 10,
-    "lights": 2
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.28,
-    "submitMs": 0.18
+    "frameMs": null,
+    "submitMs": null
   },
   "gpu": {
     "frameMs": null
   },
   "memory": {
-    "gpuBytes": 213008
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 2000,
-    "visible": 2000
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "geometryCount": 10,
-    "materialCount": 10,
-    "dynamicObjectCount": 1500,
-    "bytesPerObject": 96,
-    "indirectDrawCount": 10,
-    "cpuGainVsClassicPercent": 93.2
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "03-gpu-scene/results/legacy-unverified/latest.json"
   }
 }

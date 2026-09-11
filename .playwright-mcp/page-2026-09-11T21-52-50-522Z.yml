@@ -1,0 +1,139 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - link "← Laboratoire" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - heading "14 · Monde ouvert sous pression" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Décor Bistro réel · quartiers répétés · parcours identique · jusqu’à des dizaines de millions de triangles.
+    - generic [ref=e8]:
+      - generic [ref=e9]: "Banc d’essai :"
+      - combobox "Banc d’essai :" [ref=e10]:
+        - option "00 · Baseline"
+        - option "01 · Indirect Draw"
+        - option "02 · Frustum Culling"
+        - option "03 · GPU Scene"
+        - option "04 · GPU LOD"
+        - option "05 · Meshlets"
+        - option "06 · Meshlet Culling"
+        - option "07 · Hi-Z"
+        - option "08 · Occlusion"
+        - option "09 · Compaction"
+        - option "10 · Material Batching"
+        - option "11 · Geometry Streaming"
+        - option "12 · Visibility Buffer"
+        - option "13 · Full GPU-Driven"
+        - option "14 · Monde ouvert sous pression" [selected]
+      - link "Comparatif des calculs LOD" [ref=e11] [cursor=pointer]:
+        - /url: /04-gpu-lod/comparison.html
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "Le décor réellement rendu" [level=2] [ref=e16]
+          - generic [ref=e17]: Bistro extérieur · Amazon Lumberyard / ORCA
+        - generic "Scène urbaine détaillée du banc monde ouvert" [ref=e18]
+      - generic [ref=e19]:
+        - heading "Campagnes conservées" [level=2] [ref=e20]
+        - paragraph [ref=e22]:
+          - text: 11/09/2026 23:45:53 · 9 quartiers · 1920 × 1080 · frustum ·
+          - link "Rapport" [ref=e23] [cursor=pointer]:
+            - /url: /api/world-comparison?run=20260911T214605916Z-96ec2478-716e-4b17-b591-e6eb269ed4f8&format=markdown
+          - text: ·
+          - link "Données brutes" [ref=e24] [cursor=pointer]:
+            - /url: /api/world-comparison?run=20260911T214605916Z-96ec2478-716e-4b17-b591-e6eb269ed4f8
+          - text: ·
+          - link "Sources du test" [ref=e25] [cursor=pointer]:
+            - /url: /api/world-comparison?run=20260911T214605916Z-96ec2478-716e-4b17-b591-e6eb269ed4f8&format=sources
+      - generic [ref=e26]:
+        - paragraph [ref=e27]:
+          - text: Amazon Lumberyard Bistro, Open Research Content Archive (ORCA), 2017 ·
+          - link "source du modèle" [ref=e28] [cursor=pointer]:
+            - /url: https://developer.nvidia.com/orca/amazon-lumberyard-bistro
+          - text: ·
+          - link "CC BY 4.0" [ref=e29] [cursor=pointer]:
+            - /url: https://creativecommons.org/licenses/by/4.0/
+          - text: . Conversion de format locale, quartiers répétés pour la surcharge.
+        - paragraph [ref=e30]: Ce test charge les quartiers en mémoire. Il mesure un décor étendu et dense ; le chargement progressif d’un monde infini demande un autre scénario. Le rendu brut sert à mesurer l’effet du culling classique, et ne représente pas une nouvelle découverte par rapport à la documentation du projet.
+    - complementary [ref=e31]:
+      - generic [ref=e32]:
+        - heading "Administration du banc" [level=2] [ref=e33]
+        - group [ref=e34]:
+          - generic [ref=e35]:
+            - text: Étendue du décor
+            - combobox "Étendue du décor" [ref=e36]:
+              - option "1 quartier"
+              - option "9 quartiers" [selected]
+              - option "25 quartiers"
+          - generic [ref=e37]:
+            - text: Résolution physique
+            - combobox "Résolution physique" [ref=e38]:
+              - option "Full HD" [selected]
+              - option "1440p"
+              - option "4K"
+              - option "Full HD · Retina ratio 2"
+          - generic [ref=e39]:
+            - text: Comparaison
+            - combobox "Comparaison" [ref=e40]:
+              - option "Brut → hors champ écarté" [selected]
+              - option "Hors champ → quartiers filtrés"
+          - generic [ref=e41]:
+            - text: Mode de l’aperçu
+            - combobox "Mode de l’aperçu" [ref=e42]:
+              - option "Hors champ écarté" [selected]
+              - option "Rendu brut"
+              - option "Quartiers filtrés"
+          - generic [ref=e43]: Rendu
+          - generic [ref=e44]:
+            - text: Angle de vue
+            - combobox "Angle de vue" [ref=e45]:
+              - option "45°"
+              - option "60°" [selected]
+              - option "90°"
+          - generic [ref=e46]:
+            - text: Parcours
+            - combobox "Parcours" [ref=e47]:
+              - option "Mixte" [selected]
+              - option "Périmètre au sol"
+              - option "Panorama"
+          - generic [ref=e48]:
+            - text: Définition des ombres
+            - combobox "Définition des ombres" [ref=e49]:
+              - option "1 024 px"
+              - option "2 048 px" [selected]
+              - option "4 096 px"
+          - generic [ref=e50]:
+            - checkbox "Ombres" [checked] [ref=e51] [cursor=pointer]
+            - text: Ombres
+          - generic [ref=e52]:
+            - checkbox "Lissage des contours" [ref=e53] [cursor=pointer]
+            - text: Lissage des contours
+          - generic [ref=e54]: Mesures
+          - generic [ref=e55]:
+            - text: Images mesurées par bloc
+            - combobox "Images mesurées par bloc" [ref=e56]:
+              - option "60"
+              - option "120" [selected]
+              - option "240"
+              - option "480"
+          - generic [ref=e57]:
+            - text: Images d’échauffement par bloc
+            - combobox "Images d’échauffement par bloc" [ref=e58]:
+              - option "30" [selected]
+              - option "60"
+              - option "120"
+          - generic [ref=e59]:
+            - text: Répétitions par configuration
+            - combobox "Répétitions par configuration" [ref=e60]:
+              - option "1"
+              - option "2" [selected]
+              - option "3"
+          - group [ref=e61]:
+            - generic "Croiser les configurations" [ref=e62] [cursor=pointer]
+        - paragraph [ref=e63]: 2 campagne(s) · 960 images mesurées + 240 d’échauffement + 18 de contrôle (1 218 au total). Arrêt disponible à tout moment.
+        - paragraph [ref=e64]: Ordre A/B/B/A. Images de contrôle avant mesure. Aucun lancement automatique.
+        - generic [ref=e65]:
+          - button "Voir le parcours 3D" [ref=e66] [cursor=pointer]
+          - button "Mesurer et comparer" [ref=e67] [cursor=pointer]
+        - status [ref=e68]: Prêt. Le premier chargement du décor peut prendre du temps.
+        - generic [ref=e69]: Compteurs en direct
+        - paragraph [ref=e70]: Les compteurs distingueront les triangles principaux de ceux des ombres.

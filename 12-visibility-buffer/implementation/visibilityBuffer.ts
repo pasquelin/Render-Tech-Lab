@@ -68,23 +68,15 @@ export function evaluateVisibilityBuffer(input: VisibilityPassInput): Visibility
   // Écritures G-Buffer + lectures Shading pass = ~28 octets par pixel
   const forwardBufferBytes = pixelCount * 28;
 
-  // Facteur d'overdraw de shading éliminé (dans un forward standard avec surdessin de 3.5x)
-  const overdrawFactor = 3.5;
-  const overdrawAvoided = overdrawFactor - 1.0; // 2.5x d'évaluations de shaders évitées
-
-  // Coût estimé du shading différé
-  const shadingCostMs = (pixelCount / 1_000_000) * 1.8; // ~1.8 ms par million de pixels visibles
-  const materialLookupMs = 0.25;
-
   return {
     primitiveIdBufferBytes,
     materialIdBufferBytes: primitiveIdBufferBytes,
     depthBufferBytes,
     forwardBufferBytes,
     deferredBufferBytes,
-    shadingCostMs: Number(shadingCostMs.toFixed(3)),
-    overdrawAvoided: Number(overdrawAvoided.toFixed(2)),
-    materialLookupMs,
+    shadingCostMs: null,
+    overdrawAvoided: null,
+    materialLookupMs: null,
   };
 }
 

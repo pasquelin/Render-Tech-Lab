@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 08-occlusion-culling (Équation de Gain Net)
 
-**Date :** 2026-09-11T20:09:33.603Z  
+**Date :** 2026-09-11T20:23:45.923Z  
 **Statut :** `INTEGRATE`  
 **Charge de référence :** 1 000 000 triangles sous charge Three.js S3  
 **Formule maîtresse :** $\text{Gain}_{\text{net}} = \text{Coût}_{\text{baseline}} - (\text{Coût}_{\text{HiZ}} + \text{Coût}_{\text{culling}} + \text{Coût}_{\text{raster résiduel}})$

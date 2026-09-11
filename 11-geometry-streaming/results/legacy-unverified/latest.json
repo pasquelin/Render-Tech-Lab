@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-09-11T20:23:45.991Z",
+  "test": "11-geometry-streaming",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
+  },
+  "scene": {
+    "objects": 5000,
+    "triangles": 2500000,
+    "materials": 20,
+    "lights": 4
+  },
+  "cpu": {
+    "frameMs": 0.045,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 4194304
+  },
+  "draw": {
+    "submitted": 5000,
+    "visible": 2000
+  },
+  "customMetrics": {
+    "vramBudgetBytes": 4194304,
+    "maxResidentBytesObserved": 4194304,
+    "budgetEnforcementStrict": true,
+    "totalEvictedBytes": 4194304,
+    "totalUploadedBytes": 8388608,
+    "stallsCount": 0,
+    "lifecycleCoverage": [
+      "cold",
+      "loading",
+      "partially-resident",
+      "fully-resident",
+      "eviction",
+      "re-request"
+    ]
+  }
+}

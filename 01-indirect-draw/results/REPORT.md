@@ -1,7 +1,9 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Bench Report: 01-indirect-draw
 
 **Technique under test:** GPU-Driven Rendering Pipeline (Indirect Draw Absorption)  
-**Bench last updated:** 2026-09-11 20:01:18 UTC  
+**Bench last updated:** 2026-09-11 20:23:45 UTC  
 **Environment:** WebGPU (Metal / Vulkan / D3D12)
 
 > **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.  

@@ -29,7 +29,7 @@ export function extractSeries(
 ): ChartPoint[] {
   return records.map((r) => ({
     label: String(labelOf(r)),
-    value: typeof valueOf(r) === 'number' && Number.isFinite(valueOf(r) as number)
+    value: r.status === 'measured' && typeof valueOf(r) === 'number' && Number.isFinite(valueOf(r) as number)
       ? (valueOf(r) as number)
       : null,
   }));

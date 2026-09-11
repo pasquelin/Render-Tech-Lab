@@ -43,4 +43,4 @@ async function main() {
   console.log('🏁 Banc 04-gpu-lod complété avec succès !');
 }
 
-main().catch(console.error);
+main().catch(error => { console.error(error); process.exitCode = 1; });

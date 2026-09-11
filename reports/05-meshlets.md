@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 05-meshlets (Partitionnement en Clusters)
 
-**Date :** 2026-09-11T20:01:18.312Z  
+**Date :** 2026-09-11T20:23:45.851Z  
 **Statut :** `INTEGRATE`  
 **Maillage témoin :** Sphère haute résolution (1024 triangles, 561 sommets)
 
@@ -10,9 +12,9 @@
 
 | Triangles / Meshlet | Meshlets Générés | Moyenne Triangles | Facteur Duplication | Mémoire Métadonnées | Temps Partitionnement |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| **64** | 16 | 64 | 1.88x | 1024 octets | 0.9 ms |
-| **128** | 8 | 128 | 1.41x | 512 octets | 0.3 ms |
-| **256** | 4 | 256 | 1.18x | 256 octets | 0.2 ms |
+| **64** | 16 | 64 | 1.88x | 1024 octets | 1.04 ms |
+| **128** | 8 | 128 | 1.41x | 512 octets | 0.43 ms |
+| **256** | 4 | 256 | 1.18x | 256 octets | 0.25 ms |
 | **512** | 2 | 512 | 1.06x | 128 octets | 0.22 ms |
 
 

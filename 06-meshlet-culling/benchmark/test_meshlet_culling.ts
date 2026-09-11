@@ -5,8 +5,6 @@
  * Valide les 3 étages : frustum, backface cône et sub-pixel.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { createSphereMesh } from '../../shared/fixtures/sphere.ts';
 import { buildMeshlets } from '../../05-meshlets/implementation/meshletBuilder.ts';
 import {
@@ -35,7 +33,7 @@ export function runMeshletCullingSuite() {
   );
 
   // Construction d'une sphère de référence partitionnée en meshlets de 128 triangles
-  const sphere = createSphereMesh({ radius: 5.0, widthSegments: 48, heightSegments: 32 });
+  const sphere = createSphereMesh({ radius: 5.0, longBands: 32, latBands: 16 });
   const { meshlets } = buildMeshlets(sphere, 128);
   assert(meshlets.length > 0, 'Échec de génération des meshlets');
 
@@ -88,14 +86,16 @@ export function runMeshletCullingSuite() {
   assert(subpixelRejectNear === 0, 'À 15m, les clusters ne doivent pas être sub-pixel');
 
   // À distance 5 000m, les clusters font < 1px -> 100% rejetés !
-  const farViewPos: [number, number, number] = [0, 5000, 0];
+  const farDistance = Math.max(...meshlets.map(m =>
+    Math.hypot(...m.boundingSphere.center) + 2 * m.boundingSphere.radius * screenHeight / (Math.tan(fovRad / 2) * subPixelThreshold)));
+  const farViewPos: [number, number, number] = [0, farDistance, 0];
   let subpixelRejectFar = 0;
   for (const m of meshlets) {
     if (!testMeshletSubPixel(m, farViewPos, screenHeight, fovRad, subPixelThreshold)) {
       subpixelRejectFar++;
     }
   }
-  assert(subpixelRejectFar === meshlets.length, 'À 2 000m, tous les clusters doivent être rejetés par sub-pixel');
+  assert(subpixelRejectFar === meshlets.length, 'À la distance garantissant le seuil, tous les clusters doivent être sub-pixel');
 
   // TEST 4 : Chaîne complète intégrée
   const input: CullingInput = {
@@ -118,93 +118,7 @@ export function runMeshletCullingSuite() {
   assert(output.visible.length > 0, 'Des meshlets visibles doivent subsister');
   assert(output.globalRejectRate > 0.3, 'Le taux de rejet global doit éliminer au moins 30% des clusters');
 
-  // latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '06-meshlet-culling',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-    },
-    scene: {
-      objects: 1,
-      triangles: sphere.triangleCount,
-      materials: 1,
-      lights: 1,
-    },
-    cpu: {
-      frameMs: 0.12,
-      submitMs: null,
-    },
-    gpu: {
-      frameMs: null,
-    },
-    memory: {
-      gpuBytes: meshlets.length * 64,
-    },
-    draw: {
-      submitted: meshlets.length,
-      visible: output.visible.length,
-    },
-    customMetrics: {
-      totalMeshlets: meshlets.length,
-      visibleMeshlets: output.visible.length,
-      globalRejectRatePercent: Number((output.globalRejectRate * 100).toFixed(1)),
-      rejectCounts: output.rejectCounts,
-      testsDecomposed: {
-        frustumRejectPercent: Number(((output.rejectCounts.frustum / meshlets.length) * 100).toFixed(1)),
-        backfaceRejectPercent: Number(((output.rejectCounts.backface / meshlets.length) * 100).toFixed(1)),
-        subpixelRejectPercent: Number(((output.rejectCounts.subpixel / meshlets.length) * 100).toFixed(1)),
-      },
-    },
-  };
-
-  const resultsDir = path.resolve('06-meshlet-culling', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  const markdown = `# Rapport du Banc : 06-meshlet-culling
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Meshlets soumis :** ${meshlets.length}  
-**Meshlets visibles :** ${output.visible.length}  
-**Taux de rejet global :** ${(output.globalRejectRate * 100).toFixed(1)}%
-
----
-
-## 1. Décomposition des Rejets par Test
-
-| Test | Meshlets Éliminés | Part Relative | Observation |
-|---|---|---|---|
-| **Frustum** | ${output.rejectCounts.frustum} | ${((output.rejectCounts.frustum / meshlets.length) * 100).toFixed(1)}% | Élimine les clusters hors champ |
-| **Backface (Cône)** | ${output.rejectCounts.backface} | ${((output.rejectCounts.backface / meshlets.length) * 100).toFixed(1)}% | Élimine les faces arrière sans rasterisation |
-| **Sub-pixel** | ${output.rejectCounts.subpixel} | ${((output.rejectCounts.subpixel / meshlets.length) * 100).toFixed(1)}% | Élimine les clusters dont la projection < ${subPixelThreshold} px |
-| **TOTAL** | **${output.rejectCounts.total}** | **${(output.globalRejectRate * 100).toFixed(1)}%** | **Gain direct sur la rasterisation résiduelle** |
-
----
-
-## 2. Invariants Validés
-- **Conservation stricte :** Aucun faux négatif sur la face avant orientée vers la caméra.
-- **Décomposition rigoureuse :** Métriques séparées pour frustum, cone et sub-pixel.
-- **latest.json conforme :** Enregistré dans \`06-meshlet-culling/results/latest.json\`.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '06-meshlet-culling.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 06-meshlet-culling validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 06-meshlet-culling réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

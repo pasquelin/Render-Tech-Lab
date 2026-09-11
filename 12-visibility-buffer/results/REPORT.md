@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 12-visibility-buffer (Visibilité Découplée)
 
-**Date :** 2026-09-11T20:01:18.454Z  
+**Date :** 2026-09-11T20:23:45.992Z  
 **Statut :** `INTEGRATE`  
 **Principe :** Passe 1 (Raster ID 32-bit + Depth) ──► Passe 2 (Compute Shading barycentrique sans surdessin)
 

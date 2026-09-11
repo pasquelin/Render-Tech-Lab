@@ -1,47 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:09:43.483Z",
+  "timestamp": "2026-09-11T21:28:57.377197+00:00",
   "test": "11-geometry-streaming",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0"
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 5000,
-    "triangles": 2500000,
-    "materials": 20,
-    "lights": 4
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.049,
+    "frameMs": null,
     "submitMs": null
   },
   "gpu": {
     "frameMs": null
   },
   "memory": {
-    "gpuBytes": 4194304
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 5000,
-    "visible": 2000
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "vramBudgetBytes": 4194304,
-    "maxResidentBytesObserved": 4194304,
-    "budgetEnforcementStrict": true,
-    "totalEvictedBytes": 4194304,
-    "totalUploadedBytes": 8388608,
-    "stallsCount": 0,
-    "lifecycleCoverage": [
-      "cold",
-      "loading",
-      "partially-resident",
-      "fully-resident",
-      "eviction",
-      "re-request"
-    ]
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "11-geometry-streaming/results/legacy-unverified/latest.json"
   }
 }

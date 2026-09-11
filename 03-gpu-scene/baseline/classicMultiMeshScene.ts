@@ -6,6 +6,7 @@ export class ClassicMultiMeshScene {
   public renderer: THREE.WebGLRenderer;
   private meshes: THREE.Mesh[] = [];
   /** Conteneur dédié : permet un détachement en O(1) sans toucher aux lumières. */
+  private readonly measurement = { submitMs: 0, drawCalls: 0 };
   private meshRoot = new THREE.Group();
 
   /**
@@ -84,10 +85,9 @@ export class ClassicMultiMeshScene {
     this.renderer.render(this.scene, this.camera);
     const submitMs = performance.now() - t0;
 
-    return {
-      submitMs,
-      drawCalls: this.renderer.info.render.calls,
-    };
+    this.measurement.submitMs = submitMs;
+    this.measurement.drawCalls = this.renderer.info.render.calls;
+    return this.measurement;
   }
 
   public resize(width: number, height: number) {

@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-09-11T20:23:45.992Z",
+  "test": "13-full-gpu-driven",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0",
+    "webgpuFeatures": [
+      "indirect-first-instance"
+    ]
+  },
+  "scene": {
+    "objects": 100000,
+    "triangles": 38400000,
+    "materials": 100,
+    "lights": 4
+  },
+  "cpu": {
+    "frameMs": 0.35,
+    "submitMs": 0.25
+  },
+  "gpu": {
+    "frameMs": 2.92
+  },
+  "memory": {
+    "gpuBytes": 50331648
+  },
+  "draw": {
+    "submitted": 100000,
+    "visible": 16219
+  },
+  "customMetrics": {
+    "pipelineStages": [
+      {
+        "stage": "gpu-scene",
+        "durationMs": 0.15,
+        "inputCount": 100000,
+        "outputCount": 100000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "frustum",
+        "durationMs": 0.08,
+        "inputCount": 100000,
+        "outputCount": 60000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "lod",
+        "durationMs": 0.05,
+        "inputCount": 60000,
+        "outputCount": 60000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "meshlets",
+        "durationMs": 0.22,
+        "inputCount": 10380000,
+        "outputCount": 81094,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "meshlet-culling",
+        "durationMs": 0.12,
+        "inputCount": 81094,
+        "outputCount": 40547,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "hiz",
+        "durationMs": 0.18,
+        "inputCount": 2073600,
+        "outputCount": 11,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "occlusion",
+        "durationMs": 0.14,
+        "inputCount": 40547,
+        "outputCount": 16219,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "compaction",
+        "durationMs": 0.09,
+        "inputCount": 40547,
+        "outputCount": 16219,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "indirect-draw",
+        "durationMs": 0.04,
+        "inputCount": 16219,
+        "outputCount": 1,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "shading",
+        "durationMs": 1.85,
+        "inputCount": 2073600,
+        "outputCount": 2073600,
+        "verdict": "INTEGRATE"
+      }
+    ],
+    "totalCpuGainMs": 159.85,
+    "drawCallsUnified": 1,
+    "drawCallsBaseline": 100000,
+    "crossoverSpeedupFactor": 640.4
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-09-11T20:23:45.852Z",
+  "test": "06-meshlet-culling",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
+  },
+  "scene": {
+    "objects": 1,
+    "triangles": 1024,
+    "materials": 1,
+    "lights": 1
+  },
+  "cpu": {
+    "frameMs": 0.12,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 512
+  },
+  "draw": {
+    "submitted": 8,
+    "visible": 4
+  },
+  "customMetrics": {
+    "totalMeshlets": 8,
+    "visibleMeshlets": 4,
+    "globalRejectRatePercent": 50,
+    "rejectCounts": {
+      "frustum": 0,
+      "backface": 4,
+      "subpixel": 0,
+      "total": 4
+    },
+    "testsDecomposed": {
+      "frustumRejectPercent": 0,
+      "backfaceRejectPercent": 50,
+      "subpixelRejectPercent": 0
+    }
+  }
+}

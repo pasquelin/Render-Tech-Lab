@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 11-geometry-streaming (Résidence VRAM & Cycle LRU)
 
-**Date :** 2026-09-11T20:09:43.484Z  
+**Date :** 2026-09-11T20:23:45.991Z  
 **Statut :** `INTEGRATE`  
 **Budget VRAM Alloué :** 4.0 Mo (Plafond infranchissable)
 

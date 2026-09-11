@@ -1,104 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:09:33.601Z",
+  "timestamp": "2026-09-11T21:28:57.377380+00:00",
   "test": "08-occlusion-culling",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0"
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 2000,
-    "triangles": 1000000,
-    "materials": 10,
-    "lights": 2
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.25,
-    "submitMs": 0.15
+    "frameMs": null,
+    "submitMs": null
   },
   "gpu": {
-    "frameMs": 1.25
+    "frameMs": null
   },
   "memory": {
-    "gpuBytes": 5592404
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 2000,
-    "visible": 500
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "stressTiers": [
-      {
-        "occlusionPercent": 10,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 4.5,
-          "gainNet": 3.47
-        },
-        "verdict": "INTEGRATE"
-      },
-      {
-        "occlusionPercent": 25,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 3.75,
-          "gainNet": 4.22
-        },
-        "verdict": "INTEGRATE"
-      },
-      {
-        "occlusionPercent": 50,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 2.5,
-          "gainNet": 5.47
-        },
-        "verdict": "INTEGRATE"
-      },
-      {
-        "occlusionPercent": 75,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 1.25,
-          "gainNet": 6.72
-        },
-        "verdict": "INTEGRATE"
-      },
-      {
-        "occlusionPercent": 90,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 0.5,
-          "gainNet": 7.47
-        },
-        "verdict": "INTEGRATE"
-      },
-      {
-        "occlusionPercent": 99,
-        "equation": {
-          "baselineCost": 8.35,
-          "hiZGenerationCost": 0.15,
-          "cullingCost": 0.08,
-          "rasterCost": 0.05,
-          "gainNet": 7.92
-        },
-        "verdict": "INTEGRATE"
-      }
-    ],
-    "netGainAt75PercentMs": 6.72,
-    "occlusionCrossoverThresholdPercent": 25,
-    "trianglesCulledAt75Percent": 750000
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "08-occlusion-culling/results/legacy-unverified/latest.json"
   }
 }

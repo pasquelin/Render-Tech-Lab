@@ -1,0 +1,257 @@
+{
+  "timestamp": "2026-09-11T22:35:02.632Z",
+  "config": {
+    "width": 1920,
+    "height": 1080,
+    "pixelRatio": 1,
+    "districts": 1,
+    "samples": 120,
+    "warmup": 60,
+    "shadows": true,
+    "fov": 60,
+    "antialias": false,
+    "shadowMapSize": 1024,
+    "path": "mixed",
+    "candidate": "hierarchy",
+    "wireframe": false,
+    "showBounds": false,
+    "previewDurationSeconds": 60
+  },
+  "environment": {
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+    "threeVersion": "174",
+    "backend": "WebGL2",
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+    "renderer": "WebKit WebGL",
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "timerQueryAvailable": true,
+    "visibility": "visible",
+    "devicePixelRatio": 2.200000047683716,
+    "physicalWidth": 1920,
+    "physicalHeight": 1080,
+    "cssWidth": 1484,
+    "cssHeight": 987,
+    "rendererLogicalWidth": 1920,
+    "rendererLogicalHeight": 1080,
+    "displaySizing": "shared viewport; object-fit contain; physical drawing buffer fixed independently",
+    "antialiasRequested": false,
+    "antialiasActual": false,
+    "defaultFramebufferSamples": 0,
+    "renderPixelRatio": 1,
+    "performanceTimeOrigin": 1789165932865.5,
+    "thermalState": "not measured",
+    "telemetry": "same UI callbacks in A/B; system CPU and OS memory sampled every 2 seconds"
+  },
+  "scene": {
+    "asset": "/benchmark-assets/bistro/bistro-exterior.glb",
+    "assetSha256": "cd520e4a2f963d7b4c1fe6313e106d012080c166ee5817c924159c5e829218d2",
+    "assetBytes": 1100856892,
+    "fixture": "static-resident-bistro-exterior-district-grid",
+    "districts": 1,
+    "wireframe": false,
+    "showBounds": false,
+    "debugLinesIncluded": false,
+    "debugBoundsHelpers": 0,
+    "previewDurationSeconds": 60,
+    "sourceMeshesPerDistrict": 1591,
+    "sourceTrianglesPerDistrict": 2829226,
+    "sourceTriangles": 2829226,
+    "optimizationDomain": "static resident scene; fixed directional light, shadow projection, geometry, materials, alpha, textures and camera layers; only main camera pose changes",
+    "reference": "unchanged Three.js per-mesh frustum culling, world matrices and shadow map recomputed each render",
+    "shadowCacheInvalidation": "fresh renderer per configuration; forced rebuild on mode entry; not valid for changing casters/lights/materials/visibility/layers without invalidation",
+    "matrixCacheProof": "W_i = W_parent * L_i; immutable local transforms and parent links imply immutable world matrices by induction; camera remains updated",
+    "sharedGeometryCount": 1592,
+    "sharedMaterialCount": 133,
+    "sharedTextureCount": 405,
+    "sourceBounds": {
+      "min": [
+        -62.4582490603575,
+        -7.5618783677427235,
+        -87.93701218201225
+      ],
+      "max": [
+        111.3019584115591,
+        43.53236532809183,
+        96.48150707141068
+      ]
+    },
+    "translation": [
+      -24.421854675600798,
+      7.5618783677427235,
+      -4.272247444699211
+    ],
+    "uniformScale": 1,
+    "unit": "glTF asset units at scale 1; exporter unit conversion recorded in asset manifest",
+    "districtSpacing": [
+      187.66102406966993,
+      199.17200079369675
+    ],
+    "eyeHeight": 10.21884873916691,
+    "eyeHeightPolicy": "20 percent of source vertical bounds above translated lowest point; verify street clearance in preview",
+    "fov": 60,
+    "near": 0.015328273108750363,
+    "far": 1106.5111155205375,
+    "shadowMapSize": [
+      1024,
+      1024
+    ],
+    "shadowMapSizeRequested": 1024,
+    "path": "mixed",
+    "pathDescription": "elevated-wide-panorama-first-40-percent-then-perimeter-ground-level",
+    "environmentLighting": "Three RoomEnvironment PMREM generated once during preparation; identical A/B; no external texture",
+    "geometryAttributeBytes": 181472900
+  },
+  "quality": {
+    "passed": false,
+    "captures": [
+      {
+        "index": 0,
+        "baselineHash": "6f42258e391b109b8aa24c78d7bf79e44559bad0050dfe0ad2a8966ca148a9ea",
+        "repeatHash": "9dfbba7b25cac03a64b3948e21b2f96b804f067db8c7bbc8e530a281dc768762",
+        "candidateHash": "7b24f1e039f3ca916d7070ae082054b0238449a2fcd3ffa791c6d7f235df9e33",
+        "repeatDifferentBytes": 311,
+        "candidateDifferentBytes": 356,
+        "maxChannelDifference": 25,
+        "candidateShadowPassTriangles": 2829226,
+        "cachedShadowChecked": false
+      },
+      {
+        "index": 59,
+        "baselineHash": "fae640f61a24be23c2a097acfa4aad2c7b85e6e003df0305b8f824252abc441d",
+        "repeatHash": "fae640f61a24be23c2a097acfa4aad2c7b85e6e003df0305b8f824252abc441d",
+        "candidateHash": "fae640f61a24be23c2a097acfa4aad2c7b85e6e003df0305b8f824252abc441d",
+        "repeatDifferentBytes": 0,
+        "candidateDifferentBytes": 0,
+        "maxChannelDifference": 0,
+        "candidateShadowPassTriangles": 2829226,
+        "cachedShadowChecked": false
+      },
+      {
+        "index": 119,
+        "baselineHash": "d0be75297dbd6481ebcd0955e36c233f7eeed9a5b0d800acdcbb5dfdb8a99da7",
+        "repeatHash": "d0be75297dbd6481ebcd0955e36c233f7eeed9a5b0d800acdcbb5dfdb8a99da7",
+        "candidateHash": "d0be75297dbd6481ebcd0955e36c233f7eeed9a5b0d800acdcbb5dfdb8a99da7",
+        "repeatDifferentBytes": 0,
+        "candidateDifferentBytes": 0,
+        "maxChannelDifference": 0,
+        "candidateShadowPassTriangles": 2829226,
+        "cachedShadowChecked": false
+      }
+    ],
+    "checkedFrames": [
+      0,
+      59,
+      119
+    ],
+    "failure": "Différence de pixels : la campagne de performance n’a pas été exécutée."
+  },
+  "blocks": [],
+  "records": [
+    {
+      "timestamp": "2026-09-11T22:35:02.632Z",
+      "test": "14-open-world:quality",
+      "commit": null,
+      "status": "not-run",
+      "verdict": "REJECT",
+      "environment": {
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+        "threeVersion": "174"
+      },
+      "scene": {
+        "triangles": 2829226
+      },
+      "cpu": {
+        "frameMs": null
+      },
+      "gpu": {
+        "frameMs": null
+      },
+      "memory": {
+        "gpuBytes": null
+      },
+      "draw": {
+        "submitted": null
+      },
+      "customMetrics": {
+        "failure": "Différence de pixels : la campagne de performance n’a pas été exécutée."
+      }
+    }
+  ],
+  "limitations": [
+    "Static resident repetitions of the original Bistro exterior, not streaming terrain or a complete game; source geometry is shared between districts.",
+    "Source triangle counts are distinct from submitted main/shadow triangles; visibility and submission counts may legitimately differ between culling variants.",
+    "Captures read the default canvas framebuffer immediately after render, including the same ACES tone mapping and sRGB output as measured frames.",
+    "Exact pixel equality is checked only at three deterministic poses and this configuration; it is not a universal correctness proof.",
+    "rAF intervals measure callback cadence, not scanout or input latency. CPU submission time is not GPU execution time.",
+    "GPU timings are null if unsupported, disjoint, invalid or still pending after the bounded drain; no synchronizing GPU finish is used.",
+    "Hierarchy bounds require static geometry. Shadow-frustum union can retain every district, so no gain is presumed with shadows.",
+    "No LOD, decimation, material simplification or occlusion approximation is applied. Geometry byte counts exclude textures, driver copies and full GPU residency.",
+    "Shadow-cache and static-cache only reuse invariant outputs in this static fixture. First shadow production is included in preparation/warmup, not claimed as a steady-state saving. Animated scenes and streaming are not certified."
+  ],
+  "preparationMs": 3641.2000000178814,
+  "qualityMs": 3996.2999999821186,
+  "test": "14-open-world",
+  "provenance": {
+    "before": {
+      "timestamp": "2026-09-11T22:35:02.630Z",
+      "node": "v26.8.2",
+      "os": {
+        "platform": "darwin",
+        "release": "25.6.0",
+        "arch": "arm64"
+      },
+      "cpu": {
+        "model": "Apple M2 Max",
+        "logicalCount": 12
+      },
+      "memoryBytes": 103079215104,
+      "commit": "8425a625878e0e0ae4e1696e5771d77994840dfd",
+      "sourceHashes": {
+        "index.html": "a2dfb1229e5a017962a443eca34e2f6b6a403dc1d7eb71157e33f75e058df0ce",
+        "src/main.ts": "49b511f0cab5e00bb5d82abfcede551809ff5a39a1e2d8aa6c8def775dae976a",
+        "src/style.css": "16ac137e9634c71550884e99027813d6ca96412a09fed053e987c2b8074d5e79",
+        "14-open-world/worldScene.ts": "f4593c963604c62c2d6c837cc13b20ecfcbfcda1feec6be63787417c9bf82219",
+        "14-open-world/worldTypes.ts": "edadda691d2fe23e08863506058deafed9f9fdeeb37b25e3b504562546616d19",
+        "14-open-world/worldPage.ts": "062dd9004905aff8e40bb78c7b7510660f8573157f28632edbefbb65fa2370dc",
+        "14-open-world/worldMatrix.ts": "52cc7e11940c0a045c199611b869bfebbaad1dd8f05f5cca827bb3bc96833067",
+        "14-open-world/index.html": "b3273b48bd6e35cb2535606b532eac640f73c4fa35c923c2150909a88996e7c3",
+        "14-open-world/worldReporter.ts": "e881fb83b4d445cf183545ea6fabc60cec1766685191d531608a68d4aa000ef1",
+        "public/benchmark-assets/bistro/manifest.json": "d7b6677b5ed32d704f80a90fd82757c1cd7f13ea7155a17e9e9bcc2e13af8752",
+        "benchmarks/lodComparisonPlugin.ts": "4da04f3d3d7ef46a89f88339b8183a37fa858466a7dc6160f7b89c2af53c6e65",
+        "package.json": "1bb8e3475a277dbcd9c785ec709836421de95992e68aeb561762a072e981ed85",
+        "pnpm-lock.yaml": "2f6313d7776788eb69b8fc27b58d9897f970453752f920a65a036a08d3362bd6"
+      }
+    },
+    "after": {
+      "timestamp": "2026-09-11T22:35:10.328Z",
+      "node": "v26.8.2",
+      "os": {
+        "platform": "darwin",
+        "release": "25.6.0",
+        "arch": "arm64"
+      },
+      "cpu": {
+        "model": "Apple M2 Max",
+        "logicalCount": 12
+      },
+      "memoryBytes": 103079215104,
+      "commit": "8425a625878e0e0ae4e1696e5771d77994840dfd",
+      "sourceHashes": {
+        "index.html": "a2dfb1229e5a017962a443eca34e2f6b6a403dc1d7eb71157e33f75e058df0ce",
+        "src/main.ts": "49b511f0cab5e00bb5d82abfcede551809ff5a39a1e2d8aa6c8def775dae976a",
+        "src/style.css": "16ac137e9634c71550884e99027813d6ca96412a09fed053e987c2b8074d5e79",
+        "14-open-world/worldScene.ts": "f4593c963604c62c2d6c837cc13b20ecfcbfcda1feec6be63787417c9bf82219",
+        "14-open-world/worldTypes.ts": "edadda691d2fe23e08863506058deafed9f9fdeeb37b25e3b504562546616d19",
+        "14-open-world/worldPage.ts": "062dd9004905aff8e40bb78c7b7510660f8573157f28632edbefbb65fa2370dc",
+        "14-open-world/worldMatrix.ts": "52cc7e11940c0a045c199611b869bfebbaad1dd8f05f5cca827bb3bc96833067",
+        "14-open-world/index.html": "b3273b48bd6e35cb2535606b532eac640f73c4fa35c923c2150909a88996e7c3",
+        "14-open-world/worldReporter.ts": "e881fb83b4d445cf183545ea6fabc60cec1766685191d531608a68d4aa000ef1",
+        "public/benchmark-assets/bistro/manifest.json": "d7b6677b5ed32d704f80a90fd82757c1cd7f13ea7155a17e9e9bcc2e13af8752",
+        "benchmarks/lodComparisonPlugin.ts": "4da04f3d3d7ef46a89f88339b8183a37fa858466a7dc6160f7b89c2af53c6e65",
+        "package.json": "1bb8e3475a277dbcd9c785ec709836421de95992e68aeb561762a072e981ed85",
+        "pnpm-lock.yaml": "2f6313d7776788eb69b8fc27b58d9897f970453752f920a65a036a08d3362bd6"
+      }
+    },
+    "sourcesStable": true
+  }
+}

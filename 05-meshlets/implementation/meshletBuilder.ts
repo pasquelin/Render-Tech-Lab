@@ -14,7 +14,7 @@ import type {
   BoundingSphere,
   NormalCone,
 } from '../types.ts';
-import { norm, dot } from '../../shared/math/geometry.ts';
+import { dot } from '../../shared/math/geometry.ts';
 
 /**
  * Calcule la sphère englobante minimale d'un ensemble de sommets indexés.

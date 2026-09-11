@@ -1,0 +1,123 @@
+{
+  "timestamp": "2026-09-11T20:23:45.989Z",
+  "test": "09-gpu-compaction",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
+  },
+  "scene": {
+    "objects": 100000,
+    "triangles": 1250000,
+    "materials": 10,
+    "lights": 2
+  },
+  "cpu": {
+    "frameMs": 4.35,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 800000
+  },
+  "draw": {
+    "submitted": 100000,
+    "visible": 50000
+  },
+  "customMetrics": {
+    "benchmarkRows": [
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 1000,
+        "timeMs": 0.04,
+        "compactedCount": 500,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 1000,
+        "timeMs": 0.037,
+        "compactedCount": 500,
+        "atomicContention": 3000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 1000,
+        "timeMs": 0.141,
+        "compactedCount": 500,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 10000,
+        "timeMs": 0.349,
+        "compactedCount": 5000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 10000,
+        "timeMs": 0.345,
+        "compactedCount": 5000,
+        "atomicContention": 30000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 10000,
+        "timeMs": 1.158,
+        "compactedCount": 5000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 100000,
+        "timeMs": 0.464,
+        "compactedCount": 50000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 100000,
+        "timeMs": 0.286,
+        "compactedCount": 50000,
+        "atomicContention": 300000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 100000,
+        "timeMs": 4.35,
+        "compactedCount": 50000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 1000000,
+        "timeMs": 6.433,
+        "compactedCount": 500000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 1000000,
+        "timeMs": 3.066,
+        "compactedCount": 500000,
+        "atomicContention": 3000000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 1000000,
+        "timeMs": 42.112,
+        "compactedCount": 500000,
+        "atomicContention": 0
+      }
+    ],
+    "scale100kAtomicTimeMs": 0.286,
+    "scale100kScanTimeMs": 4.35,
+    "atomicContentionAt1M": 3000000,
+    "crossoverRecommendation": "Utiliser atomicAdd pour N < 50k, parallel-prefix-scan pour N >= 50k"
+  }
+}

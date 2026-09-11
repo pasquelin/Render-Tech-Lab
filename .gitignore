@@ -19,3 +19,8 @@ pnpm-debug.log*
 .env.local
 
 files_local
+.vite/
+benchmark-runs/
+
+# Generated licensed Bistro benchmark assets (large local files)
+/public/benchmark-assets/bistro/

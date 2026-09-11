@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 10-material-batching (Matérialisation Multi-Matériaux)
 
-**Date :** 2026-09-11T20:01:18.452Z  
+**Date :** 2026-09-11T20:23:45.991Z  
 **Statut :** `INTEGRATE`  
 **Stratégie Retenue :** `storage-buffer` (Indexation dynamique via Material Storage Buffer)
 

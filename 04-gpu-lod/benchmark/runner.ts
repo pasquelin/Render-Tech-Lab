@@ -107,7 +107,7 @@ export class LodBenchmarkRunner {
     // ----------------------------------------------------
     // Contrôle de conformité de l'erreur géométrique projetée
     // ----------------------------------------------------
-    const worldErrorLod1 = genResult.lods[1].simplificationError || 0.005;
+    const worldErrorLod1 = genResult.lods[1].simplificationError;
     // Vérification de l'erreur à la frontière LOD1 -> LOD0 (distance de bascule ~20m)
     const projErrorPx = calculateProjectedGeometricError(worldErrorLod1, 20.0, screenHeight, fovRad);
     const errorPassed = isGeometricErrorAcceptable(projErrorPx, CONTRACTUAL_MAX_ERROR_PX);
@@ -136,49 +136,21 @@ export class LodBenchmarkRunner {
     };
 
     const envInfo = {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'Node.js Test Harness',
-      commit: 'd2eb71a',
+      gpu: 'non mesuré (CPU/WASM)',
+      browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'Node.js',
+      commit: 'unknown',
     };
-
     const markdownReport = formatLodMarkdownReport(summary, envInfo);
-
-    // Conforme au Standard Benchmark Contract
     const latestJson = {
-      timestamp: new Date().toISOString(),
-      test: '04-gpu-lod',
-      commit: envInfo.commit,
-      gpuDevice: envInfo.gpu,
-      browser: envInfo.browser,
-      threeVersion: '0.174.0',
-      scene: {
-        objects: 2000,
-        triangles: lod0Triangles * 2000,
-        materials: 1,
-        lights: 2,
-      },
-      cpu: {
-        frameMs: 0.85,
-        submitMs: cpuLatenciesMs[1] ?? 0.12,
-      },
-      gpu: {
-        frameMs: 3.4,
-      },
-      memory: {
-        gpuBytes: (lod0Triangles + lod1Triangles + lod2Triangles) * 3 * 4 + 2000 * 64,
-      },
-      draw: {
-        submitted: 2000,
-        visible: 2000,
-      },
-      customMetrics: {
-        lod0Count: Math.round(2000 * 0.15),
-        lod1Count: Math.round(2000 * 0.35),
-        lod2Count: Math.round(2000 * 0.50),
-        decimationTimeMs: genResult.durationMs,
-        maxProjectedErrorPx: projErrorPx,
-        errorContractPassed: errorPassed,
-      },
+      timestamp: new Date().toISOString(), test: '04-gpu-lod', commit: null,
+      status: 'measured', verdict: 'not-yet-decided',
+      environment: { gpu: null, browser: envInfo.browser, threeVersion: THREE.REVISION, webgpuFeatures: null },
+      scene: { objects: null, triangles: lod0Triangles, materials: null, lights: null },
+      cpu: { frameMs: null, submitMs: null }, gpu: { frameMs: null },
+      memory: { gpuBytes: null }, draw: { submitted: null, visible: null },
+      customMetrics: { execution: 'cpu-wasm', decimationTimeMs: genResult.durationMs,
+        cpuSelection: summary.cpuSelection, gpuSelection: null,
+        maxProjectedErrorPx: projErrorPx, errorContractPassed: errorPassed },
     };
 
     return { summary, markdownReport, latestJson };

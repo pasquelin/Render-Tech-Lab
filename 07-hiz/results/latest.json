@@ -1,57 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:01:18.380Z",
+  "timestamp": "2026-09-11T21:28:57.377962+00:00",
   "test": "07-hiz",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0"
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 1,
-    "triangles": 2,
-    "materials": 1,
-    "lights": 0
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 1.101,
+    "frameMs": null,
     "submitMs": null
   },
   "gpu": {
     "frameMs": null
   },
   "memory": {
-    "gpuBytes": 5592404
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 1,
-    "visible": 1
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "measuredResolutions": [
-      {
-        "resolution": "256x256",
-        "mips": 9,
-        "vramBytes": 349524,
-        "timeMs": 1.487
-      },
-      {
-        "resolution": "512x512",
-        "mips": 10,
-        "vramBytes": 1398100,
-        "timeMs": 6.054
-      },
-      {
-        "resolution": "1024x1024",
-        "mips": 11,
-        "vramBytes": 5592404,
-        "timeMs": 18.339
-      }
-    ],
-    "pyramidMips1024": 11,
-    "generationTimeMs1024": 18.339,
-    "vramBytes1024": 5592404,
-    "conservativeReductionVerified": true
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "07-hiz/results/legacy-unverified/latest.json"
   }
 }

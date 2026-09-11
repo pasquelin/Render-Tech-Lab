@@ -7,7 +7,6 @@
 
 import type {
   MaterialDef,
-  MaterialBatchingStrategy,
   BatchingInput,
   BatchingOutput,
 } from '../types.ts';
@@ -78,8 +77,6 @@ export function evaluateBatchingStrategy(input: BatchingInput): BatchingOutput {
 
   let pipelineStateChanges = 0;
   let bindGroupChanges = 0;
-  let cpuFrameMs = 0.05;
-  let gpuFrameMs = 0.35;
 
   switch (strategy) {
     case 'state-switch':
@@ -87,31 +84,23 @@ export function evaluateBatchingStrategy(input: BatchingInput): BatchingOutput {
       pipelineStateChanges = materialCount;
       bindGroupChanges = materialCount;
       // Coût CPU Three.js standard : ~3µs par changement d'état + validation
-      cpuFrameMs = 0.1 + materialCount * 0.003 + objects * 0.001;
-      gpuFrameMs = 0.45;
       break;
 
     case 'storage-buffer':
       // 1 seul pipeline, 1 seul bindgroup contenant le storage buffer
       pipelineStateChanges = 1;
       bindGroupChanges = 1;
-      cpuFrameMs = 0.08;
       // Lookup dynamique dans le shader GPU : coût minime
-      gpuFrameMs = 0.36;
       break;
 
     case 'texture-array':
       pipelineStateChanges = 1;
       bindGroupChanges = 1;
-      cpuFrameMs = 0.08;
-      gpuFrameMs = 0.38;
       break;
 
     case 'pseudo-bindless':
       pipelineStateChanges = 1;
       bindGroupChanges = 1;
-      cpuFrameMs = 0.09;
-      gpuFrameMs = 0.39;
       break;
   }
 
@@ -121,8 +110,8 @@ export function evaluateBatchingStrategy(input: BatchingInput): BatchingOutput {
     materialCount,
     pipelineStateChanges,
     bindGroupChanges,
-    cpuFrameMs: Number(cpuFrameMs.toFixed(3)),
-    gpuFrameMs: Number(gpuFrameMs.toFixed(3)),
+    cpuFrameMs: null,
+    gpuFrameMs: null,
     materialTableBytes: tableBytes,
   };
 }

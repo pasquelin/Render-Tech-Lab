@@ -6,6 +6,7 @@ export class ClassicThreeScene {
   public scene: THREE.Scene;
   public meshes: THREE.Mesh[] = [];
   public totalTriangles: number = 0;
+  private readonly measurement: FrameMeasurement = { frameIndex: 0, cpuFrameMs: 0, submitMs: 0, fps: null, drawCalls: 0, triangles: 0 };
   private baseGeometry: THREE.BufferGeometry;
 
   constructor(instances: MeshInstanceDef[]) {
@@ -62,9 +63,13 @@ export class ClassicThreeScene {
    */
   public renderFrame(
     renderer: THREE.WebGLRenderer, // ou WebGPURenderer
-    camera: THREE.Camera,
+    camera: THREE.PerspectiveCamera,
     frameIndex: number
   ): FrameMeasurement {
+    if (camera.coordinateSystem !== THREE.WebGLCoordinateSystem) {
+      camera.coordinateSystem = THREE.WebGLCoordinateSystem;
+      camera.updateProjectionMatrix();
+    }
     const tStartCpu = performance.now();
 
     // Mesure isolée de la soumission Three.js (traversal + frustum culling CPU + encodage draw calls)
@@ -81,14 +86,10 @@ export class ClassicThreeScene {
     const drawCalls = renderer.info?.render?.calls ?? this.meshes.length;
     const triangles = renderer.info?.render?.triangles ?? this.totalTriangles;
 
-    return {
-      frameIndex,
-      cpuFrameMs,
-      submitMs,
-      fps: cpuFrameMs > 0 ? 1000 / cpuFrameMs : 60,
-      drawCalls,
-      triangles,
-    };
+    const result = this.measurement;
+    result.frameIndex = frameIndex; result.cpuFrameMs = cpuFrameMs; result.submitMs = submitMs;
+    result.fps = null; result.drawCalls = drawCalls; result.triangles = triangles;
+    return result;
   }
 
   public dispose() {

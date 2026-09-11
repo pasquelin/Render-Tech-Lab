@@ -1,3 +1,5 @@
+import { TimestampBatch } from '../../shared/gpu/timing.ts';
+import { runFrames } from '../../shared/benchmark/comparison.ts';
 import * as THREE from 'three';
 import type {
   BenchmarkResult,
@@ -26,6 +28,7 @@ export class BenchmarkRunner {
   private currentCount: number = 2000;
   private isBenchmarking: boolean = false;
   private frameCount: number = 0;
+  private lastTick: number | null = null;
 
   // Callbacks d'interface
   public onMetricsUpdate?: (m: FrameMeasurement, mode: string, count: number) => void;
@@ -131,6 +134,8 @@ export class BenchmarkRunner {
       measurement = this.gpuDrivenRenderer.renderFrame(this.camera, this.frameCount);
     }
 
+    if (measurement) measurement.fps = this.lastTick !== null && time > this.lastTick ? 1000 / (time - this.lastTick) : null;
+    this.lastTick = time;
     if (measurement && this.onMetricsUpdate) {
       this.onMetricsUpdate(measurement, this.currentMode, this.currentCount);
     }
@@ -143,156 +148,58 @@ export class BenchmarkRunner {
    * (500, 1 000, 2 000, 5 000, 10 000, 25 000, 50 000, 100 000 objets)
    */
   public async runAutomatedBenchmark(customTiers?: number[]): Promise<CrossoverReport> {
+    if (!this.device || !this.classicRenderer) throw new Error('WebGPU indisponible : aucune mesure simulée');
+    if (this.isBenchmarking) throw new Error('Une campagne est déjà active');
     this.isBenchmarking = true;
-    const tiers = customTiers || [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
-    const classicResults: BenchmarkResult[] = [];
-    const gpuDrivenResults: BenchmarkResult[] = [];
-
-    for (let pIdx = 0; pIdx < tiers.length; pIdx++) {
-      const count = tiers[pIdx];
-      await this.setupTier(count);
-
-      // Échantillonnage adaptatif pour les tiers extrêmes (évite le freeze CPU sur Test A)
-      const WARMUP_FRAMES = count >= 25000 ? 5 : 15;
-      const SAMPLE_FRAMES = count >= 50000 ? 10 : count >= 25000 ? 20 : 40;
-
-      // --- 1. Mesure Test A (Classic) ---
-      this.setMode('classic');
-      if (this.onBenchmarkProgress) {
-        this.onBenchmarkProgress(
-          `Test A (Classic) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
-          (pIdx * 2) / (tiers.length * 2)
-        );
-      }
-
-      const classicSamples: number[] = [];
-      const classicCpuFrames: number[] = [];
-
-      for (let f = 0; f < WARMUP_FRAMES + SAMPLE_FRAMES; f++) {
-        const angle = f * 0.05;
-        this.camera.position.set(Math.sin(angle) * 90, 25, Math.cos(angle) * 90);
-        this.camera.lookAt(0, 0, 0);
-
-        if (this.classicScene && this.classicRenderer) {
-          const m = this.classicScene.renderFrame(this.classicRenderer, this.camera, f);
-          if (f >= WARMUP_FRAMES) {
-            classicSamples.push(m.submitMs);
-            classicCpuFrames.push(m.cpuFrameMs);
-          }
+    const tiers = customTiers ?? [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
+    const classicResults: BenchmarkResult[] = [], gpuDrivenResults: BenchmarkResult[] = [];
+    const warmup = 60, samples = 128;
+    try {
+      for (let tier = 0; tier < tiers.length; tier++) {
+        const count = tiers[tier];
+        await this.setupTier(count);
+        for (const mode of (tier % 2 ? ['gpu-driven', 'classic'] : ['classic', 'gpu-driven']) as ('classic' | 'gpu-driven')[]) {
+          this.setMode(mode);
+          this.onBenchmarkProgress?.(`${mode} — ${count}`, tier / tiers.length);
+          const cpu = new Float64Array(samples), submit = new Float64Array(samples);
+          const timer = mode === 'gpu-driven' && this.device.features.has('timestamp-query')
+            ? new TimestampBatch(this.device, samples, 2) : undefined;
+          let calls = 0;
+          const render = (i: number, measured: boolean) => {
+            const angle = i * 0.05;
+            this.camera.position.set(Math.sin(angle) * 90, 25, Math.cos(angle) * 90);
+            this.camera.lookAt(0, 0, 0);
+            const m = mode === 'classic'
+              ? this.classicScene!.renderFrame(this.classicRenderer!, this.camera, i)
+              : this.gpuDrivenRenderer!.renderFrame(this.camera, i, measured ? timer : undefined, i);
+            if (measured) { cpu[i] = m.cpuFrameMs; submit[i] = m.submitMs; calls = m.drawCalls; }
+          };
+          try {
+            await runFrames(warmup, i => render(i, false));
+            await this.device.queue.onSubmittedWorkDone();
+            timer?.begin(samples);
+            await runFrames(samples, i => render(i, true));
+            if (timer) await timer.collect();
+            const average = (a: Float64Array) => a.reduce((sum, x) => sum + x, 0) / a.length;
+            const sorted = submit.slice().sort();
+            const gpu = timer && timer.frameSpanMs.every(Number.isFinite) ? average(timer.frameSpanMs) : null;
+            const result: BenchmarkResult = { mode, objectCount: count, samplesCount: samples,
+              avgCpuFrameMs: average(cpu), avgSubmitMs: average(submit),
+              p95SubmitMs: sorted[Math.ceil(samples * .95) - 1], p99SubmitMs: sorted[Math.ceil(samples * .99) - 1],
+              avgFps: null, gpuFrameMs: gpu, drawCalls: calls };
+            (mode === 'classic' ? classicResults : gpuDrivenResults).push(result);
+          } finally { timer?.destroy(); }
         }
-        await new Promise((resolve) => requestAnimationFrame(resolve));
       }
-
-      classicSamples.sort((a, b) => a - b);
-      const avgSubmitClassic = classicSamples.reduce((a, b) => a + b, 0) / classicSamples.length;
-      const avgCpuFrameClassic = classicCpuFrames.reduce((a, b) => a + b, 0) / classicCpuFrames.length;
-      const p95Classic = classicSamples[Math.floor(classicSamples.length * 0.95)];
-      const p99Classic = classicSamples[Math.floor(classicSamples.length * 0.99)];
-
-      classicResults.push({
-        mode: 'classic',
-        objectCount: count,
-        samplesCount: SAMPLE_FRAMES,
-        avgCpuFrameMs: avgCpuFrameClassic,
-        avgSubmitMs: avgSubmitClassic,
-        p95SubmitMs: p95Classic,
-        p99SubmitMs: p99Classic,
-        avgFps: 1000 / avgCpuFrameClassic,
-        drawCalls: count,
-      });
-
-      this.setMode('gpu-driven');
-      if (this.onBenchmarkProgress) {
-        this.onBenchmarkProgress(
-          `Test B (GPU-Driven) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
-          (pIdx * 2 + 1) / (tiers.length * 2)
-        );
-      }
-
-      const gpuSamples: number[] = [];
-      const gpuCpuFrames: number[] = [];
-
-      for (let f = 0; f < WARMUP_FRAMES + SAMPLE_FRAMES; f++) {
-        const angle = f * 0.05;
-        this.camera.position.set(Math.sin(angle) * 90, 25, Math.cos(angle) * 90);
-        this.camera.lookAt(0, 0, 0);
-
-        if (this.gpuDrivenRenderer) {
-          const m = this.gpuDrivenRenderer.renderFrame(this.camera, f);
-          if (f >= WARMUP_FRAMES) {
-            gpuSamples.push(m.submitMs);
-            gpuCpuFrames.push(m.cpuFrameMs);
-          }
-        } else {
-          // Simulation équivalente si WebGPU natif n'est pas exposé
-          const fakeSubmit = 0.15; // coût fixe dispatch compute + 1 draw
-          gpuSamples.push(fakeSubmit);
-          gpuCpuFrames.push(fakeSubmit + 0.4);
-        }
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-      }
-
-      gpuSamples.sort((a, b) => a - b);
-      const avgSubmitGpu = gpuSamples.reduce((a, b) => a + b, 0) / gpuSamples.length;
-      const avgCpuFrameGpu = gpuCpuFrames.reduce((a, b) => a + b, 0) / gpuCpuFrames.length;
-      const p95Gpu = gpuSamples[Math.floor(gpuSamples.length * 0.95)];
-      const p99Gpu = gpuSamples[Math.floor(gpuSamples.length * 0.99)];
-
-      gpuDrivenResults.push({
-        mode: 'gpu-driven',
-        objectCount: count,
-        samplesCount: SAMPLE_FRAMES,
-        avgCpuFrameMs: avgCpuFrameGpu,
-        avgSubmitMs: avgSubmitGpu,
-        p95SubmitMs: p95Gpu,
-        p99SubmitMs: p99Gpu,
-        avgFps: 1000 / avgCpuFrameGpu,
-        drawCalls: 1,
-      });
-
-      // Mise à jour continue du graphique
+      classicResults.sort((a, b) => a.objectCount - b.objectCount);
+      gpuDrivenResults.sort((a, b) => a.objectCount - b.objectCount);
+      // A WebGL/Three.js vs native WebGPU comparison cannot isolate an algorithm crossover.
+      const report: CrossoverReport = { timestamp: new Date().toISOString(), tiers, classicResults, gpuDrivenResults,
+        crossoverObjectCount: null,
+        analysis: 'Comparaison système WebGL/Three.js contre WebGPU natif. Aucun crossover algorithmique ni verdict automatique ; GPU mesuré uniquement si timestamp-query disponible.' };
       this.chart.render(classicResults, gpuDrivenResults, null);
-    }
-
-    // Calcul du point de croisement (Crossover point)
-    let crossoverCount: number | null = null;
-    for (let i = 0; i < tiers.length - 1; i++) {
-      const c1 = classicResults[i].avgSubmitMs;
-      const c2 = classicResults[i + 1].avgSubmitMs;
-      const g1 = gpuDrivenResults[i].avgSubmitMs;
-      const g2 = gpuDrivenResults[i + 1].avgSubmitMs;
-
-      // Si au début classic < gpu et ensuite classic > gpu
-      if (c1 <= g1 && c2 >= g2) {
-        // Interpolation linéaire
-        const p1 = tiers[i];
-        const p2 = tiers[i + 1];
-        const t = (g1 - c1) / ((c2 - c1) - (g2 - g1));
-        crossoverCount = p1 + t * (p2 - p1);
-        break;
-      } else if (c1 > g1 && crossoverCount === null) {
-        crossoverCount = tiers[0];
-      }
-    }
-
-    this.chart.render(classicResults, gpuDrivenResults, crossoverCount);
-
-    const report: CrossoverReport = {
-      timestamp: new Date().toISOString(),
-      tiers,
-      classicResults,
-      gpuDrivenResults,
-      crossoverObjectCount: crossoverCount,
-      analysis: crossoverCount
-        ? `Le point de croisement mesuré se situe à environ ${Math.round(crossoverCount)} objets. Au-delà de ce seuil, la soumission CPU de Three.js diverge ($O(N)$) tandis que le pipeline GPU-driven conserve un coût d'encodage constant ($O(1)$).`
-        : `L'architecture GPU-driven démontre un gain dès le premier tier de test.`,
-    };
-
-    this.isBenchmarking = false;
-    if (this.onBenchmarkComplete) {
-      this.onBenchmarkComplete(report);
-    }
-
-    return report;
+      this.onBenchmarkComplete?.(report);
+      return report;
+    } finally { this.isBenchmarking = false; this.lastTick = null; }
   }
 }

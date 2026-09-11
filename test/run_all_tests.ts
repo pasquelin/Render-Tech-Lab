@@ -110,7 +110,7 @@ async function runAllSuites() {
     process.exit(1);
   }
 
-  console.log('\n🎉 TOUS LES 14 BANCS UNITAIRES (00 à 13) SONT VALIDÉS AVEC SUCCÈS !');
+  console.log('\n🎉 TESTS CPU (00 à 13) RÉUSSIS — PERFORMANCE GPU NON ÉVALUÉE');
 }
 
 runAllSuites().catch((err) => {

@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-09-11T20:23:45.805Z",
+  "test": "03-gpu-scene",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0",
+    "webgpuFeatures": [
+      "indirect-first-instance"
+    ]
+  },
+  "scene": {
+    "objects": 2000,
+    "triangles": 398,
+    "materials": 10,
+    "lights": 2
+  },
+  "cpu": {
+    "frameMs": 0.28,
+    "submitMs": 0.18
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 213008
+  },
+  "draw": {
+    "submitted": 2000,
+    "visible": 2000
+  },
+  "customMetrics": {
+    "geometryCount": 10,
+    "materialCount": 10,
+    "dynamicObjectCount": 1500,
+    "bytesPerObject": 96,
+    "indirectDrawCount": 10,
+    "cpuGainVsClassicPercent": 93.2
+  }
+}

@@ -1,0 +1,68 @@
+- main [ref=f19e2]:
+  - generic [ref=f19e3]:
+    - generic [ref=f19e4]:
+      - link "← Laboratoire" [ref=f19e5] [cursor=pointer]:
+        - /url: /
+      - heading "14 · Monde ouvert sous pression" [level=1] [ref=f19e6]
+      - paragraph [ref=f19e7]: Décor Bistro réel · quartiers répétés · parcours identique · jusqu’à des dizaines de millions de triangles.
+    - link "Comparatif des calculs LOD" [ref=f19e8] [cursor=pointer]:
+      - /url: /04-gpu-lod/comparison.html
+  - generic [ref=f19e9]:
+    - group [ref=f19e10]:
+      - generic [ref=f19e11]:
+        - text: Étendue du décor
+        - combobox "Étendue du décor" [ref=f19e12]:
+          - option "1 quartier · référence"
+          - option "9 quartiers · surcharge" [selected]
+          - option "25 quartiers · extrême"
+      - generic [ref=f19e13]:
+        - text: Résolution physique
+        - combobox "Résolution physique" [ref=f19e14]:
+          - option "Full HD" [selected]
+          - option "1440p"
+          - option "4K"
+          - option "Full HD · ratio 2"
+          - option "Full HD + 1440p + 4K"
+      - generic [ref=f19e15]:
+        - text: Comparaison
+        - combobox "Comparaison" [ref=f19e16]:
+          - option "Brut → hors champ écarté" [selected]
+          - option "Hors champ → quartiers filtrés"
+      - generic [ref=f19e17]:
+        - text: Aperçu animé
+        - combobox "Aperçu animé" [ref=f19e18]:
+          - option "Hors champ écarté" [selected]
+          - option "Rendu brut"
+          - option "Quartiers filtrés"
+      - generic [ref=f19e19]:
+        - text: Répétitions
+        - combobox "Répétitions" [ref=f19e20]:
+          - option "2 campagnes" [selected]
+          - option "1 campagne"
+      - generic [ref=f19e21]:
+        - checkbox "Ombres" [checked] [ref=f19e22] [cursor=pointer]
+        - text: Ombres
+    - generic [ref=f19e23]:
+      - button "Voir le parcours 3D" [ref=f19e24] [cursor=pointer]
+      - button "Mesurer et comparer" [ref=f19e25] [cursor=pointer]
+      - generic [ref=f19e26]: 120 images par bloc · ordre A/B/B/A · contrôle des pixels avant mesure
+    - status [ref=f19e27]: Arrêt demandé.
+  - generic [ref=f19e28]:
+    - generic [ref=f19e29]:
+      - heading "Le décor réellement rendu" [level=2] [ref=f19e30]
+      - generic [ref=f19e31]: 9 quartier(s) · 1920 × 1080 physiques · ombres actives
+    - paragraph [ref=f19e32]: 43 619 390 triangles principaux + 25 463 034 d’ombres · 38868 dessins · CPU 235.9 ms · intervalle 233.4 ms
+    - generic "Scène urbaine détaillée du banc monde ouvert" [ref=f19e33]
+  - generic [ref=f19e34]:
+    - heading "Campagnes conservées" [level=2] [ref=f19e35]
+    - generic [ref=f19e36]: Aucune campagne enregistrée.
+  - generic [ref=f19e37]:
+    - paragraph [ref=f19e38]:
+      - text: Amazon Lumberyard Bistro, Open Research Content Archive (ORCA), 2017 ·
+      - link "source du modèle" [ref=f19e39] [cursor=pointer]:
+        - /url: https://developer.nvidia.com/orca/amazon-lumberyard-bistro
+      - text: ·
+      - link "CC BY 4.0" [ref=f19e40] [cursor=pointer]:
+        - /url: https://creativecommons.org/licenses/by/4.0/
+      - text: . Conversion de format locale, quartiers répétés pour la surcharge.
+    - paragraph [ref=f19e41]: Ce test charge les quartiers en mémoire. Il mesure un décor étendu et dense ; le chargement progressif d’un monde infini demande un autre scénario. Le rendu brut sert à mesurer l’effet du culling classique, et ne représente pas une nouvelle découverte par rapport à la documentation du projet.

@@ -1,3 +1,4 @@
+import type { TimestampBatch } from '../../shared/gpu/timing.ts';
 import * as THREE from 'three';
 import { GPUSceneBuffers, BYTES_PER_OBJECT, packObject } from './gpuSceneBuffers.ts';
 import { configureCanvas } from '../../src/common/gpuContext.ts';
@@ -103,6 +104,11 @@ export class GPUSceneRenderer {
 
   // Vue de profondeur mise en cache : ne change qu'au resize, pas à chaque frame.
   private depthView!: GPUTextureView;
+  private readonly computeDescriptor: GPUComputePassDescriptor = {};
+  private renderDescriptor!: GPURenderPassDescriptor;
+  private colorAttachment!: GPURenderPassColorAttachment;
+  private readonly submitList: GPUCommandBuffer[] = [];
+  private readonly measurement = { submitMs: 0, drawCalls: 0 };
 
   // Scratch réutilisés par updateCamera() — évite 3 allocations par frame.
   private camScratch = new Float32Array(64); // 256 octets
@@ -196,6 +202,9 @@ export class GPUSceneRenderer {
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     this.depthView = this.depthTexture.createView();
+    this.colorAttachment = { view: this.depthView, clearValue: { r: .11, g: .13, b: .17, a: 1 }, loadOp: 'clear', storeOp: 'store' };
+    this.renderDescriptor = { colorAttachments: [this.colorAttachment], depthStencilAttachment: {
+      view: this.depthView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } };
   }
 
   public setScene(sceneData: GeneratedGPUScene) {
@@ -260,11 +269,14 @@ export class GPUSceneRenderer {
   public updateCamera(camera: THREE.PerspectiveCamera) {
     if (!this.buffers.cameraBuffer) return;
 
+    if (camera.coordinateSystem !== THREE.WebGPUCoordinateSystem) {
+      camera.coordinateSystem = THREE.WebGPUCoordinateSystem; camera.updateProjectionMatrix();
+    }
     camera.updateMatrixWorld();
     const viewProj = this.camViewProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
 
     // Calcul des 6 plans de frustum
-    this.camFrustum.setFromProjectionMatrix(viewProj);
+    this.camFrustum.setFromProjectionMatrix(viewProj, THREE.WebGPUCoordinateSystem);
 
     const buffer = this.camScratch;
     viewProj.toArray(buffer, 0);
@@ -317,7 +329,7 @@ export class GPUSceneRenderer {
     );
   }
 
-  public render(): { submitMs: number; drawCalls: number } {
+  public render(timer?: TimestampBatch, sample = 0): { submitMs: number; drawCalls: number } {
     if (!this.sceneData || !this.megaVertexBuffer || !this.megaIndexBuffer) {
       return { submitMs: 0, drawCalls: 0 };
     }
@@ -332,9 +344,8 @@ export class GPUSceneRenderer {
     });
 
     // 2. Passe Compute : Visibilité + Génération des commandes indirectes
-    const computePass = commandEncoder.beginComputePass({
-      label: 'GPUScene.ComputePass',
-    });
+    this.computeDescriptor.timestampWrites = timer?.writes(sample, 0);
+    const computePass = commandEncoder.beginComputePass(this.computeDescriptor);
     computePass.setPipeline(this.cullingPipeline);
     computePass.setBindGroup(0, this.cullingBindGroup);
     const workgroups = Math.ceil(this.sceneData.objects.length / 64);
@@ -342,24 +353,9 @@ export class GPUSceneRenderer {
     computePass.end();
 
     // 3. Passe Render : Tir des commandes indirectes
-    const textureView = this.context.getCurrentTexture().createView();
-    const renderPass = commandEncoder.beginRenderPass({
-      label: 'GPUScene.RenderPass',
-      colorAttachments: [
-        {
-          view: textureView,
-          clearValue: { r: 0.11, g: 0.13, b: 0.17, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-      depthStencilAttachment: {
-        view: this.depthView,
-        depthClearValue: 1.0,
-        depthLoadOp: 'clear',
-        depthStoreOp: 'store',
-      },
-    });
+    this.colorAttachment.view = this.context.getCurrentTexture().createView();
+    this.renderDescriptor.timestampWrites = timer?.writes(sample, 1);
+    const renderPass = commandEncoder.beginRenderPass(this.renderDescriptor);
 
     renderPass.setPipeline(this.renderPipeline);
     renderPass.setBindGroup(0, this.renderBindGroup);
@@ -375,14 +371,14 @@ export class GPUSceneRenderer {
     renderPass.end();
 
     // 4. Soumission
-    const commandBuffer = commandEncoder.finish();
-    this.device.queue.submit([commandBuffer]);
+    if (timer && sample === timer.capacity - 1) timer.resolve(commandEncoder);
+    this.submitList[0] = commandEncoder.finish();
+    this.device.queue.submit(this.submitList);
+    if (timer && sample === timer.capacity - 1) timer.submitted();
 
     const submitMs = performance.now() - t0;
-    return {
-      submitMs,
-      drawCalls: totalGeoms,
-    };
+    this.measurement.submitMs = submitMs; this.measurement.drawCalls = totalGeoms;
+    return this.measurement;
   }
 
   /** Compteurs réels de visibilité produits par la passe compute. */

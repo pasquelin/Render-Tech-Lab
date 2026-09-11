@@ -1,7 +1,7 @@
 import type { GpuSceneBenchResult, SceneStressConfig } from '../types.ts';
 
 /**
- * Rapport Markdown du module 02, généré à partir des mesures réelles.
+ * Rapport Markdown du module 03, généré à partir des mesures réelles.
  *
  * Règle de gouvernance : chaque cellule provient d'un échantillon mesuré. Une
  * grandeur non instrumentée s'écrit « n/a » — jamais une estimation, qui
@@ -47,7 +47,7 @@ export function formatGpuSceneReport(
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
   const lines: string[] = [];
-  lines.push('# Bench Report: 02-gpu-scene');
+  lines.push('# Bench Report: 03-gpu-scene');
   lines.push('');
   lines.push(
     '**Technique under test:** Heterogeneous GPU Scene (`ObjectBuffer`, `GeometryBuffer`, `MaterialBuffer`, Multi-Draw Indirect)  '
@@ -95,14 +95,14 @@ export function formatGpuSceneReport(
   lines.push('');
   lines.push('## 2. Culling GPU et empreinte VRAM (Test B)');
   lines.push('');
-  lines.push('| Scénario | Objets visibles | Objets culled | VRAM tampons de scène |');
-  lines.push('|---|---:|---:|---:|');
+  lines.push('| Scénario | Objets visibles | Objets culled | VRAM tampons de scène | GPU Test B | GPU Test B |');
+  lines.push('|---|---:|---:|---:|---:|');
   for (const p of pairs) {
     const b = p.gpu;
     lines.push(
       `| ${p.config.name} | ${fmtInt(b ? b.visibleObjects : null)} | ${fmtInt(b ? b.culledObjects : null)} | ${fmtMB(
         b ? b.gpuMemoryBytes : null
-      )} |`
+      )} | ${fmtMs(b?.gpuFrameMs ?? null)} |`
     );
   }
 
@@ -113,7 +113,7 @@ export function formatGpuSceneReport(
   lines.push('- Test A et Test B suivent le même protocole, sur la même instance de navigateur, le même GPU et la même résolution de canvas.');
   lines.push('- La boucle d\'animation est neutralisée pendant la campagne pour ne pas soumettre de frames non mesurées.');
   lines.push('- Disposition de scène déterministe (générateur à graine fixe), donc rejouable à l\'identique.');
-  lines.push('- Le temps GPU n\'est pas instrumenté (aucune timestamp query) : les colonnes de temps sont des temps CPU.');
+  lines.push('- GPU Test B mesure par timestamp-query l’enveloppe compute/raster quand disponible ; les autres colonnes de temps mesurent le CPU. Les moteurs WebGL et WebGPU diffèrent : aucun gain algorithmique isolé n’est déduit.');
   lines.push('');
 
   return lines.join('\n');

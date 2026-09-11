@@ -1,89 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:01:18.255Z",
+  "timestamp": "2026-09-11T21:28:57.377726+00:00",
   "test": "02-gpu-frustum-culling",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0",
-    "webgpuFeatures": [
-      "indirect-first-instance"
-    ]
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 2000,
-    "triangles": 768000,
-    "materials": 1,
-    "lights": 2
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.25,
-    "submitMs": 0.15
+    "frameMs": null,
+    "submitMs": null
   },
   "gpu": {
-    "frameMs": 0.046
+    "frameMs": null
   },
   "memory": {
-    "gpuBytes": 128000
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 2000,
-    "visible": 1200
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "culledCount": 800,
-    "cullRatePercent": 40,
-    "gpuCullComputeMs": 0.046,
-    "benchmarkRows": [
-      {
-        "instanceCount": 500,
-        "cpuCullMs": 0.5807089999999988,
-        "gpuComputeMs": 0.0415,
-        "visibleCount": 300,
-        "culledCount": 200,
-        "speedup": 14
-      },
-      {
-        "instanceCount": 1000,
-        "cpuCullMs": 0.06629199999999003,
-        "gpuComputeMs": 0.043000000000000003,
-        "visibleCount": 600,
-        "culledCount": 400,
-        "speedup": 1.5
-      },
-      {
-        "instanceCount": 2000,
-        "cpuCullMs": 0.14808299999999974,
-        "gpuComputeMs": 0.046,
-        "visibleCount": 1200,
-        "culledCount": 800,
-        "speedup": 3.2
-      },
-      {
-        "instanceCount": 5000,
-        "cpuCullMs": 0.3741669999999999,
-        "gpuComputeMs": 0.055,
-        "visibleCount": 3000,
-        "culledCount": 2000,
-        "speedup": 6.8
-      },
-      {
-        "instanceCount": 10000,
-        "cpuCullMs": 0.3273329999999959,
-        "gpuComputeMs": 0.07,
-        "visibleCount": 6000,
-        "culledCount": 4000,
-        "speedup": 4.7
-      },
-      {
-        "instanceCount": 50000,
-        "cpuCullMs": 1.3950419999999895,
-        "gpuComputeMs": 0.19,
-        "visibleCount": 30000,
-        "culledCount": 20000,
-        "speedup": 7.3
-      }
-    ]
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "02-gpu-frustum-culling/results/legacy-unverified/latest.json"
   }
 }

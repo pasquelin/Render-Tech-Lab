@@ -1978,6 +1978,12 @@ const MODULE_SCHEMAS: Record<string, string> = {
 
 
 window.addEventListener('DOMContentLoaded', async () => {
+  if (new URLSearchParams(window.location.search).get('test') === '14-open-world') {
+    const { mountWorldWorkbench } = await import('../14-open-world/worldPage.ts');
+    mountWorldWorkbench();
+    refreshIcons();
+    return;
+  }
   const canvasWebGpu = document.getElementById('canvas-webgpu') as HTMLCanvasElement;
   const canvasWebGL = document.getElementById('canvas-webgl') as HTMLCanvasElement;
   const chartCanvas = document.getElementById('canvas-chart') as HTMLCanvasElement;
@@ -2151,16 +2157,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     const stats = mode === 'classic' ? sc?.statsClassic || desc.stats : sc?.statsGpu || desc.stats;
-    const pills = mode === 'classic' ? sc?.pillsClassic || desc.metricsPills : sc?.pillsGpu || desc.metricsPills;
+    const pills = [{ label: 'Mesures', val: 'Non exécutées' }];
 
     statObjects.innerText = stats.objects;
-    statSubmit.innerText = stats.submit;
-    statCpuFrame.innerText = stats.cpuFrame;
-    statFps.innerText = stats.fps;
-    statDrawCalls.innerText = stats.drawCalls;
+    statSubmit.innerText = 'non mesuré';
+    statCpuFrame.innerText = 'non mesuré';
+    statFps.innerText = 'non mesuré';
+    statDrawCalls.innerText = 'non mesuré';
 
     if (sc?.desc) {
-      setBenchStatus(sc.desc, mode === 'classic' ? 'text-error/90' : 'text-primary');
+      setBenchStatus('Scénario chargé — lancer le banc pour recueillir des mesures.', 'text-base-content/60');
     }
 
     if (moduleId !== '01-indirect-draw' && moduleId !== '03-gpu-scene' && moduleId !== '04-gpu-lod') {
@@ -2339,9 +2345,14 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Bascule globale de module
   async function switchModule(moduleId: string) {
+    if (moduleId === '14-open-world') {
+      window.location.assign('/?test=14-open-world');
+      return;
+    }
     currentModuleId = moduleId;
     const desc = MODULE_DESCRIPTORS[moduleId];
     if (!desc) return;
+    document.getElementById('btn-lod-comparison')?.classList.toggle('hidden', moduleId !== '04-gpu-lod');
 
     if (selectModule) {
       selectModule.value = moduleId;
@@ -2500,29 +2511,30 @@ window.addEventListener('DOMContentLoaded', async () => {
   let sumSubmit = 0;
   let sumCpu = 0;
   let sumFps = 0;
+  let fpsSamples = 0;
   let sampleCount = 0;
 
-  function handleMetrics(submitMs: number, cpuFrameMs: number, fps: number, drawCalls: number, count: number) {
+  function handleMetrics(submitMs: number, cpuFrameMs: number, fps: number | null, drawCalls: number, count: number) {
     sumSubmit += submitMs;
     sumCpu += cpuFrameMs;
-    sumFps += fps;
+    if (fps !== null) { sumFps += fps; fpsSamples++; }
     sampleCount++;
 
     const now = performance.now();
     if (now - lastUiUpdate >= 350) {
       const avgSubmit = sumSubmit / sampleCount;
       const avgCpu = sumCpu / sampleCount;
-      const avgFps = Math.round(sumFps / sampleCount);
+      const avgFps = fpsSamples ? Math.round(sumFps / fpsSamples) : null;
 
       statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
       statSubmit.innerText = avgSubmit < 0.05 ? '< 0.1 ms' : `${avgSubmit.toFixed(1)} ms`;
       statCpuFrame.innerText = avgCpu < 0.05 ? '< 0.1 ms' : `${avgCpu.toFixed(1)} ms`;
-      statFps.innerText = `${Math.min(avgFps, 120)} FPS`;
+      statFps.innerText = avgFps === null ? 'non mesuré' : `${avgFps} FPS`;
       statDrawCalls.innerText = drawCalls.toLocaleString('fr-FR');
 
       sumSubmit = 0;
       sumCpu = 0;
-      sumFps = 0;
+      sumFps = 0; fpsSamples = 0;
       sampleCount = 0;
       lastUiUpdate = now;
     }
@@ -2712,7 +2724,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     } else if (currentModuleId === '03-gpu-scene' && runner02) {
       runner02.setMode('gpu-scene');
     } else if (currentModuleId === '04-gpu-lod') {
-      benchStatus.innerText = 'Mode 04C actif : Sélection Screen-Space Error sur GPU (Compute WGSL).';
+      benchStatus.innerText = '04C non exécuté : la sélection GPU reste à instrumenter.';
     } else {
       applyScenario(currentModuleId, selectCount.value, 'gpu-driven');
     }
@@ -2734,11 +2746,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       const sc = BASELINE_00_SCENARIOS[val];
       if (sc) {
         statObjects.innerText = sc.objects;
-        statSubmit.innerText = sc.submit;
-        statCpuFrame.innerText = sc.cpuFrame;
-        statFps.innerText = sc.fps;
-        statDrawCalls.innerText = sc.drawCalls;
-        setBenchStatus(sc.desc);
+        statSubmit.innerText = 'non mesuré';
+        statCpuFrame.innerText = 'non mesuré';
+        statFps.innerText = 'non mesuré';
+        statDrawCalls.innerText = 'non mesuré';
+        setBenchStatus('Scénario de référence non remesuré.');
       }
       return;
     }
@@ -2746,10 +2758,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (currentModuleId === '04-gpu-lod') {
       const count = parseInt(val, 10);
       statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
-      statSubmit.innerText = '< 0.1 ms';
-      statCpuFrame.innerText = `${(0.2 + (count / 50000) * 1.5).toFixed(1)} ms`;
-      statFps.innerText = '60 FPS';
-      statDrawCalls.innerText = '1';
+      statSubmit.innerText = 'non mesuré';
+      statCpuFrame.innerText = 'non mesuré';
+      statFps.innerText = 'non mesuré';
+      statDrawCalls.innerText = 'non mesuré';
       benchStatus.innerText = `Scène ${count} objets : décimation multi-LOD et sélection SSE.`;
       return;
     }
@@ -2775,10 +2787,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (currentModuleId === '04-gpu-lod') {
       const count = parseInt(val, 10);
       statObjects.innerText = count >= 1000 ? `${count / 1000}k` : count.toString();
-      statSubmit.innerText = '< 0.1 ms';
-      statCpuFrame.innerText = `${(0.2 + (count / 50000) * 1.5).toFixed(1)} ms`;
-      statFps.innerText = '60 FPS';
-      statDrawCalls.innerText = '1';
+      statSubmit.innerText = 'non mesuré';
+      statCpuFrame.innerText = 'non mesuré';
+      statFps.innerText = 'non mesuré';
+      statDrawCalls.innerText = 'non mesuré';
       benchStatus.innerText = `Scène ${count} objets : décimation multi-LOD et sélection SSE.`;
       return;
     }
@@ -2812,6 +2824,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Bouton 1 : Benchmark Standard / Matrice 4D / Suite de test
   btnRunBenchmark.addEventListener('click', async () => {
+    if (['01-indirect-draw', '02-gpu-frustum-culling', '09-gpu-compaction'].includes(currentModuleId)) {
+      window.open(`/bench/?run=1&test=${encodeURIComponent(currentModuleId)}`, '_blank', 'noopener');
+      setBenchStatus('Banc matériel ouvert : mêmes shaders, caméra et protocole pour les variantes.');
+      return;
+    }
     if (currentModuleId === '00-baseline') {
       openReportModal('00-baseline');
       return;
@@ -2869,13 +2886,13 @@ window.addEventListener('DOMContentLoaded', async () => {
             benchStatus.innerText = `🏁 Banc ${desc.number} exécuté et validé avec succès (${durMs} ms).`;
             applyScenario(currentModuleId, selectCount.value, currentMode);
           } else {
-            if (termOutput) termOutput.innerText = `🏁 Banc ${desc.number} validé (mode local, oracles conformes).`;
+            if (termOutput) termOutput.innerText = `Banc ${desc.number} non exécuté. Aucun résultat matériel disponible.`;
           }
         } catch {
-          if (termOutput) termOutput.innerText = `🏁 Banc ${desc.number} validé (mode local, oracles conformes).`;
+          if (termOutput) termOutput.innerText = `Banc ${desc.number} non exécuté. Aucun résultat matériel disponible.`;
         } finally {
-          if (termSpinner) termSpinner.className = 'inline-block w-2 h-2 rounded-full bg-success';
-          if (termLabel) termLabel.innerText = 'Console d\'exécution du banc & oracles (Validé)';
+          if (termSpinner) termSpinner.className = 'inline-block w-2 h-2 rounded-full bg-neutral';
+          if (termLabel) termLabel.innerText = 'Console du banc — statut ci-dessus';
         }
       }
     } finally {
@@ -2887,6 +2904,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Bouton 2 : Tests de Douleur / Topologies / Stress
   if (btnPainBenchmark) {
     btnPainBenchmark.addEventListener('click', async () => {
+      if (['01-indirect-draw', '02-gpu-frustum-culling', '09-gpu-compaction'].includes(currentModuleId)) {
+        window.open(`/bench/?run=1&test=${encodeURIComponent(currentModuleId)}`, '_blank', 'noopener');
+        return;
+      }
       const desc = MODULE_DESCRIPTORS[currentModuleId];
       btnRunBenchmark.disabled = true;
       btnPainBenchmark.disabled = true;
@@ -2915,10 +2936,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             if (res.ok) {
               benchStatus.innerText = `🏁 Test de stress ${desc.number} terminé avec succès.`;
             } else {
-              benchStatus.innerText = `🏁 Test de stress ${desc.number} validé.`;
+              benchStatus.innerText = `Test ${desc.number} non exécuté : mesure GPU indisponible.`;
             }
           } catch {
-            benchStatus.innerText = `🏁 Test de stress ${desc.number} validé.`;
+            benchStatus.innerText = `Test ${desc.number} non exécuté : mesure GPU indisponible.`;
           }
         }
       } finally {
@@ -2928,8 +2949,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Initialisation par défaut : module 00-baseline
-  await switchModule('00-baseline');
+  const requestedModule = new URLSearchParams(window.location.search).get('test') ?? '00-baseline';
+  await switchModule(Object.hasOwn(MODULE_DESCRIPTORS, requestedModule) || requestedModule === '14-open-world' ? requestedModule : '00-baseline');
   refreshIcons();
 
   // Boucle de rendu

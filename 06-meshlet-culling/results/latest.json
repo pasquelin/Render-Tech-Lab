@@ -1,47 +1,37 @@
 {
-  "timestamp": "2026-09-11T20:09:23.997Z",
+  "timestamp": "2026-09-11T21:28:57.377498+00:00",
   "test": "06-meshlet-culling",
-  "status": "measured",
-  "verdict": "INTEGRATE",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
   "environment": {
-    "gpu": "Apple M-Series GPU (WebGPU)",
-    "browser": "Chrome 128 / macOS",
-    "threeVersion": "0.174.0"
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
   },
   "scene": {
-    "objects": 1,
-    "triangles": 1024,
-    "materials": 1,
-    "lights": 1
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.12,
+    "frameMs": null,
     "submitMs": null
   },
   "gpu": {
     "frameMs": null
   },
   "memory": {
-    "gpuBytes": 512
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 8,
-    "visible": 4
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "totalMeshlets": 8,
-    "visibleMeshlets": 4,
-    "globalRejectRatePercent": 50,
-    "rejectCounts": {
-      "frustum": 0,
-      "backface": 4,
-      "subpixel": 0,
-      "total": 4
-    },
-    "testsDecomposed": {
-      "frustumRejectPercent": 0,
-      "backfaceRejectPercent": 50,
-      "subpixelRejectPercent": 0
-    }
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "06-meshlet-culling/results/legacy-unverified/latest.json"
   }
 }

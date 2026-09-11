@@ -1,5 +1,7 @@
 # Bilan de transfert et validation documentaire
 
+Ce bilan décrit la passe de transfert initiale (25 documents). La [campagne comparative ajoutée ensuite](PREUVES_COMPARATIVES_OPTIMISATION.md) possède ses propres sources, mesures et limites ; les nombres et exclusions historiques ci-dessous ne sont pas l'inventaire de ce complément.
+
 **11 septembre 2026 — documentation autonome pour le développement indépendant du socle et des extensions décrites.** La comparaison des supports a conduit à compléter les mathématiques, stratégies, invariants, limites et recettes dans 25 documents. À l’issue de cette comparaison et des relectures, aucun complément mathématique ou stratégique utile identifié ne reste uniquement dans les supports temporaires.
 
 La suppression de ces supports ne retire aucune dépendance de lecture ou d’exécution aux documents et aux oracles vérifiés. Cette conclusion porte sur notre développement indépendant. Elle ne promet ni de restituer les programmes d’origine, ni de livrer un moteur déjà implémenté, ni de conserver chaque détail de leurs réalisations.

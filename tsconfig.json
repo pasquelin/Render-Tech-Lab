@@ -3,7 +3,11 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -14,7 +18,32 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["@webgpu/types", "node"]
+    "types": [
+      "@webgpu/types",
+      "node"
+    ]
   },
-  "include": ["[0-9][0-9]-*", "benchmarks", "shared", "src"]
+  "include": [
+    "00-baseline",
+    "13-full-gpu-driven",
+    "14-open-world",
+    "04-gpu-lod",
+    "05-meshlets",
+    "03-gpu-scene",
+    "11-geometry-streaming",
+    "08-occlusion-culling",
+    "06-meshlet-culling",
+    "01-indirect-draw",
+    "02-gpu-frustum-culling",
+    "10-material-batching",
+    "07-hiz",
+    "09-gpu-compaction",
+    "12-visibility-buffer",
+    "bench",
+    "benchmarks",
+    "shared",
+    "src",
+    "test",
+    "vite.config.ts"
+  ]
 }

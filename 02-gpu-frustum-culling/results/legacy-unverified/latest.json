@@ -1,0 +1,89 @@
+{
+  "timestamp": "2026-09-11T20:23:45.792Z",
+  "test": "02-gpu-frustum-culling",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0",
+    "webgpuFeatures": [
+      "indirect-first-instance"
+    ]
+  },
+  "scene": {
+    "objects": 2000,
+    "triangles": 768000,
+    "materials": 1,
+    "lights": 2
+  },
+  "cpu": {
+    "frameMs": 0.25,
+    "submitMs": 0.15
+  },
+  "gpu": {
+    "frameMs": 0.046
+  },
+  "memory": {
+    "gpuBytes": 128000
+  },
+  "draw": {
+    "submitted": 2000,
+    "visible": 1200
+  },
+  "customMetrics": {
+    "culledCount": 800,
+    "cullRatePercent": 40,
+    "gpuCullComputeMs": 0.046,
+    "benchmarkRows": [
+      {
+        "instanceCount": 500,
+        "cpuCullMs": 0.37762499999999477,
+        "gpuComputeMs": 0.0415,
+        "visibleCount": 300,
+        "culledCount": 200,
+        "speedup": 9.1
+      },
+      {
+        "instanceCount": 1000,
+        "cpuCullMs": 0.06537499999998886,
+        "gpuComputeMs": 0.043000000000000003,
+        "visibleCount": 600,
+        "culledCount": 400,
+        "speedup": 1.5
+      },
+      {
+        "instanceCount": 2000,
+        "cpuCullMs": 0.13620799999999633,
+        "gpuComputeMs": 0.046,
+        "visibleCount": 1200,
+        "culledCount": 800,
+        "speedup": 3
+      },
+      {
+        "instanceCount": 5000,
+        "cpuCullMs": 0.36512500000000614,
+        "gpuComputeMs": 0.055,
+        "visibleCount": 3000,
+        "culledCount": 2000,
+        "speedup": 6.6
+      },
+      {
+        "instanceCount": 10000,
+        "cpuCullMs": 0.6444170000000042,
+        "gpuComputeMs": 0.07,
+        "visibleCount": 6000,
+        "culledCount": 4000,
+        "speedup": 9.2
+      },
+      {
+        "instanceCount": 50000,
+        "cpuCullMs": 1.9831250000000011,
+        "gpuComputeMs": 0.19,
+        "visibleCount": 30000,
+        "culledCount": 20000,
+        "speedup": 10.4
+      }
+    ]
+  }
+}

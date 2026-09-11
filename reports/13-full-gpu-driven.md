@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 13-full-gpu-driven (Architecture Complète Unifiée)
 
-**Date :** 2026-09-11T20:01:18.455Z  
+**Date :** 2026-09-11T20:23:45.993Z  
 **Statut :** `INTEGRATE`  
 **Scène de stress :** 100,000 instances ($38{,}400{,}000$ triangles)
 

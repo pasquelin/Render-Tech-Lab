@@ -19,25 +19,42 @@ export function hizReduceCeil(depth: number[][], reversedZ: boolean = false): nu
     throw new Error('Image vide ou non rectangulaire');
   }
 
-  const reducer = reversedZ
-    ? (vals: number[]) => Math.min(...vals)
-    : (vals: number[]) => Math.max(...vals);
-
   const result: number[][] = [];
 
   for (let startRow = 0; startRow < height; startRow += 2) {
     const row: number[] = [];
     for (let startCol = 0; startCol < width; startCol += 2) {
-      const footprint: number[] = [];
+      let value = reversedZ ? Infinity : -Infinity;
       for (let r = startRow; r < Math.min(startRow + 2, height); r++) {
         for (let c = startCol; c < Math.min(startCol + 2, width); c++) {
-          footprint.push(depth[r][c]);
+          value = reversedZ ? Math.min(value, depth[r][c]) : Math.max(value, depth[r][c]);
         }
       }
-      row.push(reducer(footprint));
+      row.push(value);
     }
     result.push(row);
   }
 
   return result;
+}
+
+/** Ceil-sized levels, matching hizReduceCeil (not native NPOT texture mip sizes). */
+export function hizReduceInto(src: Float32Array, width: number, height: number,
+  dst: Float32Array, reversedZ = false): void {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1
+    || src.length < width * height || dst.length < Math.ceil(width / 2) * Math.ceil(height / 2)) {
+    throw new Error('Dimensions ou capacité Hi-Z invalides');
+  }
+  if (src.buffer === dst.buffer && src.byteOffset < dst.byteOffset + dst.byteLength
+    && dst.byteOffset < src.byteOffset + src.byteLength) throw new Error('Buffers Hi-Z superposés');
+  const dw = Math.ceil(width / 2), dh = Math.ceil(height / 2);
+  for (let y = 0; y < dh; y++) {
+    const a = 2 * y * width, b = Math.min(2 * y + 1, height - 1) * width;
+    for (let x = 0; x < dw; x++) {
+      const c = x * 2, d = Math.min(c + 1, width - 1);
+      dst[y * dw + x] = reversedZ
+        ? Math.min(src[a + c], src[a + d], src[b + c], src[b + d])
+        : Math.max(src[a + c], src[a + d], src[b + c], src[b + d]);
+    }
+  }
 }

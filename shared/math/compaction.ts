@@ -28,19 +28,42 @@ export function compact<T>(values: T[], flags: (number | boolean)[]): T[] {
   if (values.length !== flags.length) {
     throw new Error('Prédicats invalides : longueurs divergentes');
   }
-  const numericFlags = flags.map((f) => (f === true || f === 1 ? 1 : f === false || f === 0 ? 0 : -1));
-  if (numericFlags.some((f) => f !== 0 && f !== 1)) {
-    throw new Error('Prédicats invalides : les flags doivent valoir 0 ou 1');
-  }
-
-  const [offsets, total] = exclusiveScan(numericFlags);
-  const result: T[] = new Array(total);
-
+  const result: T[] = [];
   for (let index = 0; index < flags.length; index++) {
-    if (numericFlags[index] === 1) {
-      result[offsets[index]] = values[index];
-    }
+    const flag = flags[index];
+    if (flag === 1 || flag === true) result.push(values[index]);
+    else if (flag !== 0 && flag !== false) throw new Error('Prédicats invalides : les flags doivent valoir 0 ou 1');
   }
 
   return result;
+}
+
+export function exclusiveScanInto(flags: Uint32Array, offsets: Uint32Array): number {
+  if (offsets.length < flags.length) throw new Error('Capacité scan insuffisante');
+  if (offsets.buffer === flags.buffer && offsets.byteOffset !== flags.byteOffset
+    && offsets.byteOffset < flags.byteOffset + flags.byteLength
+    && flags.byteOffset < offsets.byteOffset + offsets.byteLength) throw new Error('Alias de scan invalide');
+  let total = 0;
+  for (let i = 0; i < flags.length; i++) {
+    const value = flags[i];
+    if (value > 1) throw new Error('Flag non binaire');
+    offsets[i] = total;
+    total += value;
+  }
+  return total;
+}
+
+export function compactIdsInto(ids: Uint32Array, flags: Uint32Array, out: Uint32Array): number {
+  if (ids.length !== flags.length || out.length < ids.length) throw new Error('Capacité compaction invalide');
+  // In-place ids -> out is safe only at the same start or into a disjoint range.
+  if (out.buffer === flags.buffer || (out.buffer === ids.buffer && out.byteOffset !== ids.byteOffset
+    && out.byteOffset < ids.byteOffset + ids.byteLength && ids.byteOffset < out.byteOffset + out.byteLength)) {
+    throw new Error('Alias de compaction invalide');
+  }
+  let count = 0;
+  for (let i = 0; i < ids.length; i++) {
+    if (flags[i] > 1) throw new Error('Flag non binaire');
+    if (flags[i] === 1) out[count++] = ids[i];
+  }
+  return count;
 }

@@ -1,6 +1,8 @@
+> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+
 # Rapport du Banc : 07-hiz (Hierarchical-Z Depth Pyramid)
 
-**Date :** 2026-09-11T20:01:18.381Z  
+**Date :** 2026-09-11T20:23:45.922Z  
 **Statut :** `INTEGRATE`  
 **Technique :** Réduction pyramidale 2x2 conservatrice (Math.max) pour culling d'occlusion.
 
@@ -10,9 +12,9 @@
 
 | Résolution Base | Niveaux Mip | Mémoire VRAM | Temps Génération CPU/Sim |
 |:---:|:---:|:---:|:---:|
-| 256x256 | 9 | 0.33 Mo | 1.49 ms |
-| 512x512 | 10 | 1.33 Mo | 6.05 ms |
-| 1024x1024 | 11 | 5.33 Mo | 18.34 ms |
+| 256x256 | 9 | 0.33 Mo | 2.14 ms |
+| 512x512 | 10 | 1.33 Mo | 4.60 ms |
+| 1024x1024 | 11 | 5.33 Mo | 19.83 ms |
 
 
 ---

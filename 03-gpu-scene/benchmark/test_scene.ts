@@ -5,8 +5,6 @@
  * Valide les mega-buffers, la sérialisation GPUObject et la génération de commandes indirectes.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   generateStressScene,
   createVariedGeometries,
@@ -64,7 +62,7 @@ export function runSceneSuite() {
   const uintView = new Uint32Array(buffer);
 
   const testObj: GPUObjectData = {
-    id: 42,
+    padding: 0,
     geometryId: 3,
     materialId: 7,
     flags: 1, // STATIQUE
@@ -126,85 +124,7 @@ export function runSceneSuite() {
   }
   assert(indirectDrawArray.length === 50, '10 géométries * 5 uint32 = 50 uints dans le DrawBuffer');
 
-  // Génération de latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '03-gpu-scene',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-      webgpuFeatures: ['indirect-first-instance'],
-    },
-    scene: {
-      objects: 2000,
-      triangles: scene.mergedIndexBuffer.length / 3,
-      materials: 10,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: 0.28,
-      submitMs: 0.18,
-    },
-    gpu: {
-      frameMs: null,
-    },
-    memory: {
-      gpuBytes:
-        scene.objects.length * BYTES_PER_OBJECT +
-        scene.mergedVertexBuffer.byteLength +
-        scene.mergedIndexBuffer.byteLength +
-        indirectDrawArray.byteLength,
-    },
-    draw: {
-      submitted: 2000,
-      visible: 2000,
-    },
-    customMetrics: {
-      geometryCount: 10,
-      materialCount: 10,
-      dynamicObjectCount: dynamicCount,
-      bytesPerObject: BYTES_PER_OBJECT,
-      indirectDrawCount: 10,
-      cpuGainVsClassicPercent: 93.2,
-    },
-  };
-
-  const resultsDir = path.resolve('03-gpu-scene', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  const markdown = `# Rapport du Banc : 03-gpu-scene
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Verdict :** Le stockage plat en mega-buffers élimine le surcoût de parcours de graphe de scène pour 100 topologies et 100 matériaux.
-
----
-
-## 1. Métriques Clés du Banc 03-gpu-scene
-- **Instances :** 2 000
-- **Topologies distinctes :** 10
-- **Matériaux distincts :** 10
-- **Taille binaire GPUObject :** 96 octets (aligné vec4 WGSL)
-- **Draw calls indirects émis :** 10 (1 par topologie au lieu de 2 000)
-- **Gain CPU mesuré vs Three.js standard :** −93.2%
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '03-gpu-scene.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 03-gpu-scene validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 03-gpu-scene réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

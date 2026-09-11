@@ -7,7 +7,7 @@
  * contexte (status, label d'adaptateur, features) attendue par le Master Test Plan.
  */
 
-import { getSharedDevice } from '../../src/common/gpuContext.ts';
+import { getSharedDevice, getAdapterInfo } from '../../src/common/gpuContext.ts';
 import type { GPUContext } from './types.ts';
 
 export { getSharedDevice };
@@ -28,13 +28,13 @@ export async function createGPUContext(): Promise<GPUContext> {
     };
   }
 
-  const adapterInfo = (device as unknown as { adapterInfo?: { description?: string } }).adapterInfo;
+  const adapterInfo = getAdapterInfo();
 
   return {
     device,
     status: 'ready',
     info: {
-      adapterLabel: adapterInfo?.description ?? 'unknown',
+      adapterLabel: adapterInfo?.description || null,
       features: Array.from(device.features),
     },
   };

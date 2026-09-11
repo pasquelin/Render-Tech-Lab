@@ -1,36 +1,37 @@
 {
-  "timestamp": "2026-09-11T18:37:08.044Z",
+  "timestamp": "2026-09-11T21:28:57.376685+00:00",
   "test": "04-gpu-lod",
-  "commit": "d2eb71a",
-  "gpuDevice": "Apple M-Series GPU (WebGPU)",
-  "browser": "Node.js/26",
-  "threeVersion": "0.174.0",
+  "commit": null,
+  "status": "not-run",
+  "verdict": "not-yet-decided",
+  "environment": {
+    "gpu": null,
+    "browser": null,
+    "threeVersion": null,
+    "webgpuFeatures": []
+  },
   "scene": {
-    "objects": 2000,
-    "triangles": 16128000,
-    "materials": 1,
-    "lights": 2
+    "objects": null,
+    "triangles": null,
+    "materials": null,
+    "lights": null
   },
   "cpu": {
-    "frameMs": 0.85,
-    "submitMs": 0.027591800000000433
+    "frameMs": null,
+    "submitMs": null
   },
   "gpu": {
-    "frameMs": 3.4
+    "frameMs": null
   },
   "memory": {
-    "gpuBytes": 297332
+    "gpuBytes": null
   },
   "draw": {
-    "submitted": 2000,
-    "visible": 2000
+    "submitted": null,
+    "visible": null
   },
   "customMetrics": {
-    "lod0Count": 300,
-    "lod1Count": 700,
-    "lod2Count": 1000,
-    "decimationTimeMs": 4.930457999999987,
-    "maxProjectedErrorPx": 0.04418670961156395,
-    "errorContractPassed": true
+    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
+    "archivedArtifact": "04-gpu-lod/results/legacy-unverified/latest.json"
   }
 }

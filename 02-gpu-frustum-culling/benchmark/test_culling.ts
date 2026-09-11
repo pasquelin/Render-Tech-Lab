@@ -5,17 +5,13 @@
  * Valide le comportement conservateur et l'arbitrage CPU vs GPU.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import {
-  cullInstancesCPU,
   cullBoundingSphereAgainstFrustum,
   WGSL_FRUSTUM_CULLING,
 } from '../implementation/frustumCuller.ts';
 import type {
   FrustumPlane,
   CullingInstance,
-  CullingBenchmarkRow,
 } from '../types.ts';
 
 function assert(condition: boolean, message: string) {
@@ -87,133 +83,7 @@ export function runCullingSuite() {
     'Sphère entièrement hors du plan gauche doit être rejetée'
   );
 
-  // TEST 6 : Campagne de benchmark multi-échelles
-  const tiers = [500, 1000, 2000, 5000, 10000, 50000];
-  const benchmarkRows: CullingBenchmarkRow[] = [];
-
-  for (const count of tiers) {
-    const instances: CullingInstance[] = [];
-    for (let i = 0; i < count; i++) {
-      // 60% d'instances dans le volume visible, 40% en dehors
-      const isInside = i % 10 < 6;
-      const x = isInside ? (Math.random() - 0.5) * 60 : 80 + Math.random() * 50;
-      const y = (Math.random() - 0.5) * 40;
-      const z = -(10 + Math.random() * 150);
-      instances.push({
-        id: i,
-        boundingSphere: { center: [x, y, z], radius: 2 },
-      });
-    }
-
-    const cpuResult = cullInstancesCPU(instances, TEST_FRUSTUM_PLANES);
-
-    // Temps de compute GPU simulé : coût dispatch quasi constant + temps lecture mémoire
-    // À 2000 objets, GPU compute ~ 0.08 ms vs CPU traversal ~ 0.35 ms
-    const gpuComputeMs = 0.04 + (count / 50000) * 0.15;
-    const speedup = cpuResult.cpuTimeMs ? Number((cpuResult.cpuTimeMs / gpuComputeMs).toFixed(1)) : 1.0;
-
-    benchmarkRows.push({
-      instanceCount: count,
-      cpuCullMs: cpuResult.cpuTimeMs ?? 0.1,
-      gpuComputeMs,
-      visibleCount: cpuResult.visibleCount,
-      culledCount: cpuResult.culledCount,
-      speedup,
-    });
-
-    console.log(
-      `  Tier ${String(count).padStart(5)} obj : Visibles = ${cpuResult.visibleCount} | Culled = ${cpuResult.culledCount} (${(cpuResult.cullRate * 100).toFixed(0)}%) | GPU = ${gpuComputeMs.toFixed(3)} ms`
-    );
-  }
-
-  // Vérification de la réduction de charge
-  const row2k = benchmarkRows.find((r) => r.instanceCount === 2000)!;
-  assert(row2k.culledCount > 0, 'Le culling doit éliminer des objets hors frustum');
-
-  // Génération de latest.json contractuel
-  const latestJson = {
-    timestamp: new Date().toISOString(),
-    test: '02-gpu-frustum-culling',
-    status: 'measured',
-    verdict: 'INTEGRATE',
-    environment: {
-      gpu: 'Apple M-Series GPU (WebGPU)',
-      browser: 'Chrome 128 / macOS',
-      threeVersion: '0.174.0',
-      webgpuFeatures: ['indirect-first-instance'],
-    },
-    scene: {
-      objects: 2000,
-      triangles: 2000 * 384,
-      materials: 1,
-      lights: 2,
-    },
-    cpu: {
-      frameMs: 0.25,
-      submitMs: 0.15,
-    },
-    gpu: {
-      frameMs: row2k.gpuComputeMs,
-    },
-    memory: {
-      gpuBytes: 2000 * 64, // 64 octets par instance pour les métadonnées de culling
-    },
-    draw: {
-      submitted: 2000,
-      visible: row2k.visibleCount,
-    },
-    customMetrics: {
-      culledCount: row2k.culledCount,
-      cullRatePercent: Number(((row2k.culledCount / 2000) * 100).toFixed(1)),
-      gpuCullComputeMs: row2k.gpuComputeMs,
-      benchmarkRows,
-    },
-  };
-
-  const resultsDir = path.resolve('02-gpu-frustum-culling', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(resultsDir, 'latest.json'),
-    JSON.stringify(latestJson, null, 2),
-    'utf-8'
-  );
-
-  // Rapport Markdown
-  let tableRows = '';
-  for (const r of benchmarkRows) {
-    tableRows += `| ${r.instanceCount} | ${r.visibleCount} | ${r.culledCount} | ${( (r.culledCount / r.instanceCount) * 100).toFixed(1)}% | ${r.cpuCullMs.toFixed(3)} ms | ${r.gpuComputeMs.toFixed(3)} ms |\n`;
-  }
-
-  const markdown = `# Rapport du Banc : 02-gpu-frustum-culling
-
-**Date :** ${new Date().toISOString()}  
-**Statut :** \`INTEGRATE\`  
-**Verdict :** Le culling frustum sur Compute Shader WGSL élimine les objets hors champ dès la passe GPU avant toute émission de commande indirecte.
-
----
-
-## 1. Mesures d'échelle & Taux de Culling
-
-| Instances | Visibles | Éliminées | Taux Culling | CPU Traversal | GPU Compute WGSL |
-|---|---|---|---|---|---|
-${tableRows}
-
----
-
-## 2. Invariants Validés
-- **Conservation stricte :** Aucun faux négatif sur les objets tangents ou sécants aux plans.
-- **Compaction atomique :** \`atomicAdd\` sur le compteur d'instances indirect dans le compute shader WGSL.
-- **latest.json conforme :** Enregistré dans \`02-gpu-frustum-culling/results/latest.json\`.
-`;
-
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdown, 'utf-8');
-
-  const reportsDir = path.resolve('reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '02-gpu-frustum-culling.md'), markdown, 'utf-8');
-
-  console.log('✅ Banc 02-gpu-frustum-culling validé avec succès !');
-  return latestJson;
+  console.log('Tests CPU 02-gpu-frustum-culling réussis — aucune mesure GPU ni export de campagne.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
