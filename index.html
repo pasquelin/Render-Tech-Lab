@@ -12,22 +12,22 @@
 
       <!-- Contenu Principal (Navbar + Viewport 3D) -->
       <div class="drawer-content flex flex-col h-full overflow-hidden">
-        <!-- Barre de navigation supérieure Nordic daisyUI -->
-        <header class="navbar bg-base-200 border-b border-base-content/10 h-14 min-h-[3.5rem] px-4 flex justify-between items-center z-20 shrink-0">
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1.5 font-bold tracking-tight text-sm sm:text-base text-base-content">
+        <!-- Barre de navigation supérieure daisyUI -->
+        <header class="navbar bg-base-200 border-b border-base-content/10 h-14 min-h-[3.5rem] px-4 flex justify-between items-center z-20 shrink-0 gap-3">
+          <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 font-bold tracking-tight text-sm sm:text-base text-base-content whitespace-nowrap">
               <span class="text-primary font-mono tracking-normal">render-tech-lab</span>
               <span class="text-base-content/30">/</span>
               <span id="nav-module-title" class="font-mono text-xs text-base-content/60">01-gpu-driven</span>
             </div>
-            <div class="badge badge-sm badge-outline border-base-content/20 text-base-content/70 font-mono text-[10px] tracking-wide">
+            <div class="badge badge-sm badge-outline border-base-content/20 text-base-content/70 font-mono text-[10px] tracking-wide whitespace-nowrap hidden md:inline-flex">
               R&D LAB
             </div>
           </div>
 
           <!-- Sélecteur de banc d'essai R&D (Module switcher) -->
-          <div class="flex items-center gap-2">
-            <label for="select-module" class="text-xs text-base-content/60 hidden sm:inline font-medium">Banc d'essai :</label>
+          <div class="flex items-center gap-2 shrink-0">
+            <label for="select-module" class="text-xs text-base-content/60 hidden sm:inline font-medium whitespace-nowrap">Banc d'essai :</label>
             <select id="select-module" class="select select-bordered select-xs sm:select-sm font-semibold text-primary bg-base-300 border-base-content/15 focus:border-primary focus:outline-none">
               <option value="01-gpu-driven" selected>01 · GPU-Driven Indirect Draw</option>
               <option value="00-baseline">00 · Baseline Spec 13 S0–S5</option>
@@ -41,9 +41,9 @@
           </div>
 
           <!-- Section Droite : Cycle gouvernant + Bouton menu mobile -->
-          <div class="flex items-center gap-2">
-            <div class="hidden md:flex items-center gap-2 text-xs font-mono text-base-content/60">
-              <div class="badge badge-neutral badge-sm gap-1.5 text-[11px] bg-base-300 border-base-content/10 text-base-content/70">
+          <div class="flex items-center gap-2 shrink-0">
+            <div class="hidden xl:flex items-center gap-2 text-xs font-mono text-base-content/60 whitespace-nowrap">
+              <div class="badge badge-neutral badge-sm gap-1.5 text-[11px] bg-base-300 border-base-content/10 text-base-content/70 whitespace-nowrap">
                 <span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
                 Hypothèse → Proto → Bench → Crossover
               </div>
