@@ -1,6 +1,6 @@
 # Rapport du Banc : 09-gpu-compaction (Compaction & Contention)
 
-**Date :** 2026-09-11T18:41:16.892Z  
+**Date :** 2026-09-11T19:07:20.283Z  
 **Statut :** `INTEGRATE`  
 **Paliers d'échelle :** 1 000 à 1 000 000 instances
 
@@ -10,18 +10,18 @@
 
 | Échelle (N) | Variante | Temps Exécution | Éléments Compactés | Contention Atomique |
 |:---:|:---:|:---:|:---:|:---:|
-| **1,000** | `one-thread-per-command` | 0.041 ms | 500 | 0 |
-| **1,000** | `atomicAdd` | 0.033 ms | 500 | 3,000 |
-| **1,000** | `parallel-prefix-scan` | 0.164 ms | 500 | 0 |
-| **10,000** | `one-thread-per-command` | 0.28 ms | 5,000 | 0 |
-| **10,000** | `atomicAdd` | 0.209 ms | 5,000 | 30,000 |
-| **10,000** | `parallel-prefix-scan` | 1.046 ms | 5,000 | 0 |
-| **100,000** | `one-thread-per-command` | 0.465 ms | 50,000 | 0 |
-| **100,000** | `atomicAdd` | 0.437 ms | 50,000 | 300,000 |
-| **100,000** | `parallel-prefix-scan` | 4.272 ms | 50,000 | 0 |
-| **1,000,000** | `one-thread-per-command` | 7.208 ms | 500,000 | 0 |
-| **1,000,000** | `atomicAdd` | 3.178 ms | 500,000 | 3,000,000 |
-| **1,000,000** | `parallel-prefix-scan` | 44.688 ms | 500,000 | 0 |
+| **1,000** | `one-thread-per-command` | 0.039 ms | 500 | 0 |
+| **1,000** | `atomicAdd` | 0.036 ms | 500 | 3,000 |
+| **1,000** | `parallel-prefix-scan` | 0.16 ms | 500 | 0 |
+| **10,000** | `one-thread-per-command` | 0.291 ms | 5,000 | 0 |
+| **10,000** | `atomicAdd` | 0.293 ms | 5,000 | 30,000 |
+| **10,000** | `parallel-prefix-scan` | 1.018 ms | 5,000 | 0 |
+| **100,000** | `one-thread-per-command` | 0.491 ms | 50,000 | 0 |
+| **100,000** | `atomicAdd` | 0.341 ms | 50,000 | 300,000 |
+| **100,000** | `parallel-prefix-scan` | 4.34 ms | 50,000 | 0 |
+| **1,000,000** | `one-thread-per-command` | 6.762 ms | 500,000 | 0 |
+| **1,000,000** | `atomicAdd` | 3.291 ms | 500,000 | 3,000,000 |
+| **1,000,000** | `parallel-prefix-scan` | 42.867 ms | 500,000 | 0 |
 
 
 ---

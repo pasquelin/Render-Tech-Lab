@@ -1,6 +1,6 @@
 # Rapport du Banc : 03-gpu-scene
 
-**Date :** 2026-09-11T18:41:16.708Z  
+**Date :** 2026-09-11T19:07:20.087Z  
 **Statut :** `INTEGRATE`  
 **Verdict :** Le stockage plat en mega-buffers élimine le surcoût de parcours de graphe de scène pour 100 topologies et 100 matériaux.
 

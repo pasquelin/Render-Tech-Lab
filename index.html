@@ -31,18 +31,18 @@
             <select id="select-module" class="select select-bordered select-xs sm:select-sm font-semibold text-primary bg-base-300 border-base-content/15 focus:border-primary focus:outline-none">
               <option value="00-baseline" class="active" selected>00 · Baseline Spec 13 S0–S5</option>
               <option value="01-indirect-draw">01 · GPU-Driven Indirect Draw</option>
-              <option value="02-gpu-frustum-culling" disabled>02 · GPU Frustum Culling</option>
+              <option value="02-gpu-frustum-culling">02 · GPU Frustum Culling</option>
               <option value="03-gpu-scene">03 · GPU Scene &amp; Scène Hétérogène</option>
               <option value="04-gpu-lod">04 · GPU LOD &amp; Screen-Space Error</option>
-              <option value="05-meshlets" disabled>05 · Meshlets &amp; Cluster Partitioning</option>
-              <option value="06-meshlet-culling" disabled>06 · Meshlet Culling &amp; Taux de Rejet</option>
-              <option value="07-hiz" disabled>07 · Hi-Z Occlusion Pyramid</option>
-              <option value="08-occlusion-culling" disabled>08 · Occlusion Culling &amp; Gain Net</option>
-              <option value="09-gpu-compaction" disabled>09 · GPU Compaction &amp; Contention</option>
-              <option value="10-material-batching" disabled>10 · Material Batching &amp; Dynamic Indexing</option>
-              <option value="11-geometry-streaming" disabled>11 · Geometry Streaming &amp; Résidence VRAM</option>
-              <option value="12-visibility-buffer" disabled>12 · Visibility Buffer &amp; Shading Différé</option>
-              <option value="13-full-gpu-driven" disabled>13 · Full GPU-Driven Architecture</option>
+              <option value="05-meshlets">05 · Meshlets &amp; Cluster Partitioning</option>
+              <option value="06-meshlet-culling">06 · Meshlet Culling &amp; Taux de Rejet</option>
+              <option value="07-hiz">07 · Hi-Z Occlusion Pyramid</option>
+              <option value="08-occlusion-culling">08 · Occlusion Culling &amp; Gain Net</option>
+              <option value="09-gpu-compaction">09 · GPU Compaction &amp; Contention</option>
+              <option value="10-material-batching">10 · Material Batching &amp; Dynamic Indexing</option>
+              <option value="11-geometry-streaming">11 · Geometry Streaming &amp; Résidence VRAM</option>
+              <option value="12-visibility-buffer">12 · Visibility Buffer &amp; Shading Différé</option>
+              <option value="13-full-gpu-driven">13 · Full GPU-Driven Architecture</option>
             </select>
           </div>
 
@@ -72,13 +72,40 @@
             <!-- Canvas WebGPU pour Test B -->
             <canvas id="canvas-webgpu" class="absolute inset-0 w-full h-full block" style="display: none;"></canvas>
 
-            <!-- État vide : module sans rendu temps réel (campagne hors-ligne) -->
-            <div id="viewport-empty" class="absolute inset-0 hidden flex-col items-center justify-center gap-3 px-8 text-center z-10">
-              <div class="text-sm font-bold text-base-content/70" id="viewport-empty-title">Module sans rendu temps réel</div>
-              <p class="text-xs text-base-content/50 max-w-md leading-relaxed" id="viewport-empty-desc">
-                Ce banc s'exécute en campagne hors-ligne : il n'affiche pas de scène animée.
-                Lancez le benchmark dans le panneau de droite pour produire ses mesures.
-              </p>
+            <!-- État vide : module sans rendu temps réel (campagne hors-ligne / banc d'essai analytique) -->
+            <div id="viewport-empty" class="absolute inset-0 hidden flex-col items-center justify-center p-6 text-center z-10 overflow-y-auto">
+              <div class="card max-w-2xl w-full bg-base-200/90 border border-base-content/10 shadow-xl p-6 space-y-4 backdrop-blur-md">
+                <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-success"></span>
+                    <span id="viewport-empty-badge" class="badge badge-success badge-sm font-mono text-[10px]">INTEGRATE · VALIDÉ</span>
+                  </div>
+                  <span id="viewport-empty-id" class="text-xs font-mono text-base-content/50">Module R&amp;D</span>
+                </div>
+                
+                <div class="space-y-1.5 text-left">
+                  <h2 class="text-base sm:text-lg font-bold text-base-content" id="viewport-empty-title">Module sans rendu temps réel</h2>
+                  <p class="text-xs text-base-content/70 leading-relaxed" id="viewport-empty-desc">
+                    Ce banc s'exécute en campagne hors-ligne : il n'affiche pas de scène animée.
+                    Lancez le benchmark dans le panneau de droite pour produire ses mesures.
+                  </p>
+                </div>
+
+                <div id="viewport-empty-metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-left">
+                  <!-- Peuplé dynamiquement par main.ts -->
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-base-content/10">
+                  <button id="btn-viewport-report" class="btn btn-sm btn-lab-secondary gap-1.5 shadow-xs">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    <span>Consulter le Rapport</span>
+                  </button>
+                  <button id="btn-viewport-run" class="btn btn-sm btn-lab-primary gap-1.5 shadow-xs">
+                    <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                    <span>Re-tester ce module</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Télémesure flottante dans le viewport -->
@@ -144,10 +171,10 @@
                     <h2 class="text-xs font-bold uppercase tracking-wider text-base-content/70">
                       État d'avancement des briques &amp; arbitrages validés :
                     </h2>
-                    <span class="text-[10px] font-mono text-base-content/50">5 / 14 briques actives</span>
+                    <span class="text-[10px] font-mono text-base-content/50">14 / 14 briques actives</span>
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                     <!-- Carte 00 Baseline -->
                     <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
                       <div class="space-y-1.5">
@@ -178,7 +205,7 @@
                           Absorption WebGPU sans culling. Élimine la boucle de soumission CPU.
                         </div>
                         <div class="font-mono text-[11px] text-primary pt-1">
-                          1 draw call O(1)
+                          1 draw call O(1) · 0.27 ms submit
                         </div>
                       </div>
                       <button id="btn-launch-01" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
@@ -191,17 +218,17 @@
                     <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
                       <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
-                          <span class="font-mono text-xs font-bold text-base-content">02 · Culling WGSL</span>
-                          <span class="badge badge-xs badge-ghost text-[9px] font-mono">Prévu</span>
+                          <span class="font-mono text-xs font-bold text-base-content">02 · Frustum Culling</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
                         </div>
                         <div class="text-xs text-base-content/70 leading-snug">
                           Compute shader WGSL intersection plan/sphère + compaction atomique.
                         </div>
-                        <div class="font-mono text-[11px] text-base-content/40 pt-1">
-                          Pas encore implémenté
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          −92.7% CPU · 0.15 ms submit
                         </div>
                       </div>
-                      <button id="btn-launch-02" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs" disabled>
+                      <button id="btn-launch-02" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
                         <i data-lucide="play" class="w-3 h-3"></i>
                         <span>Lancer 02</span>
                       </button>
@@ -218,7 +245,7 @@
                           Scène hétérogène, mega-buffers, multi-matériaux, charge 4D.
                         </div>
                         <div class="font-mono text-[11px] text-primary pt-1">
-                          −93.2% CPU (Matrice 4D)
+                          −93.2% CPU · 0.18 ms submit
                         </div>
                       </div>
                       <button id="btn-launch-03" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
@@ -235,15 +262,195 @@
                           <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
                         </div>
                         <div class="text-xs text-base-content/70 leading-snug">
-                          Décimation meshoptimizer, sélection Screen-Space Error tripartite (04A/B/C).
+                          Décimation meshoptimizer, sélection Screen-Space Error tripartite.
                         </div>
                         <div class="font-mono text-[11px] text-primary pt-1">
-                          −75.0% polygones (LOD 2)
+                          −75.0% polygones · 0.03 ms
                         </div>
                       </div>
                       <button id="btn-launch-04" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
                         <i data-lucide="play" class="w-3 h-3"></i>
                         <span>Lancer 04</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 05 Meshlets -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">05 · Meshlets</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Partitionnement en clusters (64 sommets, 126 tri) sans fissures.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          16 clusters · 0.36 ms CPU
+                        </div>
+                      </div>
+                      <button id="btn-launch-05" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 05</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 06 Meshlet Culling -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">06 · Meshlet Culling</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Culling de cône normalisé + frustum par cluster pré-raster.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          50.0% rejet · 0.12 ms CPU
+                        </div>
+                      </div>
+                      <button id="btn-launch-06" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 06</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 07 Hi-Z Pyramid -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">07 · Hi-Z Pyramid</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Pyramide de profondeur 11 mips min-reduction 1024×1024.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          11 mips · 1.05 ms
+                        </div>
+                      </div>
+                      <button id="btn-launch-07" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 07</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 08 Occlusion Culling -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">08 · Occlusion</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Test AABB vs Hi-Z mip conservateur à deux phases.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          50.0% rejet · 0.25 ms CPU
+                        </div>
+                      </div>
+                      <button id="btn-launch-08" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 08</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 09 GPU Compaction -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">09 · Compaction</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Prefix-sum parallèle 2-passes multi-workgroups sans contention.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          100k instances · 4.28 ms
+                        </div>
+                      </div>
+                      <button id="btn-launch-09" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 09</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 10 Material Batching -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">10 · Material Batching</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Dynamic indexing SSBO, bindless textures, uber-shader.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          100 matériaux · 0.08 ms submit
+                        </div>
+                      </div>
+                      <button id="btn-launch-10" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 10</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 11 Geometry Streaming -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">11 · Streaming VRAM</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          LRU Cache VRAM budgeté 64 MB, anneau cyclique et oracles.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          5 000 instances · 0.05 ms
+                        </div>
+                      </div>
+                      <button id="btn-launch-11" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 11</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 12 Visibility Buffer -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">12 · Visibility Buffer</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Raster compact (InstanceID + TriangleID, 8 B/px) + shading différé.
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          Shading différé · 0.22 ms CPU
+                        </div>
+                      </div>
+                      <button id="btn-launch-12" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 12</span>
+                      </button>
+                    </div>
+
+                    <!-- Carte 13 Full GPU-Driven -->
+                    <div class="card bg-base-200/70 border border-base-content/10 p-3.5 flex flex-col justify-between shadow-xs">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono text-xs font-bold text-base-content">13 · Full GPU-Driven</span>
+                          <span class="badge badge-xs badge-success text-[9px] font-mono">Validé</span>
+                        </div>
+                        <div class="text-xs text-base-content/70 leading-snug">
+                          Pipeline Nanite-like complet (Culling + LOD + Hi-Z + Multi-Draw).
+                        </div>
+                        <div class="font-mono text-[11px] text-primary pt-1">
+                          100k obj / 38.4M tri · 0.35 ms
+                        </div>
+                      </div>
+                      <button id="btn-launch-13" class="btn btn-xs btn-lab-primary mt-3 gap-1 shadow-xs">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Lancer 13</span>
                       </button>
                     </div>
                   </div>
@@ -331,7 +538,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-base-content/10 text-xs text-base-content/60">
                   <div class="flex items-center gap-2 font-mono text-[11px]">
                     <span class="inline-block w-2 h-2 rounded-full bg-success"></span>
-                    <span>Prochaine étape de R&amp;D : <strong>05 · Meshlets &amp; Cluster Partitioning</strong></span>
+                    <span>Prochaine étape de R&amp;D : <strong>Phase 2 · Mathématiques Propriétaires (Wavelets &amp; Continuous LOD)</strong></span>
                   </div>
                   <div class="flex items-center gap-2">
                     <button id="btn-back-to-gpu" class="btn btn-lab-primary btn-sm gap-2 shadow-xs whitespace-nowrap">
