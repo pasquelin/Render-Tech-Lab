@@ -8,7 +8,7 @@ Ordre de référence : `mises à jour → frustum instances → choix LOD → fr
 
 ## 2. Espaces et projection
 
-Les calculs de distance utilisent l'espace vue avec une profondeur positive `depth`. Si la caméra regarde vers Z négatif, convertir explicitement `depth=-viewZ`. Ne jamais mesurer une distance avec les composantes avant division d'une matrice modèle-vue-projection.
+Les calculs de distance utilisent l'espace vue avec une profondeur positive `depth`. Si la caméra regarde vers Z négatif, convertir explicitement `depth=-viewZ`. Ne jamais mesurer une distance avec les composantes avant division d'une matrice modèle-vue-projection. Les formules suivantes supposent une caméra perspective ou orthographique conventionnelle, sans terme de cisaillement dans la projection ; les décentrages et le jitter de translation restent admis. Une projection générale exige sa propre borne de jacobienne.
 
 Pour une perspective de focale pixel `focalY=height/(2*tan(fovY/2))`, l'approximation centrale est `pixels≈error*focalY/depth`. Elle est utile comme baseline, pas comme borne générale hors axe.
 
@@ -24,11 +24,23 @@ La transformation d'erreur utilise une borne de la norme opérateur de la partie
 
 La V1 parcourt des régions emboîtées. Une région possède une représentation coarse complète, éventuellement plusieurs clusters, et des régions filles dont l'union représente la même surface. Le score décide de l'ensemble, pas de chaque morceau isolément.
 
+Dans cet exemple, `region.errorObject` est l'erreur composée, quantification comprise, en unités d'objet. `view.errorScale` majore la norme opérateur de la partie linéaire de `V*M` pour l'instance ; `region.viewBox` contient les représentations comparées dans ce même espace, avec profondeur positive. `view.pixelScale` vaut `[W*abs(P00)/2,H*abs(P11)/2]` pour les deux projections : pixels pour la focale perspective, pixels par unité vue pour l'orthographique. La projection et ces données sont recalculées pour chaque instance/vue.
+
 ```text
+lodScore(region, view):
+    require region.errorObject >= 0 and view.errorScale >= 0
+    require all(view.pixelScale > 0)
+    require finite(region.errorObject, view.errorScale, view.pixelScale)
+    errorView = region.errorObject * view.errorScale
+    if view.projection == orthographic:
+        return errorView * max(view.pixelScale)
+    require view.projection == perspective and view.near > 0
+    return screenError(errorView, region.viewBox, view.pixelScale, view.near)
+
 select(region, view, resident):
     if not all(page in resident for page in region.coarsePages):
         return unavailable
-    score = screenError(region.error, region.viewBox, view.focal, view.near)
+    score = lodScore(region, view)
     if score <= view.threshold or empty(region.children):
         return region.coarseClusters
     fine = []
@@ -55,7 +67,7 @@ Transformer une AABB affine : `center'=matrix*center+translation`, `extent'=abs(
 
 Un cône de normales fournit un rejet backface seulement pour géométrie compatible, normale et direction exprimées dans le même espace, angle valide et borne de perspective conservatrice. Désactiver ce rejet pour double face, cône trop large, caméra trop proche ou déformation non bornée. Le frustum constitue la référence, le cône une optimisation facultative.
 
-Pour un ensemble de normales compris dans un cône d'axe unitaire `axis` et de demi-angle `angle`, et une direction vers la caméra unitaire `view`, la borne supérieure de `dot(normal,view)` est 1 si `angle+acos(dot(axis,view))` permet l'alignement ; sinon elle vaut `cos(max(0,acos(dot(axis,view))-angle))`. Rejeter seulement si ce maximum est strictement négatif, après élargissement du cône par la variation des directions sur la borne spatiale. Le test sur une seule direction au centre sans cet élargissement n'est pas conservatif en perspective.
+Pour un ensemble de normales compris dans un cône d'axe unitaire `axis` et de demi-angle `angle`, et une direction vers la caméra unitaire `view`, poser `theta=acos(clamp(dot(axis,view),-1,1))`. Le maximum de `dot(normal,view)` sur le cône vaut `cos(max(0,theta-angle))` : il vaut 1 exactement lorsque `theta<=angle`. Rejeter seulement si ce maximum est strictement négatif, après élargissement du cône par la variation des directions sur la borne spatiale. La référence ne rejette jamais pour un demi-angle total supérieur ou égal à `pi/2`. Le test sur une seule direction au centre sans cet élargissement n'est pas conservatif en perspective.
 
 ## 5. Hi-Z
 

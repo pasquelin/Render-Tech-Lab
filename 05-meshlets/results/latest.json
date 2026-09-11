@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T19:07:20.134Z",
+  "timestamp": "2026-09-11T19:09:55.604Z",
   "test": "05-meshlets",
   "status": "measured",
   "verdict": "INTEGRATE",
@@ -15,7 +15,7 @@
     "lights": 1
   },
   "cpu": {
-    "frameMs": 0.38,
+    "frameMs": 0.31,
     "submitMs": null
   },
   "gpu": {
@@ -37,7 +37,7 @@
         "vertexDuplicationFactor": 1.88,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 1024,
-        "buildTimeMs": 1.17
+        "buildTimeMs": 0.91
       },
       {
         "trianglesPerMeshlet": 128,
@@ -46,7 +46,7 @@
         "vertexDuplicationFactor": 1.41,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 512,
-        "buildTimeMs": 0.38
+        "buildTimeMs": 0.31
       },
       {
         "trianglesPerMeshlet": 256,
@@ -55,7 +55,7 @@
         "vertexDuplicationFactor": 1.18,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 256,
-        "buildTimeMs": 0.24
+        "buildTimeMs": 0.21
       },
       {
         "trianglesPerMeshlet": 512,
@@ -64,7 +64,7 @@
         "vertexDuplicationFactor": 1.06,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 128,
-        "buildTimeMs": 0.26
+        "buildTimeMs": 0.21
       }
     ],
     "optimalTrianglesPerMeshlet": 128,

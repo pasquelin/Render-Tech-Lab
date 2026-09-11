@@ -28,6 +28,8 @@ Associer à chaque demi-arête `(start,end,face)` une clé non orientée `(min(p
 
 Classer séparément bord ouvert, couture d'attribut, séparation de matériau, frontière entre clusters et frontière de région. Les liens de proximité entre îlots ne sont pas des arêtes géométriques et ne doivent jamais créer de faces.
 
+Vérifier aussi chaque sommet : son graphe de lien contient une arête entre les deux autres sommets de chacune de ses faces incidentes. Un sommet manifold intérieur possède un seul cycle connexe, tous les degrés égaux à 2. Un sommet manifold de bord possède un seul chemin connexe, exactement deux degrés 1 et les autres degrés 2. Les autres cas sont verrouillés et diagnostiqués ; un sommet sans face est inutilisé. Deux surfaces fermées qui ne partagent qu'un sommet produisent deux cycles disjoints : le seul comptage des faces par arête ne détecte pas ce défaut. Cette classification précède les contractions et s'actualise dans les voisinages modifiés.
+
 Exemple : deux triangles d'un carré partagent la diagonale. Leur graphe possède une arête. En séparant leurs UV le long de la diagonale, le contact géométrique demeure mais l'identité des attributs change. Les deux relations doivent rester accessibles.
 
 Construction par table de hachage : coût moyen linéaire dans le nombre de demi-arêtes, avec mémoire linéaire. Une variante triée coûte `O(T log T)` et donne un ordre explicite ; elle sert de comparaison déterministe.
@@ -38,7 +40,7 @@ Fixer deux plafonds indépendants : triangles et sommets uniques. Un plafond de 
 
 Référence : démarrer avec le plus petit identifiant non affecté, ajouter un voisin admissible qui crée le moins de nouveaux sommets, départager par identifiant. Arrêter quand aucun ajout ne respecte les plafonds ; démarrer un autre cluster. Toutes les faces sont attribuées exactement une fois.
 
-Pour favoriser la localité, trier d'abord les centroïdes par clé Morton. Sur chaque axe :
+Variante de localité : choisir le triangle de départ par `(clé Morton du centroïde, ID)` plutôt que par ID seul, en gardant le même critère d'ajout. Cette variante ne remplace pas silencieusement la baseline. Sur chaque axe :
 
 ```text
 quantize(value, low, high, bits):
@@ -72,7 +74,7 @@ Contraintes de référence :
 
 1. Ne pas contracter une arête non manifold ou une couture verrouillée.
 2. Conserver les positions des sommets verrouillés ; deux positions verrouillées différentes interdisent leur fusion.
-3. Vérifier le lien topologique : les voisins communs des extrémités sont exactement les sommets opposés des faces incidentes, avec règles de bord cohérentes.
+3. Vérifier le lien topologique complet `Lk(a) ∩ Lk(b) = Lk({a,b})`, y compris ses arêtes ; la seule égalité des sommets voisins est un filtre insuffisant. La V1 verrouille les sommets des bords ouverts et non manifold, ainsi que les coutures à conserver.
 4. Recalculer les faces survivantes ; refuser aire trop faible et inversion de normale.
 5. Refuser doublons de faces et tout contact topologique non autorisé ; ajouter un test global d'intersection si la politique exige une surface sans auto-intersection.
 6. Garder les matériaux discrets et les copies d'attributs nécessaires.
@@ -123,7 +125,7 @@ La première version stocke des indices explicites et des champs adressables. Aj
 
 Grille commune : `encoded=floor((position-origin)/step+0.5)`, `decoded=origin+step*encoded`, `step>0`. Les copies d'une frontière utilisent les mêmes coordonnées, origine, pas et arrondi. Une grille propre à chaque cluster crée des fissures. Pour un arrondi au plus proche, erreur euclidienne maximale de position `sqrt(3)*step/2`, hors erreur flottante.
 
-Une plage entière `[low,high]` demande `ceil(log2(high-low+1))` bits ; une plage constante demande zéro bit et stocke sa valeur de base. Rejeter débordements au lieu de saturer silencieusement une position.
+Une plage entière `[low,high]` demande mathématiquement `ceil(log2(high-low+1))` bits ; calculer ce nombre par la longueur binaire entière de `high-low`, sans logarithme flottant. Une plage constante demande zéro bit et stocke sa valeur de base. Rejeter débordements au lieu de saturer silencieusement une position.
 
 Trier les triangles par matériau peut améliorer les plages de dessin. Recalculer ensuite tous les remappings. Quantifier les normales, UV, poids et tangentes avec leur tolérance propre. Conserver des indices explicites en référence avant delta, réutilisation de sommets ou strips.
 

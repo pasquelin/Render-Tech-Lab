@@ -32,7 +32,7 @@ Les noms sont proposés; ils doivent respecter la structure du moteur lors de la
 2. Construire des IDs de position et des IDs d'attribut distincts. La V1 ne soude pas automatiquement des positions proches : l'égalité choisie fait partie du contrat import.
 3. Construire la table des arêtes orientées et non orientées. Classer frontières ouvertes, coutures et arêtes non manifold.
 4. Partitionner d'abord par contraintes de matériau/attribut, puis spatialement.
-5. Baseline sans bibliothèque de graphes : trier les centroids par clé Morton, départ par plus petite clé non affectée, croissance aux voisins qui ajoutent le moins de frontière sous plafonds. Départ d'un nouveau cluster si aucune addition n'est admissible.
+5. Baseline sans bibliothèque de graphes : départ par plus petit ID de triangle non affecté, croissance aux voisins qui ajoutent le moins de nouveaux sommets sous plafonds. Départ d'un nouveau cluster si aucune addition n'est admissible. Le départ par clé Morton ou la minimisation de frontière sont des variantes distinctes, à nommer dans la configuration.
 6. Briser les égalités par ID d'entrée, jamais par ordre de hachage non déterministe.
 7. Produire remapping global→local, indices locaux, liste des voisins et bounds.
 
@@ -56,7 +56,7 @@ tant que triangles > cible ET file non vide :
 retourner la géométrie atteinte et les métriques, même si cible non atteinte
 ```
 
-Pour une arête contractée sur une surface manifold, le test de lien compare les voisins communs aux sommets opposés des triangles adjacents. Une arête interne manifold possède deux faces; une arête de bord en possède une. Les arêtes non manifold sont verrouillées dans la V1. Ce test doit être adapté si l'on veut accepter volontairement des changements topologiques.
+Pour une arête contractée sur une surface manifold, le test de lien exige `Lk(a) ∩ Lk(b) = Lk({a,b})` sur les simplexes, pas seulement sur les sommets voisins. Le lien d'un sommet contient aussi des arêtes : le seul test des voisins communs accepte à tort une contraction de tétraèdre qui superpose deux faces. Les algorithmes de base définissent ce test et le refus des faces dupliquées après contraction. Une arête interne manifold possède deux faces; une arête de bord en possède une. La V1 verrouille les bords ouverts, coutures et sommets non manifold ; une politique autorisant leur simplification doit définir ses conditions de bord séparément.
 
 Pour chaque face survivante autour des sommets modifiés, comparer ancienne/nouvelle aire et normales : aire nouvelle au-dessus du seuil relatif et `dot(normal_old,normal_new)` au-dessus de la limite angulaire choisie. Une orientation locale préservée ne garantit pas l'absence de toute auto-intersection globale : celle-ci est un test supplémentaire si le domaine l'exige.
 

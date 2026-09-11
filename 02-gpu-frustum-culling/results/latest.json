@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T19:07:20.074Z",
+  "timestamp": "2026-09-11T19:09:55.548Z",
   "test": "02-gpu-frustum-culling",
   "status": "measured",
   "verdict": "INTEGRATE",
@@ -38,51 +38,51 @@
     "benchmarkRows": [
       {
         "instanceCount": 500,
-        "cpuCullMs": 0.3306670000000054,
+        "cpuCullMs": 0.24929199999999696,
         "gpuComputeMs": 0.0415,
         "visibleCount": 300,
         "culledCount": 200,
-        "speedup": 8
+        "speedup": 6
       },
       {
         "instanceCount": 1000,
-        "cpuCullMs": 0.06670800000000554,
+        "cpuCullMs": 0.07816700000000765,
         "gpuComputeMs": 0.043000000000000003,
         "visibleCount": 600,
         "culledCount": 400,
-        "speedup": 1.6
+        "speedup": 1.8
       },
       {
         "instanceCount": 2000,
-        "cpuCullMs": 0.13116600000000744,
+        "cpuCullMs": 0.16133299999999906,
         "gpuComputeMs": 0.046,
         "visibleCount": 1200,
         "culledCount": 800,
-        "speedup": 2.9
+        "speedup": 3.5
       },
       {
         "instanceCount": 5000,
-        "cpuCullMs": 0.3742499999999893,
+        "cpuCullMs": 0.5121659999999935,
         "gpuComputeMs": 0.055,
         "visibleCount": 3000,
         "culledCount": 2000,
-        "speedup": 6.8
+        "speedup": 9.3
       },
       {
         "instanceCount": 10000,
-        "cpuCullMs": 0.31433299999999065,
+        "cpuCullMs": 0.2915840000000003,
         "gpuComputeMs": 0.07,
         "visibleCount": 6000,
         "culledCount": 4000,
-        "speedup": 4.5
+        "speedup": 4.2
       },
       {
         "instanceCount": 50000,
-        "cpuCullMs": 3.5650420000000054,
+        "cpuCullMs": 1.561916999999994,
         "gpuComputeMs": 0.19,
         "visibleCount": 30000,
         "culledCount": 20000,
-        "speedup": 18.8
+        "speedup": 8.2
       }
     ]
   }

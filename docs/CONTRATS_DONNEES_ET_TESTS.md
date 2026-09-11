@@ -43,7 +43,7 @@ Le résultat contient : géométrie encodée, clusters, groupes de remplacement,
 
 ### Header proposé
 
-Un header disque minimal peut utiliser little-endian et les champs suivants : magic neutre, major/minor, taille header, flags, nombre de sections, longueur totale, checksum et hash de configuration. Chaque descripteur de section porte type, version, offset u64, longueur u64, nombre d'éléments et stride. Les offsets u64 se lisent par BigInt ou deux mots; ne pas supposer qu'un Number JavaScript représente tous les entiers u64.
+L'en-tête de référence est celui de [pages et mémoire](PAGES_MEMOIRE_ET_CACHE.md) : 64 octets little-endian, signature, versions, tailles, flags et offsets. Le CRC32 appartient à chaque descripteur de section de 40 octets ; les hashes et la configuration appartiennent au manifeste, pas à des champs supplémentaires implicites de l'en-tête. Les offsets u64 se lisent par BigInt ou deux mots; ne pas supposer qu'un Number JavaScript représente tous les entiers u64.
 
 La validation impose `offset <= length` puis `size <= length-offset`, sans addition pouvant déborder. Une section inconnue obligatoire rend le fichier incompatible; une section facultative inconnue peut être ignorée selon le flag défini. La V1 n'a pas besoin de supporter les fichiers supérieurs à la limite effective de la plateforme.
 
@@ -84,7 +84,7 @@ Une mesure échantillonnée de distance à la source reste une estimation sauf c
 6. Les métriques et bornes nécessaires au score LOD respectent la monotonie choisie.
 7. Les erreurs zéro, niveaux terminaux et groupes non simplifiables ont des règles d'arrêt explicites.
 8. Les duplications d'une frontière produisent les mêmes entiers quantifiés et attributs contractuels.
-9. Les pages racines restent lisibles seules; les dépendances d'une page ne créent pas de cycle impossible à charger.
+9. Les pages racines et leur fermeture de dépendances se chargent sans page fine et restent épinglées ; les dépendances ne créent pas de cycle impossible à charger. Avec l'encodage indépendant de référence, cette fermeture se réduit aux racines.
 10. Le decode→encode→decode préserve les champs discrets exactement et les champs quantifiés sous tolérance.
 
 Vérifier dans un espace de régions/groupe est plus juste que comparer seulement les IDs de triangles entre niveaux, puisque la simplification change la triangulation.

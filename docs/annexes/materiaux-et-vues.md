@@ -1,11 +1,18 @@
 # Matériaux, listes compactes et vues
 
-```text
-cle_raster(m):
-  return (m.double_face, m.masque, m.deformation, m.profondeur)
+Les champs d'une clé sont des descriptions comparables des états effectifs. Un lot rassemble du travail compatible ; il ne garantit pas à lui seul qu'un backend l'exécute en une commande. Le shader de couverture décide quels échantillons existent ; le shader de matériau peut ensuite être évalué séparément dans le chemin de visibilité différée. `etat_raster` est résolu pour l'élément, son instance et la vue : `cull_mode` distingue aucune face, faces avant et faces arrière ; `front_face` tient compte de l'orientation après transform et viewport. Une instance réfléchie ne partage pas aveuglément cet état avec une instance non réfléchie du même matériau. `etat_nuanceur` décrit les états effectifs de l'évaluation du matériau.
 
-cle_nuanceur(m):
-  return (m.programme, m.textures, m.derivees, m.eclairage)
+```text
+cle_raster(element):
+  m = element.etat_raster
+  return (m.format_geometrie, m.programme_couverture, m.bindings_raster,
+          m.cull_mode, m.front_face, m.masque, m.deformation, m.profondeur,
+          m.formats_cibles, m.echantillons, m.blending)
+
+cle_nuanceur(element):
+  m = element.etat_nuanceur
+  return (m.programme, m.bindings_materiau, m.textures, m.samplers,
+          m.derivees, m.eclairage, m.formats_cibles)
 
 indices(x):
   return range(len(x))
@@ -24,7 +31,7 @@ classer(elements, champ):
   cles = []
   bins = []
   for e in elements:
-    id = id_cle(cles, champ(e.materiau))
+    id = id_cle(cles, champ(e))
     bins.append(id)
   return cles, bins
 ```
@@ -84,13 +91,16 @@ Vue:
   id
   largeur
   hauteur
+  projection
   near
   plans
   version
 
 valider_vue(v):
   require v.largeur > 0 and v.hauteur > 0
-  require v.near > 0
+  require finite(v.near)
+  require v.projection in [perspective, orthographic]
+  require v.near > 0 if v.projection == perspective else v.near >= 0
   require 5 <= len(v.plans) <= 6
   return v
 

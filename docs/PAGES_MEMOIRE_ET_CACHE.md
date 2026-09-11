@@ -31,6 +31,8 @@ Descripteur de section de 40 octets : type u32 à 0, version u16 à 4, flags u16
 
 Types de section V1 : 1 sommets, 2 indices, 3 clusters, 4 régions, 5 relations, 6 pages, 7 matériaux, 8 identités. Le manifeste encode configuration, unités, type d'erreur, version de compilateur et hash des entrées en UTF-8. Sa canonicalisation est versionnée pour obtenir la même clé de cache.
 
+Cette enveloppe ne constitue pas encore un format d'échange complet entre deux implémentations indépendantes. Avant d'écrire le writer et le reader, figer les records de chaque section, listes et sentinelles, alignements disque, représentations des bornes/erreurs, flux d'attributs et paramètres de quantification, ainsi que la grammaire et la canonicalisation du manifeste. Les relations et invariants sont définis dans les chapitres ; leur disposition binaire reste une décision de spécification, sans dépendance à un format extérieur. Toute signature de format effectivement publiée doit identifier aussi ces choix.
+
 Vérifier toutes les plages par `offset<=total` puis `size<=total-offset`. Refuser les recouvrements non déclarés, les strides impossibles, offsets non alignés, réservés non nuls et sections obligatoires inconnues. Pour tableaux fixes, exiger `count*stride==size` avec multiplication contrôlée. Pour flux variables, vérifier un index de plages séparé.
 
 CRC32 sert à détecter une corruption accidentelle, pas à authentifier un asset. Référence : polynôme réfléchi `0xEDB88320`, initialisation `0xFFFFFFFF`, XOR final `0xFFFFFFFF`. Les opérations portent sur mots u32.

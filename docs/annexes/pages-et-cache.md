@@ -1,5 +1,9 @@
 # Pages et cache
 
+Cet exemple représente un cache d'asset géré par un seul ordonnanceur. Le validateur contrôle les octets avant `recevoir`. Les messages sont préalablement filtrés par identité d'asset et de job ; `generation` protège ensuite la réservation locale. Les noms d'états abrégés correspondent au cycle décrit dans le chapitre mémoire.
+
+Les tables épinglent toutes leurs entrées pour leur durée de vie. Le suivi conservatif des soumissions concerne donc toute la table. La récence LRU est mise à jour séparément par `toucher`, à partir des pages sélectionnées ou demandées ; un simple parcours de table n'est pas une preuve d'utilisation. Une annulation en attente est reprise après complétion de la soumission.
+
 ```text
 Page:
     id, generation, etat, parents, priorite, slot
@@ -81,6 +85,8 @@ reserver(cache, pages, id):
     page.slot = slot
     page.etat = lecture
     page.annule = false
+    cache.horloge += 1
+    cache.acces[slot] = cache.horloge
     return [id, page.generation]
 ```
 
@@ -115,10 +121,12 @@ enregistrerUpload(page, soumission):
     page.derniereSoumission = soumission
     page.etat = transfert
 
-terminerUpload(cache, page):
+terminerUpload(cache, pages, page):
     require page.etat == transfert
     if cache.soumissionTerminee < page.derniereSoumission:
         return attente
+    if page.annule:
+        return annuler(cache, pages, page.id, page.generation)
     page.etat = pret
     return ok
 
@@ -172,8 +180,13 @@ utiliser(cache, table, pages, soumission):
     for id in table.entrees.keys():
         page = pages[id]
         page.derniereSoumission = max(page.derniereSoumission, soumission)
-        cache.horloge += 1
-        cache.acces[page.slot] = cache.horloge
+
+toucher(cache, pages, idsUtilises):
+    cache.horloge += 1
+    for id in set(idsUtilises):
+        page = pages[id]
+        if page.slot != aucun and not page.annule:
+            cache.acces[page.slot] = cache.horloge
 
 fermerTable(cache, table, pages):
     require not table.active and not table.fermee

@@ -36,4 +36,6 @@ Les annexes contiennent uniquement des exemples thématiques, sans commentaires 
 
 Commencer par meshes statiques opaques, assets résidents, sélection CPU et raster matériel. Ajouter une optimisation à la fois, en gardant cette référence. Aucun nom de langage ne garantit un gain ; aucune simplification ne doit cacher des triangles manquants, des coutures cassées ou une mémoire dépassée.
 
-Les fichiers proposés à l'exécution des oracles sont temporaires et sont générés depuis le Markdown. Les futurs dépendances logicielles et outils de compilation devront être installés au moment du développement ; « documentation autonome » ne signifie pas « programme exécutable sans environnement ».
+Les fichiers proposés à l'exécution des oracles sont temporaires et sont générés depuis le Markdown. Les futures dépendances logicielles et outils de compilation devront être installés au moment du développement ; « documentation autonome » ne signifie pas « programme exécutable sans environnement ».
+
+La complétude vérifiée porte sur les mathématiques, stratégies, invariants et recettes nécessaires au socle. Le format détaillé des sections, les budgets, les versions moteur et les points d'intégration doivent être figés avant les étapes correspondantes. Les extensions possèdent une direction et des limites explicites ; elles ne constituent pas toutes des spécifications prêtes à implémenter. Le bilan de validation précise ces réserves et les contrôles réellement exécutés.

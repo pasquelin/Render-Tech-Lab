@@ -4,7 +4,9 @@ Ce document contient les fonctions de référence et leurs tests. Python 3.10+ e
 
 Ces tests vérifient des calculs et contre-exemples, pas un moteur complet, un shader GPU ou des performances matérielles. Les tirages déterministes complètent les exemples sans constituer une preuve exhaustive sur toutes les entrées.
 
-## Exécuter depuis le dossier rapport
+## Exécuter depuis le dossier docs
+
+Ouvrir un terminal dans le dossier contenant ce document (`docs` dans le dépôt), puis lancer la commande suivante. Elle fonctionne aussi sur une copie isolée de ce dossier. Seule la bibliothèque standard de Python est utilisée.
 
 ```sh
 python3 - <<'PY'
@@ -35,6 +37,8 @@ import math
 
 
 def dot(left, right):
+    if len(left) != len(right):
+        raise ValueError('Dimensions incompatibles')
     return sum(first * second for first, second in zip(left, right))
 
 
@@ -45,8 +49,10 @@ def norm(vector):
 def quadric_from_planes(planes):
     result = [[0.0] * 4 for _ in range(4)]
     for plane, weight in planes:
-        if weight < 0 or not math.isclose(norm(plane[:3]), 1.0):
-            raise ValueError('Plan non normalise ou poids negatif')
+        if (len(plane) != 4 or not math.isfinite(weight) or weight < 0
+                or any(not math.isfinite(value) for value in plane)
+                or not math.isclose(norm(plane[:3]), 1.0)):
+            raise ValueError('Plan ou poids invalide')
         for row in range(4):
             for column in range(4):
                 result[row][column] += weight * plane[row] * plane[column]
@@ -96,6 +102,8 @@ def projected_point(point, focal):
 
 
 def projected_error_bound(error, minimum, maximum, focal, near=0.01):
+    if len(minimum) != 3 or len(maximum) != 3 or len(focal) != 2:
+        raise ValueError('Dimensions de projection invalides')
     if error < 0 or any(not math.isfinite(value) for value in [error, *minimum, *maximum, *focal, near]):
         raise ValueError('Valeur invalide')
     if any(lower > upper for lower, upper in zip(minimum, maximum)) or near <= 0:
@@ -104,6 +112,74 @@ def projected_error_bound(error, minimum, maximum, focal, near=0.01):
         return math.inf
     transverse_squared = sum(max(abs(minimum[axis]), abs(maximum[axis])) ** 2 for axis in range(2))
     return error * max(abs(value) for value in focal) / minimum[2] * math.sqrt(1 + transverse_squared / minimum[2] ** 2)
+
+
+def lod_score(error_object, error_scale, minimum, maximum, pixel_scale, projection, near):
+    if (not all(math.isfinite(value) and value >= 0 for value in [error_object, error_scale, near])
+            or len(pixel_scale) != 2
+            or not all(math.isfinite(value) and value > 0 for value in pixel_scale)):
+        raise ValueError('Parametres LOD invalides')
+    error_view = error_object * error_scale
+    if not math.isfinite(error_view):
+        raise ValueError('Erreur transformee hors domaine')
+    if projection == 'orthographic':
+        return error_view * max(pixel_scale)
+    if projection == 'perspective':
+        return projected_error_bound(error_view, minimum, maximum, pixel_scale, near)
+    raise ValueError('Projection inconnue')
+
+
+def required_bits(low, high):
+    if type(low) is not int or type(high) is not int or high < low:
+        raise ValueError('Plage entiere invalide')
+    return (high - low).bit_length()
+
+
+def simplicial_link(triangles, simplex):
+    import itertools
+    result = set()
+    for triangle in triangles:
+        vertices = set(triangle)
+        if simplex <= vertices:
+            remaining = sorted(vertices - simplex)
+            for count in range(1, len(remaining) + 1):
+                result.update(itertools.combinations(remaining, count))
+    return result
+
+
+def link_condition(triangles, left, right):
+    return (simplicial_link(triangles, {left}) & simplicial_link(triangles, {right})
+            == simplicial_link(triangles, {left, right}))
+
+
+def cone_rejects(axis_dot_view, angle, direction_spread=0):
+    if (not -1 <= axis_dot_view <= 1 or not 0 <= angle <= math.pi
+            or not 0 <= direction_spread <= math.pi):
+        raise ValueError('Cone invalide')
+    total_angle = angle + direction_spread
+    return total_angle < math.pi / 2 and axis_dot_view < -math.sin(total_angle)
+
+
+def point_triangle_distance(point, triangle):
+    first, second, third = triangle
+    candidates = []
+    for start, end in [(first, second), (second, third), (third, first)]:
+        direction = [end[axis] - start[axis] for axis in range(3)]
+        offset = [point[axis] - start[axis] for axis in range(3)]
+        squared = dot(direction, direction)
+        ratio = max(0, min(1, dot(offset, direction) / squared)) if squared else 0
+        candidates.append([start[axis] + ratio * direction[axis] for axis in range(3)])
+    edge_a = [second[axis] - first[axis] for axis in range(3)]
+    edge_b = [third[axis] - first[axis] for axis in range(3)]
+    offset = [point[axis] - first[axis] for axis in range(3)]
+    aa, ab, bb = dot(edge_a, edge_a), dot(edge_a, edge_b), dot(edge_b, edge_b)
+    determinant = aa * bb - ab * ab
+    if determinant > 0:
+        u = (bb * dot(offset, edge_a) - ab * dot(offset, edge_b)) / determinant
+        v = (aa * dot(offset, edge_b) - ab * dot(offset, edge_a)) / determinant
+        if u >= 0 and v >= 0 and u + v <= 1:
+            candidates.append([first[axis] + u * edge_a[axis] + v * edge_b[axis] for axis in range(3)])
+    return min(norm([point[axis] - candidate[axis] for axis in range(3)]) for candidate in candidates)
 
 
 def sphere_union(first_center, first_radius, second_center, second_radius):
@@ -278,6 +354,89 @@ import reference_math as reference
 
 
 class MathematicalContractTests(unittest.TestCase):
+    def test_qem_rejects_nonfinite_planes_and_weights(self):
+        for invalid in [math.nan, math.inf, -math.inf]:
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    reference.quadric_from_planes([([1, 0, 0, 0], invalid)])
+                with self.assertRaises(ValueError):
+                    reference.quadric_from_planes([([1, 0, 0, invalid], 1)])
+
+    def test_qem_rejects_wrong_dimensions(self):
+        for plane in [[1, 0, 0], [1, 0, 0, 0, 0]]:
+            with self.assertRaises(ValueError):
+                reference.quadric_from_planes([(plane, 1)])
+        with self.assertRaises(ValueError):
+            reference.dot([1, 2], [1])
+
+    def test_tetrahedron_common_vertices_are_not_the_full_link(self):
+        triangles = [(0, 1, 2), (0, 3, 1), (0, 2, 3), (1, 3, 2)]
+        left = reference.simplicial_link(triangles, {0})
+        right = reference.simplicial_link(triangles, {1})
+        common_vertices = {simplex for simplex in left & right if len(simplex) == 1}
+        self.assertEqual(common_vertices, reference.simplicial_link(triangles, {0, 1}))
+        self.assertIn((2, 3), left & right)
+        self.assertFalse(reference.link_condition(triangles, 0, 1))
+        after = [tuple(0 if vertex == 1 else vertex for vertex in face) for face in triangles]
+        surviving = [tuple(sorted(face)) for face in after if len(set(face)) == 3]
+        self.assertEqual(len(surviving), 2)
+        self.assertEqual(len(set(surviving)), 1)
+
+    def test_link_condition_accepts_an_octahedron_edge(self):
+        triangles = [(pole, ring[index], ring[(index + 1) % 4])
+                     for pole in [0, 1] for ring in [[2, 3, 4, 5]] for index in range(4)]
+        self.assertTrue(reference.link_condition(triangles, 0, 2))
+
+    def test_orthographic_error_does_not_shrink_with_distance(self):
+        for depth in [1, 100, 10000]:
+            score = reference.lod_score(1, 1, [0, 0, depth], [1, 1, depth + 1], [100, 80], 'orthographic', 0)
+            self.assertEqual(score, 100)
+
+    def test_lod_error_includes_instance_scale(self):
+        for projection in ['orthographic', 'perspective']:
+            parameters = ([0, 0, 100], [1, 1, 101], [100, 80], projection, 0.1)
+            self.assertAlmostEqual(reference.lod_score(0.01, 10, *parameters),
+                                   10 * reference.lod_score(0.01, 1, *parameters))
+
+    def test_lod_projection_and_near_contract(self):
+        for projection, near in [('perspective', 0), ('unknown', 0.1), ('orthographic', -1)]:
+            with self.assertRaises(ValueError):
+                reference.lod_score(1, 1, [0, 0, 1], [1, 1, 2], [100, 100], projection, near)
+
+    def test_wide_cone_must_not_reject_a_visible_normal(self):
+        angle = 2 * math.pi / 3
+        normal = [math.sqrt(3) / 2, 0, -0.5]
+        self.assertGreater(reference.dot(normal, [0, 0, -1]), 0)
+        self.assertTrue(-1 < -math.sin(angle))
+        self.assertFalse(reference.cone_rejects(-1, angle))
+
+    def test_cone_tangency_and_perspective_spread_are_kept(self):
+        self.assertTrue(reference.cone_rejects(-1, math.pi / 6))
+        self.assertFalse(reference.cone_rejects(-math.sin(math.pi / 6), math.pi / 6))
+        self.assertFalse(reference.cone_rejects(-1, math.pi / 3, math.pi / 6))
+
+    def test_integer_width_boundaries(self):
+        for low, high, count in [(0, 0, 0), (-4, -1, 2), (0, 2**32 - 1, 32),
+                                 (0, 2**32, 33), (0, 2**63, 64)]:
+            self.assertEqual(reference.required_bits(low, high), count)
+            self.assertLessEqual(high - low, 2**count - 1)
+
+    def test_point_triangle_interior_edge_and_degeneracy(self):
+        triangle = [[0, 0, 0], [2, 0, 0], [0, 2, 0]]
+        self.assertEqual(reference.point_triangle_distance([0.5, 0.5, 3], triangle), 3)
+        self.assertAlmostEqual(reference.point_triangle_distance([2, 2, 0], triangle), math.sqrt(2))
+        self.assertEqual(reference.point_triangle_distance([1, 1, 0], [[0, 0, 0], [2, 0, 0], [2, 0, 0]]), 1)
+        self.assertEqual(reference.point_triangle_distance([0, 0, 3], [[0, 0, 0]] * 3), 3)
+
+    def test_surface_samples_need_a_covering_radius(self):
+        triangle = [[0, 0, 0], [2, 0, 0], [0, 2, 0]]
+        moved = [[point[0], point[1], 1] for point in triangle]
+        sample_max = max(reference.point_triangle_distance(point, moved) for point in triangle)
+        diameter = math.sqrt(8)
+        self.assertEqual(sample_max, 1)
+        for u, v in [(0.1, 0.2), (0.25, 0.5), (0.7, 0.1)]:
+            self.assertLessEqual(reference.point_triangle_distance([2 * u, 2 * v, 0], moved), sample_max + diameter)
+
     def test_qem_known_intersection(self):
         quadric = reference.quadric_from_planes([([1, 0, 0, -1], 1), ([0, 1, 0, -2], 1), ([0, 0, 1, -3], 1)])
         optimum = reference.quadric_candidate(quadric, [0, 0, 0], [4, 4, 4])

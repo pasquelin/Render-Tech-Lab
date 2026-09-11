@@ -1,6 +1,6 @@
 # Rapport du Banc : 11-geometry-streaming (Résidence VRAM & Cycle LRU)
 
-**Date :** 2026-09-11T19:07:20.285Z  
+**Date :** 2026-09-11T19:09:55.749Z  
 **Statut :** `INTEGRATE`  
 **Budget VRAM Alloué :** 4.0 Mo (Plafond infranchissable)
 

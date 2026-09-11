@@ -44,6 +44,10 @@ La transparence mélange plusieurs surfaces ; un unique identifiant de triangle 
 
 Position skinnée homogène : `position=sum(weight_j*matrix_j*restPosition)`, avec poids finis non négatifs de somme 1 et matrices exprimées dans le même repère. Réunir les poids des identifiants d'os identiques avant de réduire le nombre d'influences.
 
+Composition de référence avec vecteurs colonnes : `M_bind` transforme le mesh au repos vers le monde, `B_j` transforme l'os en pose de liaison vers le monde, `J_j(t)` cet os à l'instant courant et `M(t)` le mesh courant vers le monde. Définir `inverseBind_j=inverse(B_j)*M_bind`, puis `matrix_j(t)=inverse(M(t))*J_j(t)*inverseBind_j`. Le résultat pondéré est local au mesh courant ; multiplier par `M(t)` donne sa position monde. Les matrices inversées doivent être non singulières. Des matrices de liaison fournies par l'import sont converties vers cette convention, sans appliquer deux fois la liaison.
+
+Test de liaison : lorsque `M(t)=M_bind` et `J_j(t)=B_j`, chaque `matrix_j` vaut l'identité et le mesh de repos est restitué. Exemple sur un axe : translations du mesh de 10, de l'os au repos de 12 et de l'os courant de 15 ; `inverseBind` translate de −2, la matrice locale de skinning de +3. Un point local 1 devient local 4 puis monde 14. Ce test sépare une translation d'instance d'une déformation et détecte une liaison appliquée deux fois.
+
 Quantification des poids : normaliser, multiplier par `maxInteger`, prendre les planchers, distribuer le reste aux plus grandes fractions avec départage stable. La somme entière reste exactement `maxInteger`. Exemple `[0.2,0.3,0.5]` sur 255 donne `[51,77,127]` si l'égalité des fractions donne priorité au deuxième poids.
 
 La référence de normales recalcule les normales sur la géométrie déformée en préservant les domaines de lissage. Additionner des normales transformées constitue une approximation de shading à recetter ; la somme des inverses-transposées n'est pas l'inverse-transposée de la somme des matrices.
@@ -51,6 +55,8 @@ La référence de normales recalcule les normales sur la géométrie déformée 
 La référence de bornes recalcule l'AABB de toutes les positions déformées. Un mélange affine commun peut transformer une borne seulement si les poids sont identiques pour tout l'ensemble. Pour poids variables, employer des enveloppes d'os démontrées ou le recalcul, pas la borne du repos.
 
 Morphs : `position=base+sum(weight_j*delta_j)`. Pour des poids bornés, chaque composante de delta donne un intervalle ; additionner leurs minima/maxima produit une AABB conservative. Si les poids sortent des intervalles déclarés, invalider la borne.
+
+Pour une extension combinant morphs et skinning, la référence applique les deltas de morph dans le repère du mesh au repos, puis le skinning, puis la transform d'instance. Un déplacement supplémentaire doit déclarer son repère, son ordre et ses bornes ; aucun ordre implicite ne peut être partagé entre culling, ombres et rendu final.
 
 La vélocité compare projections des positions aux temps courant/précédent, avec caméras et déformations correspondantes. Une génération incompatible remet l'historique à zéro. Les ombres d'un objet hors champ peuvent encore demander sa déformation.
 

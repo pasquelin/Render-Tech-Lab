@@ -2,6 +2,8 @@
 
 <a id="code"></a>
 
+Ces exemples utilisent les conventions et domaines des chapitres. Les indices d'adjacence sont des identités géométriques ; les copies d'attributs restent distinctes. La partition canonique part de l'ID minimal et minimise les nouveaux sommets. Une variante Morton change explicitement l'ordre des graines.
+
 ```text
 dot(left, right):
     require size(left) == size(right)
@@ -31,11 +33,21 @@ neighbors(triangles):
     for face, triangle in enumerate(triangles):
         for start, end in triangle.edges:
             key = [min(start, end), max(start, end)]
-            edges[key].append(face)
+            edges[key].append([face, start, end])
     graph = empty_graph(size(triangles))
-    for faces in edges.values:
-        for left, right in distinct_pairs(faces):
-            graph.connect(left, right)
+    for key, occurrences in edges.items():
+        if size(occurrences) == 1:
+            mark_and_lock_open_boundary(key)
+        elif size(occurrences) == 2:
+            leftFace, leftStart, leftEnd = occurrences[0]
+            rightFace, rightStart, rightEnd = occurrences[1]
+            if leftStart == rightEnd and leftEnd == rightStart:
+                graph.connect(leftFace, rightFace)
+            else:
+                mark_and_lock_non_manifold(key, occurrences)
+        else:
+            mark_and_lock_non_manifold(key, occurrences)
+    classify_vertex_links_and_lock(triangles)
     return graph, edges
 ```
 
@@ -110,6 +122,15 @@ candidate(left, right, leftMatrix, rightMatrix, tolerance):
 ```
 
 ```text
+simplicialLink(mesh, simplex):
+    result = empty_set()
+    for face in mesh.triangles:
+        vertices = set(face.vertexIds)
+        if simplex subset_of vertices:
+            for subset in nonempty_subsets(vertices minus simplex):
+                result.add(sorted_tuple(subset))
+    return result
+
 safeFace(before, after, minArea, minCos):
     oldNormal = cross(before[1] - before[0], before[2] - before[0])
     newNormal = cross(after[1] - after[0], after[2] - after[0])
@@ -126,6 +147,20 @@ canCollapse(edge, point, mesh, minArea, minCos):
         return false
     if common_neighbors(edge) != opposite_vertices(edge.faces):
         return false
+    leftLink = simplicialLink(mesh, {edge.start.id})
+    rightLink = simplicialLink(mesh, {edge.end.id})
+    edgeLink = simplicialLink(mesh, {edge.start.id, edge.end.id})
+    if leftLink intersect rightLink != edgeLink:
+        return false
+    seenFaces = empty_set()
+    for face in mesh.triangles:
+        ids = [edge.start.id if id == edge.end.id else id for id in face.vertexIds]
+        if size(set(ids)) < 3:
+            continue
+        key = sorted_tuple(ids)
+        if key in seenFaces:
+            return false
+        seenFaces.add(key)
     for face in surviving_faces_after_collapse(edge):
         after = replace_endpoints(face, edge, point)
         if not safeFace(face.positions, after, minArea, minCos):
@@ -303,7 +338,12 @@ decode(encoded, origin, step):
 
 bits(low, high):
     require integers(low, high) and high >= low
-    return ceil(log2(high - low + 1))
+    remaining = high - low
+    count = 0
+    while remaining > 0:
+        remaining = remaining // 2
+        count += 1
+    return count
 ```
 
 ```text

@@ -1,5 +1,7 @@
 # Subdivision, déformation et bornes
 
+La subdivision ci-dessous conserve les positions et IDs géométriques ; elle illustre les motifs conformes, pas un compilateur complet d'attributs. Chaque coin doit en plus transporter ses attributs dans son domaine continu, interpoler les valeurs à l'arête et conserver les copies de couture. Deux copies partagent l'ID géométrique du milieu mais peuvent garder des UV, normales ou tangentes différents. Une extension avec déplacement doit définir leur continuité avant activation. `atteint` signifie que toutes les longueurs respectent le seuil, même à la dernière passe autorisée ; `limite` indique que des arêtes restent trop longues.
+
 ```text
 cle_arete(a, b):
   return (a, b) if a < b else (b, a)
@@ -110,6 +112,8 @@ subdiviser(triangles, seuil, profondeur_max, capacite):
       if len(suivant) > capacite:
         return courant, budget
     courant = suivant
+  if not any(choisir_aretes(courant, seuil).values()):
+    return courant, atteint
   return courant, limite
 ```
 

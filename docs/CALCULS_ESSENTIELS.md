@@ -48,7 +48,7 @@ normal = cross / ||cross||
 
 Si `area` est trop petite relativement à l'échelle locale, le triangle est dégénéré : ne pas normaliser `cross`. Une tolérance absolue commune à une planète et à une vis est inadaptée.
 
-Une arête topologique se code par `(min(id_a,id_b), max(id_a,id_b))`. Une table arête → triangles construit le graphe dual en temps attendu `O(T)` par hachage, ou `O(T log T)` par tri déterministe. Un sommet géométrique et un sommet d'attributs ne sont pas la même chose : une couture UV peut partager une position et avoir deux jeux d'attributs.
+Une arête topologique se code par `(min(id_a,id_b), max(id_a,id_b))`. Une table arête → triangles construit l'adjacence manifold en temps attendu `O(T)` par hachage, ou `O(T log T)` par tri déterministe. Les arêtes à plus de deux faces sont diagnostiquées et verrouillées, sans créer une clique de toutes leurs faces : celle-ci coûterait un nombre quadratique de liens. Un sommet géométrique et un sommet d'attributs ne sont pas la même chose : une couture UV peut partager une position et avoir deux jeux d'attributs.
 
 Le partitionnement recherche des groupes de triangles avec peu d'arêtes coupées :
 
@@ -60,7 +60,7 @@ contraintes : triangles(cluster) <= T_max
 
 Des contraintes matériaux et topologie peuvent augmenter ce coût. Aucune partition de taille fixe n'est universellement optimale. Le nombre de sommets et le taux de duplication importent autant que le nombre de triangles.
 
-**Optimiser après recette :** tri spatial Morton + croissance locale comme baseline déterministe; comparer un partitionneur de graphe avec les mêmes plafonds. Mesurer le temps de build, les duplications, la compacité des bornes et le coût de culling obtenu, pas uniquement le nombre de clusters.
+**Optimiser après recette :** partir de la référence par ID et croissance minimisant les nouveaux sommets, puis comparer départ spatial Morton et partitionneur de graphe avec les mêmes plafonds. Mesurer le temps de build, les duplications, la compacité des bornes et le coût de culling obtenu, pas uniquement le nombre de clusters.
 
 
 ## 4. M02 — Quadric Error Metric : où placer le sommet simplifié ?
@@ -229,7 +229,7 @@ Avec vecteurs colonnes et lignes `row0..row3` de la matrice world→clip : gauch
 
 Une AABB objet transformée a `center_world=A center+t` et `extent_world=abs(A) extent`. Cette expression est exacte pour l'AABB englobant une boîte affine, y compris avec cisaillement.
 
-**Cône de normales, variante optionnelle.** Soit l'axe unitaire `axis`, demi-angle `alpha`, et `view` la direction unitaire surface→caméra. Si la direction est constante, toutes les faces sont arrière lorsque `dot(axis,view) < -sin(alpha)`, avec marge de sécurité. Pour une sphère de rayon `r` vue à distance `d>r`, élargir l'angle par `beta=asin(r/d)`; utiliser `alpha+beta` uniquement si inférieur à `pi/2`. Sinon ne pas rejeter. Désactiver pour faces doubles et bornes de déformation inconnues. Un déterminant de transformation négatif change la convention d'orientation.
+**Cône de normales, variante optionnelle.** Soit l'axe unitaire `axis`, demi-angle `alpha`, et `view` la direction unitaire surface→caméra. La référence exige `0<=alpha<pi/2`. Si la direction est constante, toutes les faces sont arrière lorsque `dot(axis,view) < -sin(alpha)`, avec marge de sécurité. Pour une sphère de rayon `r` vue à distance `d>r`, élargir l'angle par `beta=asin(r/d)`; utiliser `alpha+beta` uniquement si inférieur à `pi/2`. Sinon ne pas rejeter, y compris en orthographique pour un cône initial trop large. Désactiver pour faces doubles et bornes de déformation inconnues. Un déterminant de transformation négatif change la convention d'orientation.
 
 **Tests :** aucun faux rejet face à une référence par triangle, y compris réflexion et caméra intérieure. Mesurer si le cône économise davantage de raster qu'il ne coûte en calcul et en mémoire.
 
@@ -318,7 +318,7 @@ La profondeur NDC `z_clip/w_clip` s'interpole linéairement avec ces barycentriq
 
 **Visibilité :** le chemin matériel utilise un depth attachment et un/des IDs entiers. L'ID doit distinguer instance, cluster et triangle (directement ou par table), avec sentinelle de fond et bornes de capacité. `primitive_index` ne doit pas être supposé disponible sur toutes les implémentations; une voie portable fournit un ID plat depuis une géométrie déroulée/vertex pulling, avec le même ID pour les trois sommets.
 
-La source VirtualizedGeometry assemble profondeur et visibilité en une mise à jour atomique large. Deux atomic u32 indépendants ne garantissent pas que l'ID final corresponde au gagnant depth. Un spinlock par pixel est aussi un problème de progression GPU, pas une solution de référence portable. Partir du raster matériel; toute alternative logicielle doit prouver le couplage depth/ID, le traitement des égalités et l'absence de blocage.
+Une variante de raster logiciel peut coupler profondeur et visibilité dans une seule mise à jour atomique si le backend expose la largeur nécessaire. Deux atomic u32 indépendants ne garantissent pas que l'ID final corresponde au gagnant depth. Un spinlock par pixel est aussi un problème de progression GPU, pas une solution de référence portable. Partir du raster matériel; toute alternative logicielle doit prouver le couplage depth/ID, le traitement des égalités et l'absence de blocage.
 
 ## 14. M12 — Attributs en perspective et dérivées analytiques
 
@@ -362,6 +362,8 @@ La règle d'arrondi (égalité au milieu et valeurs négatives) est un élément
 Si le plus proche entier est choisi correctement et qu'il n'y a ni saturation ni erreur arithmétique supplémentaire : `|error_axis| <= step/2` et `error_3d <= sqrt(3) step/2`. Ajouter cette incertitude à la métrique géométrique et aux bornes. Exemple `step=1 mm` → borne environ `0.8660 mm`.
 
 `bits=0` est permis pour une coordonnée constante si le décodeur le définit. Avec mots u32, traiter explicitement `bits=32` : un masque `(1<<32)-1` et les décalages de largeur mot n'ont pas la même sémantique selon langage. Tester des champs traversant une frontière de mot et les limites d'offset.
+
+Le nombre de bits se calcule exactement comme la longueur binaire de `max_q-min_q`, zéro compris. La formule logarithmique décrit les mathématiques, pas une recette en flottants : pour `[0,2^63]`, il faut 64 bits, alors qu'un logarithme arrondi peut en annoncer 63.
 
 **Normales octaédriques :** normaliser `n`, poser `p=n/(|nx|+|ny|+|nz|)`. Si `pz<0`, replier `p.xy=(1-|p.yx|)×sign_not_zero(p.xy)`. Quantifier les deux composantes. Au décodage reconstruire `z=1-|x|-|y|`, appliquer le repli inverse si nécessaire puis normaliser. `sign_not_zero(0)=+1` doit être défini. Mesurer l'erreur angulaire après reconstruction, pas seulement la taille du flux.
 
