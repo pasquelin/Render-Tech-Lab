@@ -1,1 +1,0 @@
-{ "extends": "./tsconfig.json", "include": ["02-gpu-scene"] }
