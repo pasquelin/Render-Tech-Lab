@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T19:31:27.276Z",
+  "timestamp": "2026-09-11T19:42:41.301Z",
   "test": "07-hiz",
   "status": "measured",
   "verdict": "INTEGRATE",
@@ -15,7 +15,7 @@
     "lights": 0
   },
   "cpu": {
-    "frameMs": 1.142,
+    "frameMs": 1.133,
     "submitMs": null
   },
   "gpu": {
@@ -34,23 +34,23 @@
         "resolution": "256x256",
         "mips": 9,
         "vramBytes": 349524,
-        "timeMs": 2.067
+        "timeMs": 2.196
       },
       {
         "resolution": "512x512",
         "mips": 10,
         "vramBytes": 1398100,
-        "timeMs": 5.767
+        "timeMs": 6.2
       },
       {
         "resolution": "1024x1024",
         "mips": 11,
         "vramBytes": 5592404,
-        "timeMs": 18.147
+        "timeMs": 18.952
       }
     ],
     "pyramidMips1024": 11,
-    "generationTimeMs1024": 18.147,
+    "generationTimeMs1024": 18.952,
     "vramBytes1024": 5592404,
     "conservativeReductionVerified": true
   }

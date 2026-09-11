@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T19:31:27.192Z",
+  "timestamp": "2026-09-11T19:42:41.231Z",
   "test": "05-meshlets",
   "status": "measured",
   "verdict": "INTEGRATE",
@@ -37,7 +37,7 @@
         "vertexDuplicationFactor": 1.88,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 1024,
-        "buildTimeMs": 0.96
+        "buildTimeMs": 0.94
       },
       {
         "trianglesPerMeshlet": 128,
@@ -55,7 +55,7 @@
         "vertexDuplicationFactor": 1.18,
         "indexMemoryBytes": 12288,
         "metadataMemoryBytes": 256,
-        "buildTimeMs": 0.2
+        "buildTimeMs": 0.19
       },
       {
         "trianglesPerMeshlet": 512,

@@ -72,9 +72,9 @@
             <!-- Canvas WebGPU pour Test B -->
             <canvas id="canvas-webgpu" class="absolute inset-0 w-full h-full block" style="display: none;"></canvas>
 
-            <!-- État vide : module sans rendu temps réel (campagne hors-ligne / banc d'essai analytique) -->
+            <!-- Console d'administration & pilotage R&D (Bancs algorithmiques et analytiques) -->
             <div id="viewport-empty" class="absolute inset-0 hidden flex-col items-center justify-center p-6 text-center z-10 overflow-y-auto">
-              <div class="card max-w-2xl w-full bg-base-200/90 border border-base-content/10 shadow-xl p-6 space-y-4 backdrop-blur-md">
+              <div class="card max-w-2xl w-full bg-base-200/95 border border-base-content/15 shadow-2xl p-6 space-y-4 backdrop-blur-md">
                 <div class="flex items-center justify-between border-b border-base-content/10 pb-3">
                   <div class="flex items-center gap-2">
                     <span class="inline-block w-2 h-2 rounded-full bg-success"></span>
@@ -84,15 +84,26 @@
                 </div>
                 
                 <div class="space-y-1.5 text-left">
-                  <h2 class="text-base sm:text-lg font-bold text-base-content" id="viewport-empty-title">Module sans rendu temps réel</h2>
+                  <h2 class="text-base sm:text-lg font-bold text-base-content" id="viewport-empty-title">Console d'Administration R&amp;D</h2>
                   <p class="text-xs text-base-content/70 leading-relaxed" id="viewport-empty-desc">
-                    Ce banc s'exécute en campagne hors-ligne : il n'affiche pas de scène animée.
-                    Lancez le benchmark dans le panneau de droite pour produire ses mesures.
+                    Banc d'essai algorithmique avec oracles de conformité et calcul en direct.
                   </p>
                 </div>
 
                 <div id="viewport-empty-metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-left">
                   <!-- Peuplé dynamiquement par main.ts -->
+                </div>
+
+                <!-- Console d'exécution & Terminal en direct -->
+                <div class="space-y-1.5 text-left pt-1">
+                  <div class="flex items-center justify-between text-[10px] font-mono text-base-content/60 uppercase tracking-wider">
+                    <span class="flex items-center gap-1.5">
+                      <span id="terminal-spinner" class="inline-block w-2 h-2 rounded-full bg-success"></span>
+                      <span id="terminal-label">Console d'exécution du banc &amp; oracles</span>
+                    </span>
+                    <span id="terminal-duration" class="text-primary font-bold"></span>
+                  </div>
+                  <pre id="viewport-terminal-output" class="bg-base-300/90 border border-base-content/10 p-3 rounded-box font-mono text-[11px] text-base-content/90 max-h-40 overflow-y-auto whitespace-pre-wrap select-text leading-relaxed">Prêt. Sélectionnez une configuration ou cliquez sur « Exécuter le banc en direct » pour tester l'algorithme.</pre>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-base-content/10">
@@ -102,7 +113,7 @@
                   </button>
                   <button id="btn-viewport-run" class="btn btn-sm btn-lab-primary gap-1.5 shadow-xs">
                     <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                    <span>Re-tester ce module</span>
+                    <span id="btn-viewport-run-text">Exécuter le banc en direct</span>
                   </button>
                 </div>
               </div>
