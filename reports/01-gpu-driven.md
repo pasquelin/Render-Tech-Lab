@@ -1,7 +1,7 @@
 # Rapport de Banc d'Essai : 01-gpu-driven
 
 **Technique testée :** GPU-Driven Rendering Pipeline (Frustum Culling & Indirect Draw)  
-**Dernière mise à jour du banc :** 11/09/2026 16:38:14  
+**Dernière mise à jour du banc :** 11/09/2026 16:38:28  
 **Environnement :** WebGPU (Metal / Vulkan / D3D12)
 
 > **Règle gouvernante :** On ne complexifie le moteur que lorsqu'une mesure reproductible démontre que l'architecture actuelle limite réellement le produit.  
@@ -14,7 +14,7 @@
 | Indicateur clé | Résultat mesuré | Cible / Seuil de décision |
 |---|---|---|
 | **Point de croisement (*Crossover Point*)** | **~500 objets uniques** | $le 2,000$ objets |
-| **Gain soumission CPU sur palier S3 (2 000 obj)** | **-92.4%** | $ge 70\%$ de réduction |
+| **Gain soumission CPU sur palier S3 (2 000 obj)** | **-92.7%** | $ge 70\%$ de réduction |
 | **Appels de dessin CPU (Draw Calls)** | **1 appel indirect unique** vs $2,000$ appels | Facteur $O(1)$ vs $O(N)$ |
 | **Round-trip CPU $\leftrightarrow$ GPU** | **0 octet lu par le CPU** (Zéro stall de pipeline) | Invariant strict respecté |
 
@@ -28,10 +28,10 @@ Banc comparatif exécuté sur la même scène avec caméra orbitale dynamique :
 
 | Palier (obj) | Submit A (CPU) | Submit B (GPU) | Accélération | Frametime A | Frametime B | P95 Submit A | P95 Submit B | Draw Calls A | Draw Calls B |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **500** | 0.90 ms | 0.25 ms | **3.6×** | 1.70 ms | 0.60 ms | 1.03 ms | 0.26 ms | 500 | 1 |
-| **1k** | 1.70 ms | 0.25 ms | **6.8×** | 2.50 ms | 0.60 ms | 1.96 ms | 0.26 ms | 1000 | 1 |
-| **2k** | 3.30 ms | 0.25 ms | **13.2×** | 4.10 ms | 0.60 ms | 3.79 ms | 0.26 ms | 2000 | 1 |
-| **5k** | 8.10 ms | 0.25 ms | **32.4×** | 8.90 ms | 0.60 ms | 9.31 ms | 0.26 ms | 5000 | 1 |
+| **500** | 1.10 ms | 0.15 ms | **7.4×** | 1.10 ms | 0.20 ms | 1.70 ms | 0.30 ms | 500 | 1 |
+| **1k** | 1.59 ms | 0.16 ms | **10.2×** | 1.59 ms | 0.21 ms | 2.70 ms | 0.20 ms | 1000 | 1 |
+| **2k** | 2.05 ms | 0.15 ms | **13.7×** | 2.06 ms | 0.21 ms | 3.80 ms | 0.30 ms | 2000 | 1 |
+| **5k** | 2.84 ms | 0.17 ms | **17.1×** | 2.84 ms | 0.22 ms | 3.70 ms | 0.30 ms | 5000 | 1 |
 
 ---
 
@@ -54,7 +54,7 @@ Banc comparatif exécuté sur la même scène avec caméra orbitale dynamique :
 
 | Dimension | Gain observé | Coût / Contrainte technique |
 |---|---|---|
-| **Temps CPU (`submitMs`)** | Effondrement de 92.4% sur 2 000 objets | Nécessite la gestion manuelle du compactage des buffers |
+| **Temps CPU (`submitMs`)** | Effondrement de 92.7% sur 2 000 objets | Nécessite la gestion manuelle du compactage des buffers |
 | **Frametime GPU** | Aucun surcoût perceptible ($le 0.15\,\text{ms}$ pour le compute) | Consommation d'un slot de compute pass avant le raster |
 | **VRAM & Bande passante** | Faible empreinte ($96\,\text{octets}$ / instance + $20\,\text{octets}$ indirect) | Nécessite la synchronisation des données de transformation |
 | **Complexité logicielle** | Bypasse le graphe de scène Three.js | Matériaux doivent lire les données depuis le storage buffer |
