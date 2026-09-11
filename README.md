@@ -31,18 +31,31 @@ Every module follows the same cycle, and nothing merges into the main engine wit
 Hypothesis → Prototype → Benchmark → Profiling → Gain → Cost → Decision
 ```
 
-## The eight modules
+## Methodology: Two Levels of Baseline
 
-| Module | Research subject | Protocol |
-|---|---|---|
-| [**00-baseline**](00-baseline/README.md) | Reference WebGPU/TSL floor — S0–S5 load curve, golden stills | [hypothesis.md](00-baseline/hypothesis.md) |
-| [**01-gpu-driven**](01-gpu-driven/README.md) | GPU-driven rendering, frustum & Hi-Z culling (compute / indirect draw) | [hypothesis.md](01-gpu-driven/hypothesis.md) |
-| [**02-virtualized-geometry**](02-virtualized-geometry/README.md) | Virtualized geometry, meshlets & cluster culling | [hypothesis.md](02-virtualized-geometry/hypothesis.md) |
-| [**03-virtual-shadow-maps**](03-virtual-shadow-maps/README.md) | Virtual shadow maps (VSM) & paged atlas | [hypothesis.md](03-virtual-shadow-maps/hypothesis.md) |
-| [**04-global-illumination**](04-global-illumination/README.md) | Dynamic global illumination (TSL screen-space GI, radiance cascades) | [hypothesis.md](04-global-illumination/hypothesis.md) |
-| [**05-temporal-upscaling**](05-temporal-upscaling/README.md) | Temporal upscaling & anti-aliasing (TAAU) | [hypothesis.md](05-temporal-upscaling/hypothesis.md) |
-| [**06-virtual-textures**](06-virtual-textures/README.md) | Sparse virtual texturing (SVT) & mip streaming | [hypothesis.md](06-virtual-textures/hypothesis.md) |
-| [**07-render-graph**](07-render-graph/README.md) | Render graph & transient resource aliasing | [hypothesis.md](07-render-graph/hypothesis.md) |
+To guarantee mathematical and scientific rigor across reports, the laboratory strictly distinguishes two tiers of measurement:
+
+1. **Official Baseline (Spec 13 Witness Floor)**:
+   - Fixed, normalized witness matrix under frozen Spec 13 reference conditions (S0 to S5).
+   - Identifies the contractual bottleneck knee: scenario **S3 (2 000 unique meshes)** saturated CPU submission at **3.35 ms / 2 002 draw calls**, officially unlocking and requiring GPU-driven R&D.
+2. **Live Comparative A/B Benchmarks**:
+   - Synchronous, side-by-side execution on the active testbench (Test A Three.js vs Test B Prototype).
+   - Conducted under strictly identical realtime conditions: same browser instance, same GPU, same canvas resolution, same dynamic orbital camera, and identical warmup protocol.
+   - Measures direct speed-up ($O(N)$ vs $O(1)$) across live geometric and stress tiers.
+
+## The R&D Progression
+
+Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively:
+
+| Module | Research subject | Status | Protocol |
+|---|---|---|---|
+| [**00-baseline**](00-baseline/README.md) | Baseline Spec 13 Witness — S0–S5 load curve, reference floor | **Validé** | [hypothesis.md](00-baseline/hypothesis.md) |
+| [**01-gpu-driven**](01-gpu-driven/README.md) | GPU-Driven Indirect Draw & Frustum Culling Compute WGSL (1 draw call) | **Validé** | [hypothesis.md](01-gpu-driven/hypothesis.md) |
+| [**02-gpu-scene**](02-gpu-scene/README.md) | Heterogeneous GPU Scene (`Object`, `Geometry`, `Material`, `Draw` buffers, 4D stress) | **En cours (Actif)** | [hypothesis.md](02-gpu-scene/hypothesis.md) |
+| [**03-gpu-lod**](03-gpu-lod/README.md) | GPU LOD selection by screen-space projected error in compute | *Prévu* | hypothesis.md |
+| [**04-meshlets**](04-meshlets/README.md) | Meshlet hierarchy (meshoptimizer), cluster-level culling & compaction | *Prévu* | hypothesis.md |
+| [**05-hiz**](05-hiz/README.md) | Hi-Z depth pyramid & two-phase occlusion culling (90% occlusion stress) | *Prévu* | hypothesis.md |
+| [**06-gpu-material**](06-gpu-material/README.md) | Visibility buffer & deferred material shading | *Prévu* | hypothesis.md |
 
 Each module holds the same five drawers: `hypothesis.md` (scoping sheet and final verdict), `baseline/` (the current engine, without the technique), `implementation/` (the experimental prototype), `benchmark/` (automated, reproducible load scenarios) and `results/` (captures, figures, visual comparisons).
 
@@ -67,25 +80,37 @@ Instead of one comfortable benchmark, the harness runs a parameterised suite and
 | **S0** | Minimal baseline |
 | **S1** | 500 instanced objects |
 | **S2** | 1 000 instanced objects |
-| **S3** | 2 000 unique objects (CPU submission stress) |
+| **S3** | 2 000 unique objects (CPU submission stress — **3.35 ms / 2 002 draw calls**) |
 | **S4** | 30 dynamic lights (GPU pass stress) |
-| **S5** | Hostile (geometry, lights and shadows combined) |
+| **S5** | Hostile (geometry, lights and shadows combined — **8.45 ms**) |
 
 Recorded on every run: `CPU frame`, `GPU frame`, `submitMs`, `P95`, `P99`, `firstStillMs − stillMs`.
 
 - *Linear degradation* → GPU-bound → targeted pass optimisation.
 - *Staircase* → CPU submission saturation → targeted architectural decision.
 
-## Execution order
+## Execution roadmap
 
 ```text
-Batch A (00-baseline) ── S0–S5 curve + three gates
-  │
-  ├── Ceiling not reached ──→ TSL immediate nodes ──→ atmosphere, auto LODs, KTX2, MRT/SSS, WebGPU export runtime
-  │
-  └── Ceiling reached ──────→ Profile the specific bottleneck
-                                ├── CPU submission ──→ smallest quantified action
-                                └── GPU / VRAM ──────→ smallest quantified action
+00-baseline (Spec 13 S0–S5)          ← VALIDÉ (Knee at S3 / 3.35 ms)
+     │
+     ▼
+01-gpu-driven (Indirect Draw WGSL)   ← VALIDÉ (1 draw call, crossover ~500 obj)
+     │
+     ▼
+02-gpu-scene (Heterogeneous Scene)   ← BANC ACTIF (Object, Geometry, Material, Draw Buffers, 4D stress)
+     │
+     ▼
+03-gpu-lod (Screen-Space Error)      ← Prochaine étape
+     │
+     ▼
+04-meshlets (Cluster Culling)        ← Échelle Nanite
+     │
+     ▼
+05-hiz (Occlusion Pyramid)           ← Occlusion 90%
+     │
+     ▼
+06-gpu-material / visibility         ← Visibility Buffer
 ```
 
 ## Conditional watchlist

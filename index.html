@@ -29,14 +29,13 @@
           <div class="flex items-center gap-2 shrink-0">
             <label for="select-module" class="text-xs text-base-content/60 hidden sm:inline font-medium whitespace-nowrap">Banc d'essai :</label>
             <select id="select-module" class="select select-bordered select-xs sm:select-sm font-semibold text-primary bg-base-300 border-base-content/15 focus:border-primary focus:outline-none">
-              <option value="00-baseline">00 · Baseline Spec 13 S0–S5</option>
-              <option value="01-gpu-driven" selected>01 · GPU-Driven Indirect Draw</option>
-              <option value="02-virtualized-geometry" disabled>02 · Virtualized Geometry &amp; Meshlets (Prévu)</option>
-              <option value="03-virtual-shadow-maps" disabled>03 · Virtual Shadow Maps / VSM (Prévu)</option>
-              <option value="04-global-illumination" disabled>04 · Global Illumination / SDF (Prévu)</option>
-              <option value="05-temporal-upscaling" disabled>05 · Temporal Upscaling / TSR (Prévu)</option>
-              <option value="06-virtual-textures" disabled>06 · Virtual Textures (Prévu)</option>
-              <option value="07-render-graph" disabled>07 · Async Render Graph (Prévu)</option>
+              <option value="00-baseline">00 · Baseline Spec 13 S0–S5 (Validé)</option>
+              <option value="01-gpu-driven" selected>01 · GPU-Driven Indirect Draw (Validé)</option>
+              <option value="02-gpu-scene">02 · GPU Scene &amp; Scène Hétérogène (Banc Actif)</option>
+              <option value="03-gpu-lod" disabled>03 · GPU LOD &amp; Screen-Space Error (Prévu)</option>
+              <option value="04-meshlets" disabled>04 · Meshlets &amp; Cluster Culling (Prévu)</option>
+              <option value="05-hiz" disabled>05 · Hi-Z Occlusion Pyramid (Prévu)</option>
+              <option value="06-gpu-material" disabled>06 · Visibility Buffer &amp; Deferred Shading (Prévu)</option>
             </select>
           </div>
 
@@ -365,6 +364,6 @@
       </form>
     </dialog>
 
-    <script type="module" src="/01-gpu-driven/main.ts"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
