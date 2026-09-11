@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-11T18:28:22.558Z",
+  "timestamp": "2026-09-11T18:37:08.044Z",
   "test": "04-gpu-lod",
   "commit": "d2eb71a",
   "gpuDevice": "Apple M-Series GPU (WebGPU)",
@@ -13,7 +13,7 @@
   },
   "cpu": {
     "frameMs": 0.85,
-    "submitMs": 0.028454099999997595
+    "submitMs": 0.027591800000000433
   },
   "gpu": {
     "frameMs": 3.4
@@ -29,7 +29,7 @@
     "lod0Count": 300,
     "lod1Count": 700,
     "lod2Count": 1000,
-    "decimationTimeMs": 5.74837500000001,
+    "decimationTimeMs": 4.930457999999987,
     "maxProjectedErrorPx": 0.04418670961156395,
     "errorContractPassed": true
   }

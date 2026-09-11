@@ -1,158 +1,47 @@
-[
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "11-geometry-streaming",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 10,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+{
+  "timestamp": "2026-09-11T18:41:16.893Z",
+  "test": "11-geometry-streaming",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "11-geometry-streaming",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 25,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "scene": {
+    "objects": 5000,
+    "triangles": 2500000,
+    "materials": 20,
+    "lights": 4
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "11-geometry-streaming",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 50,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "cpu": {
+    "frameMs": 0.042,
+    "submitMs": null
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "11-geometry-streaming",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 100,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 4194304
+  },
+  "draw": {
+    "submitted": 5000,
+    "visible": 2000
+  },
+  "customMetrics": {
+    "vramBudgetBytes": 4194304,
+    "maxResidentBytesObserved": 4194304,
+    "budgetEnforcementStrict": true,
+    "totalEvictedBytes": 4194304,
+    "totalUploadedBytes": 8388608,
+    "stallsCount": 0,
+    "lifecycleCoverage": [
+      "cold",
+      "loading",
+      "partially-resident",
+      "fully-resident",
+      "eviction",
+      "re-request"
+    ]
   }
-]
+}

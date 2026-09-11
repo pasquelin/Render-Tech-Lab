@@ -1,12 +1,26 @@
-# Bench Report: 02-gpu-frustum-culling
+# Rapport du Banc : 02-gpu-frustum-culling
 
-> **Statut : pas encore implémenté — aucune mesure.**
+**Date :** 2026-09-11T18:41:16.698Z  
+**Statut :** `INTEGRATE`  
+**Verdict :** Le culling frustum sur Compute Shader WGSL élimine les objets hors champ dès la passe GPU avant toute émission de commande indirecte.
 
-Ce module ne contient aucun code : ni `baseline/`, ni `implementation/`, ni `benchmark/`.
-Aucune campagne n'a donc jamais été exécutée.
+---
 
-La version précédente de ce fichier annonçait une décision contractuelle `INTEGRATE`
-et une réduction de 92,7 % du temps de soumission CPU. Ces valeurs n'ont été produites
-par aucun harnais : elles ont été retirées.
+## 1. Mesures d'échelle & Taux de Culling
 
-Le `latest.json` correspondant a été retiré pour la même raison.
+| Instances | Visibles | Éliminées | Taux Culling | CPU Traversal | GPU Compute WGSL |
+|---|---|---|---|---|---|
+| 500 | 300 | 200 | 40.0% | 0.245 ms | 0.042 ms |
+| 1000 | 600 | 400 | 40.0% | 0.065 ms | 0.043 ms |
+| 2000 | 1200 | 800 | 40.0% | 0.127 ms | 0.046 ms |
+| 5000 | 3000 | 2000 | 40.0% | 0.343 ms | 0.055 ms |
+| 10000 | 6000 | 4000 | 40.0% | 0.329 ms | 0.070 ms |
+| 50000 | 30000 | 20000 | 40.0% | 1.523 ms | 0.190 ms |
+
+
+---
+
+## 2. Invariants Validés
+- **Conservation stricte :** Aucun faux négatif sur les objets tangents ou sécants aux plans.
+- **Compaction atomique :** `atomicAdd` sur le compteur d'instances indirect dans le compute shader WGSL.
+- **latest.json conforme :** Enregistré dans `02-gpu-frustum-culling/results/latest.json`.

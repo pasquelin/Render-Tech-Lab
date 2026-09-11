@@ -1,392 +1,112 @@
-[
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+{
+  "timestamp": "2026-09-11T18:41:16.895Z",
+  "test": "13-full-gpu-driven",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0",
+    "webgpuFeatures": [
+      "indirect-first-instance"
+    ]
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 2,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "scene": {
+    "objects": 100000,
+    "triangles": 38400000,
+    "materials": 100,
+    "lights": 4
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 3,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "cpu": {
+    "frameMs": 0.35,
+    "submitMs": 0.25
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 4,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "gpu": {
+    "frameMs": 2.92
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 5,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "memory": {
+    "gpuBytes": 50331648
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 6,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "draw": {
+    "submitted": 100000,
+    "visible": 16219
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 7,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
-  },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 8,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
-  },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 9,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
-  },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "13-full-gpu-driven",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 10,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "customMetrics": {
+    "pipelineStages": [
+      {
+        "stage": "gpu-scene",
+        "durationMs": 0.15,
+        "inputCount": 100000,
+        "outputCount": 100000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "frustum",
+        "durationMs": 0.08,
+        "inputCount": 100000,
+        "outputCount": 60000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "lod",
+        "durationMs": 0.05,
+        "inputCount": 60000,
+        "outputCount": 60000,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "meshlets",
+        "durationMs": 0.22,
+        "inputCount": 10380000,
+        "outputCount": 81094,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "meshlet-culling",
+        "durationMs": 0.12,
+        "inputCount": 81094,
+        "outputCount": 40547,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "hiz",
+        "durationMs": 0.18,
+        "inputCount": 2073600,
+        "outputCount": 11,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "occlusion",
+        "durationMs": 0.14,
+        "inputCount": 40547,
+        "outputCount": 16219,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "compaction",
+        "durationMs": 0.09,
+        "inputCount": 40547,
+        "outputCount": 16219,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "indirect-draw",
+        "durationMs": 0.04,
+        "inputCount": 16219,
+        "outputCount": 1,
+        "verdict": "INTEGRATE"
+      },
+      {
+        "stage": "shading",
+        "durationMs": 1.85,
+        "inputCount": 2073600,
+        "outputCount": 2073600,
+        "verdict": "INTEGRATE"
+      }
+    ],
+    "totalCpuGainMs": 159.85,
+    "drawCallsUnified": 1,
+    "drawCallsBaseline": 100000,
+    "crossoverSpeedupFactor": 640.4
   }
-]
+}

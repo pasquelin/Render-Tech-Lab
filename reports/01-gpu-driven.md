@@ -1,7 +1,7 @@
 # Bench Report: 01-indirect-draw
 
 **Technique under test:** GPU-Driven Rendering Pipeline (Indirect Draw Absorption)  
-**Bench last updated:** 2026-09-11 18:28:25 UTC  
+**Bench last updated:** 2026-09-11 18:41:16 UTC  
 **Environment:** WebGPU (Metal / Vulkan / D3D12)
 
 > **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.  

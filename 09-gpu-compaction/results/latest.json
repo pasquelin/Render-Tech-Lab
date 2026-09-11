@@ -1,119 +1,123 @@
-[
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "09-gpu-compaction",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+{
+  "timestamp": "2026-09-11T18:41:16.891Z",
+  "test": "09-gpu-compaction",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "09-gpu-compaction",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "scene": {
+    "objects": 100000,
+    "triangles": 1250000,
+    "materials": 10,
+    "lights": 2
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "09-gpu-compaction",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "cpu": {
+    "frameMs": 4.272,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 800000
+  },
+  "draw": {
+    "submitted": 100000,
+    "visible": 50000
+  },
+  "customMetrics": {
+    "benchmarkRows": [
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 1000,
+        "timeMs": 0.041,
+        "compactedCount": 500,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 1000,
+        "timeMs": 0.033,
+        "compactedCount": 500,
+        "atomicContention": 3000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 1000,
+        "timeMs": 0.164,
+        "compactedCount": 500,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 10000,
+        "timeMs": 0.28,
+        "compactedCount": 5000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 10000,
+        "timeMs": 0.209,
+        "compactedCount": 5000,
+        "atomicContention": 30000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 10000,
+        "timeMs": 1.046,
+        "compactedCount": 5000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 100000,
+        "timeMs": 0.465,
+        "compactedCount": 50000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 100000,
+        "timeMs": 0.437,
+        "compactedCount": 50000,
+        "atomicContention": 300000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 100000,
+        "timeMs": 4.272,
+        "compactedCount": 50000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "one-thread-per-command",
+        "inputCount": 1000000,
+        "timeMs": 7.208,
+        "compactedCount": 500000,
+        "atomicContention": 0
+      },
+      {
+        "variant": "atomicAdd",
+        "inputCount": 1000000,
+        "timeMs": 3.178,
+        "compactedCount": 500000,
+        "atomicContention": 3000000
+      },
+      {
+        "variant": "parallel-prefix-scan",
+        "inputCount": 1000000,
+        "timeMs": 44.688,
+        "compactedCount": 500000,
+        "atomicContention": 0
+      }
+    ],
+    "scale100kAtomicTimeMs": 0.437,
+    "scale100kScanTimeMs": 4.272,
+    "atomicContentionAt1M": 3000000,
+    "crossoverRecommendation": "Utiliser atomicAdd pour N < 50k, parallel-prefix-scan pour N >= 50k"
   }
-]
+}

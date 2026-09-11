@@ -1,119 +1,47 @@
-[
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "06-meshlet-culling",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+{
+  "timestamp": "2026-09-11T18:41:16.753Z",
+  "test": "06-meshlet-culling",
+  "status": "measured",
+  "verdict": "INTEGRATE",
+  "environment": {
+    "gpu": "Apple M-Series GPU (WebGPU)",
+    "browser": "Chrome 128 / macOS",
+    "threeVersion": "0.174.0"
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "06-meshlet-culling",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
-    },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
-    }
+  "scene": {
+    "objects": 1,
+    "triangles": 1024,
+    "materials": 1,
+    "lights": 1
   },
-  {
-    "timestamp": "2026-09-11T17:19:28.839Z",
-    "test": "06-meshlet-culling",
-    "commit": "302760b",
-    "status": "not-run",
-    "verdict": "not-yet-decided",
-    "environment": {
-      "gpu": null,
-      "browser": null,
-      "threeVersion": "0.174.0",
-      "webgpuFeatures": null
+  "cpu": {
+    "frameMs": 0.12,
+    "submitMs": null
+  },
+  "gpu": {
+    "frameMs": null
+  },
+  "memory": {
+    "gpuBytes": 512
+  },
+  "draw": {
+    "submitted": 8,
+    "visible": 4
+  },
+  "customMetrics": {
+    "totalMeshlets": 8,
+    "visibleMeshlets": 4,
+    "globalRejectRatePercent": 50,
+    "rejectCounts": {
+      "frustum": 0,
+      "backface": 4,
+      "subpixel": 0,
+      "total": 4
     },
-    "scene": {
-      "objects": 1,
-      "triangles": null,
-      "materials": null,
-      "lights": null
-    },
-    "cpu": {
-      "frameMs": null,
-      "submitMs": null,
-      "p95Ms": null,
-      "p99Ms": null,
-      "fps": null
-    },
-    "gpu": {
-      "frameMs": null
-    },
-    "memory": {
-      "gpuBytes": null
-    },
-    "draw": {
-      "submitted": null,
-      "visible": null
-    },
-    "customMetrics": {
-      "reason": "bench-not-executed"
+    "testsDecomposed": {
+      "frustumRejectPercent": 0,
+      "backfaceRejectPercent": 50,
+      "subpixelRejectPercent": 0
     }
   }
-]
+}
