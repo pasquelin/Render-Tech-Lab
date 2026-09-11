@@ -86,8 +86,9 @@
                       Point zéro et matrice de référence Three.js sur les scénarios S0 à S5
                     </p>
                   </div>
-                  <button id="btn-baseline-report-view" class="btn btn-sm btn-primary gap-2 self-start sm:self-auto shadow-xs">
-                    📄 Rapport 00-baseline.md
+                  <button id="btn-baseline-report-view" class="btn btn-sm btn-lab-primary gap-2 self-start sm:self-auto shadow-xs whitespace-nowrap">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Rapport 00-baseline.md</span>
                   </button>
                 </div>
 
@@ -177,8 +178,9 @@
                   </div>
                 </div>
 
-                <button id="btn-back-to-gpu" class="btn btn-primary btn-sm gap-2 shadow-xs">
-                  ⚡ Basculer sur le banc actif : 01-gpu-driven
+                <button id="btn-back-to-gpu" class="btn btn-lab-primary btn-sm gap-2 shadow-xs whitespace-nowrap">
+                  <i data-lucide="zap" class="w-4 h-4"></i>
+                  <span>Basculer sur le banc actif : 01-gpu-driven</span>
                 </button>
               </div>
             </div>
@@ -204,7 +206,7 @@
                 <button id="btn-classic" class="btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium transition-all">
                   Test A (Three.js)
                 </button>
-                <button id="btn-gpu-driven" class="btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium transition-all shadow-xs">
+                <button id="btn-gpu-driven" class="btn btn-sm join-item flex-1 btn-lab-primary font-medium transition-all shadow-xs">
                   Test B (GPU-Driven)
                 </button>
               </div>
@@ -214,12 +216,12 @@
                 <select id="select-count" class="select select-bordered select-sm w-full bg-base-100 font-mono text-xs focus:outline-none focus:border-primary border-base-content/15">
                   <option value="500">500 objets uniques</option>
                   <option value="1000">1 000 objets uniques</option>
-                  <option value="2000" selected>2 000 objets (S3 Coude CPU)</option>
+                  <option value="2000" selected>⚡ 2 000 objets (S3 Coude CPU)</option>
                   <option value="5000">5 000 objets uniques</option>
-                  <option value="10000">10 000 objets (Pain Test)</option>
-                  <option value="25000">25 000 objets (Pain Test)</option>
-                  <option value="50000">50 000 objets (Extreme Pain)</option>
-                  <option value="100000">100 000 objets (Torture Test)</option>
+                  <option value="10000">🔥 10 000 objets (Pain Test)</option>
+                  <option value="25000">🔥 25 000 objets (Pain Test)</option>
+                  <option value="50000">☠️ 50 000 objets (Extreme Pain)</option>
+                  <option value="100000">☠️ 100 000 objets (Torture Test)</option>
                 </select>
               </div>
             </div>
@@ -271,16 +273,18 @@
                 3. Courbe de Croisement &amp; Douleur
               </div>
 
-              <div class="w-full h-44 bg-base-100 rounded-box border border-base-content/10 overflow-hidden flex items-center justify-center p-1">
-                <canvas id="canvas-chart" width="380" height="176" class="w-full h-full block"></canvas>
+              <div class="w-full h-44 bg-base-100 rounded-box border border-base-content/10 overflow-hidden relative">
+                <canvas id="canvas-chart" class="w-full h-full block rounded-box"></canvas>
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <button id="btn-benchmark" class="btn btn-sm btn-primary w-full shadow-xs">
-                  ▶ Benchmark Standard (500 → 5k)
+                <button id="btn-benchmark" class="btn btn-sm btn-lab-primary w-full shadow-xs gap-2">
+                  <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                  <span>Benchmark Standard (500 → 5k)</span>
                 </button>
-                <button id="btn-pain-benchmark" class="btn btn-sm btn-outline btn-neutral w-full shadow-xs text-base-content/80 hover:text-base-content">
-                  Tests de Douleur (10k → 100k)
+                <button id="btn-pain-benchmark" class="btn btn-sm btn-lab-danger w-full shadow-xs gap-2">
+                  <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+                  <span>Tests de Douleur (10k → 100k)</span>
                 </button>
               </div>
 
@@ -300,11 +304,13 @@
               </div>
 
               <div class="flex gap-2">
-                <button id="btn-view-report" class="btn btn-sm btn-primary flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2">
-                  📄 Voir rapport
+                <button id="btn-view-report" class="btn btn-sm btn-lab-primary flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                  <span>Voir rapport</span>
                 </button>
-                <button id="btn-open-reports" class="btn btn-sm btn-outline btn-neutral flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2">
-                  📁 Révéler Finder
+                <button id="btn-open-reports" class="btn btn-sm btn-lab-secondary flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2">
+                  <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                  <span>Révéler Finder</span>
                 </button>
               </div>
 
@@ -323,17 +329,17 @@
         <!-- En-tête Modal -->
         <div class="flex justify-between items-center px-5 py-3.5 bg-base-300 border-b border-base-content/10">
           <div class="flex items-center gap-2.5">
-            <span class="text-lg">📄</span>
+            <i data-lucide="file-text" class="w-5 h-5 text-primary"></i>
             <div>
               <div id="modal-report-title" class="font-bold text-sm text-base-content">Rapport R&D — REPORT.md</div>
               <div id="modal-report-path" class="text-[10px] font-mono text-base-content/50">reports/01-gpu-driven.md</div>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-copy-report" class="btn btn-xs btn-outline font-mono">📋 Copier Markdown</button>
-            <button id="btn-refresh-report" class="btn btn-xs btn-outline font-mono">🔄 Recharger</button>
+            <button id="btn-copy-report" class="btn btn-xs btn-lab-secondary font-mono gap-1"><i data-lucide="copy" class="w-3 h-3"></i> Copier Markdown</button>
+            <button id="btn-refresh-report" class="btn btn-xs btn-lab-secondary font-mono gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Recharger</button>
             <form method="dialog">
-              <button id="btn-close-modal" class="btn btn-xs btn-circle btn-ghost">✕</button>
+              <button id="btn-close-modal" class="btn btn-xs btn-circle btn-ghost"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
             </form>
           </div>
         </div>
@@ -347,9 +353,9 @@
         <div class="flex items-center justify-between px-5 py-3 bg-base-300 border-t border-base-content/10">
           <div id="modal-feedback" class="text-xs font-mono text-primary font-medium"></div>
           <div class="flex gap-2">
-            <button id="btn-modal-open-finder" class="btn btn-xs btn-outline font-mono">📁 Révéler dans Finder</button>
+            <button id="btn-modal-open-finder" class="btn btn-xs btn-lab-secondary font-mono gap-1"><i data-lucide="folder" class="w-3 h-3"></i> Révéler dans Finder</button>
             <form method="dialog">
-              <button id="btn-modal-close" class="btn btn-xs btn-primary">Fermer</button>
+              <button id="btn-modal-close" class="btn btn-xs btn-lab-primary">Fermer</button>
             </form>
           </div>
         </div>

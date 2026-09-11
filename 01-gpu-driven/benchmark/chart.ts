@@ -54,12 +54,11 @@ export class CrossoverChart {
     const w = cssW;
     const h = cssH;
 
-    // Fond sombre épuré assorti au thème dim
-    ctx.fillStyle = '#1c212a';
-    ctx.fillRect(0, 0, w, h);
+    // Effacement transparent fluide : le conteneur parent assure bg-base-100 et rounded-box overflow-hidden
+    ctx.clearRect(0, 0, w, h);
 
-    const padLeft = 52;
-    const padRight = 20;
+    const padLeft = 68;
+    const padRight = 16;
     const padTop = 26;
     const padBottom = 38;
 

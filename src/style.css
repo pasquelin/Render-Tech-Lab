@@ -64,3 +64,41 @@ html, body {
 .btn {
   white-space: nowrap;
 }
+
+/* Boutons de laboratoire R&D sobres, contrastés et élégants (mode sombre) */
+.btn-lab-primary {
+  background-color: oklch(86.133% 0.141 139.549 / 0.14);
+  border: 1px solid oklch(86.133% 0.141 139.549 / 0.45);
+  color: oklch(86.133% 0.141 139.549);
+  transition: all 0.15s ease-in-out;
+}
+.btn-lab-primary:hover {
+  background-color: oklch(86.133% 0.141 139.549 / 0.92);
+  color: oklch(17.226% 0.028 139.549);
+  border-color: oklch(86.133% 0.141 139.549);
+}
+
+.btn-lab-secondary {
+  background-color: oklch(24.731% 0.02 264.094 / 0.85);
+  border: 1px solid oklch(82.901% 0.031 222.959 / 0.28);
+  color: oklch(82.901% 0.031 222.959);
+  transition: all 0.15s ease-in-out;
+}
+.btn-lab-secondary:hover {
+  background-color: oklch(35% 0.025 264);
+  border-color: oklch(82.901% 0.031 222.959 / 0.55);
+  color: #ffffff;
+}
+
+.btn-lab-danger {
+  background-color: oklch(86.163% 0.142 94.818 / 0.12);
+  border: 1px solid oklch(86.163% 0.142 94.818 / 0.45);
+  color: oklch(86.163% 0.142 94.818);
+  transition: all 0.15s ease-in-out;
+}
+.btn-lab-danger:hover {
+  background-color: oklch(86.163% 0.142 94.818 / 0.92);
+  color: oklch(17.232% 0.028 94.818);
+  border-color: oklch(86.163% 0.142 94.818);
+}
+

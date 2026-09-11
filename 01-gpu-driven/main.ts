@@ -2,6 +2,38 @@ import '../src/style.css';
 import { BenchmarkRunner } from './benchmark/runner.ts';
 import { formatMarkdownReport } from './benchmark/reporter.ts';
 import type { FrameMeasurement, CrossoverReport } from './types.ts';
+import {
+  createIcons,
+  Play,
+  Flame,
+  FileText,
+  Folder,
+  Copy,
+  RefreshCw,
+  Zap,
+  Activity,
+  Check,
+  X,
+  Menu,
+} from 'lucide';
+
+function refreshIcons() {
+  createIcons({
+    icons: {
+      Play,
+      Flame,
+      FileText,
+      Folder,
+      Copy,
+      RefreshCw,
+      Zap,
+      Activity,
+      Check,
+      X,
+      Menu,
+    },
+  });
+}
 
 // Parser Markdown vers HTML daisyUI propre, sobre et sécurisé
 function parseMarkdownToHtml(md: string): string {
@@ -135,11 +167,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   const webGpuSupported = await runner.init();
 
   if (!webGpuSupported) {
-    benchStatus.innerText = '⚠️ WebGPU non disponible. Mode secours actif.';
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-warning';
+    benchStatus.innerText = '⚠️ WebGPU non disponible (mode secours)';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-warning whitespace-nowrap truncate';
   } else {
-    benchStatus.innerText = '✅ WebGPU natif actif (Metal / Direct3D / Vulkan)';
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-base-content/80';
+    benchStatus.innerText = '✅ Pipeline WebGPU natif actif';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-base-content/80 whitespace-nowrap truncate';
   }
 
   // Redimensionnement réactif
@@ -192,20 +224,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Mise à jour visuelle des boutons Test A / Test B avec daisyUI (Cohérence Nordic)
+  // Mise à jour visuelle des boutons Test A / Test B avec daisyUI
   function updateModeButtons(mode: 'classic' | 'gpu-driven') {
     const telemetryMode = document.getElementById('viewport-telemetry-mode');
     const telemetryDetail = document.getElementById('viewport-telemetry-detail');
 
     if (mode === 'classic') {
-      btnClassic.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-lab-primary font-medium shadow-xs';
       btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
       statMode.innerText = 'Test A (Three.js)';
       statMode.className = 'text-primary font-medium';
       if (telemetryMode) telemetryMode.innerText = 'Three.js WebGL Pipeline';
       if (telemetryDetail) telemetryDetail.innerText = 'CPU Frustum Culling + Draw Calls';
     } else {
-      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-lab-primary font-medium shadow-xs';
       btnClassic.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
       statMode.innerText = 'Test B (GPU-Driven)';
       statMode.className = 'text-primary font-medium';
@@ -294,6 +326,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (res.ok) {
         rawReportContent = await res.text();
         modalBody.innerHTML = parseMarkdownToHtml(rawReportContent);
+        refreshIcons();
       } else {
         const errText = await res.text();
         modalBody.innerHTML = `<div class="alert alert-warning text-xs font-mono">⚠️ ${errText}</div>`;
@@ -429,6 +462,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Initialisation de l'état des boutons au lancement
   updateModeButtons('gpu-driven');
+  refreshIcons();
 
   // Boucle d'animation
   function animate(t: number) {
