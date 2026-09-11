@@ -1,6 +1,6 @@
 # Rapport du Banc : 10-material-batching (Matérialisation Multi-Matériaux)
 
-**Date :** 2026-09-11T19:09:55.749Z  
+**Date :** 2026-09-11T19:31:27.346Z  
 **Statut :** `INTEGRATE`  
 **Stratégie Retenue :** `storage-buffer` (Indexation dynamique via Material Storage Buffer)
 

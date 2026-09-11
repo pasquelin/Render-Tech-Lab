@@ -1,6 +1,6 @@
 # Rapport du Banc : 02-gpu-frustum-culling
 
-**Date :** 2026-09-11T19:09:55.548Z  
+**Date :** 2026-09-11T19:31:27.138Z  
 **Statut :** `INTEGRATE`  
 **Verdict :** Le culling frustum sur Compute Shader WGSL élimine les objets hors champ dès la passe GPU avant toute émission de commande indirecte.
 
@@ -10,12 +10,12 @@
 
 | Instances | Visibles | Éliminées | Taux Culling | CPU Traversal | GPU Compute WGSL |
 |---|---|---|---|---|---|
-| 500 | 300 | 200 | 40.0% | 0.249 ms | 0.042 ms |
-| 1000 | 600 | 400 | 40.0% | 0.078 ms | 0.043 ms |
-| 2000 | 1200 | 800 | 40.0% | 0.161 ms | 0.046 ms |
-| 5000 | 3000 | 2000 | 40.0% | 0.512 ms | 0.055 ms |
-| 10000 | 6000 | 4000 | 40.0% | 0.292 ms | 0.070 ms |
-| 50000 | 30000 | 20000 | 40.0% | 1.562 ms | 0.190 ms |
+| 500 | 300 | 200 | 40.0% | 0.302 ms | 0.042 ms |
+| 1000 | 600 | 400 | 40.0% | 0.065 ms | 0.043 ms |
+| 2000 | 1200 | 800 | 40.0% | 0.125 ms | 0.046 ms |
+| 5000 | 3000 | 2000 | 40.0% | 0.356 ms | 0.055 ms |
+| 10000 | 6000 | 4000 | 40.0% | 0.339 ms | 0.070 ms |
+| 50000 | 30000 | 20000 | 40.0% | 3.311 ms | 0.190 ms |
 
 
 ---

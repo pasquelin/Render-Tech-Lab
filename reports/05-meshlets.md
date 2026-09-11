@@ -1,6 +1,6 @@
 # Rapport du Banc : 05-meshlets (Partitionnement en Clusters)
 
-**Date :** 2026-09-11T19:09:55.604Z  
+**Date :** 2026-09-11T19:31:27.192Z  
 **Statut :** `INTEGRATE`  
 **Maillage témoin :** Sphère haute résolution (1024 triangles, 561 sommets)
 
@@ -10,10 +10,10 @@
 
 | Triangles / Meshlet | Meshlets Générés | Moyenne Triangles | Facteur Duplication | Mémoire Métadonnées | Temps Partitionnement |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| **64** | 16 | 64 | 1.88x | 1024 octets | 0.91 ms |
-| **128** | 8 | 128 | 1.41x | 512 octets | 0.31 ms |
-| **256** | 4 | 256 | 1.18x | 256 octets | 0.21 ms |
-| **512** | 2 | 512 | 1.06x | 128 octets | 0.21 ms |
+| **64** | 16 | 64 | 1.88x | 1024 octets | 0.96 ms |
+| **128** | 8 | 128 | 1.41x | 512 octets | 0.3 ms |
+| **256** | 4 | 256 | 1.18x | 256 octets | 0.2 ms |
+| **512** | 2 | 512 | 1.06x | 128 octets | 0.2 ms |
 
 
 ---

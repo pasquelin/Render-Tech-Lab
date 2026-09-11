@@ -1,6 +1,6 @@
 # Rapport du Banc : 06-meshlet-culling
 
-**Date :** 2026-09-11T19:09:55.606Z  
+**Date :** 2026-09-11T19:31:30.421Z  
 **Statut :** `INTEGRATE`  
 **Meshlets soumis :** 8  
 **Meshlets visibles :** 4  
