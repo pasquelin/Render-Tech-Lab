@@ -104,14 +104,31 @@ window.addEventListener('DOMContentLoaded', async () => {
     benchStatus.innerText = `Prêt (${val} objets).`;
   });
 
+  const btnPainBenchmark = document.getElementById('btn-pain-benchmark') as HTMLButtonElement | null;
+
   btnRunBenchmark.addEventListener('click', async () => {
     btnRunBenchmark.disabled = true;
+    if (btnPainBenchmark) btnPainBenchmark.disabled = true;
     try {
-      await runner.runAutomatedBenchmark();
+      await runner.runAutomatedBenchmark([500, 1000, 2000, 5000]);
     } finally {
       btnRunBenchmark.disabled = false;
+      if (btnPainBenchmark) btnPainBenchmark.disabled = false;
     }
   });
+
+  if (btnPainBenchmark) {
+    btnPainBenchmark.addEventListener('click', async () => {
+      btnRunBenchmark.disabled = true;
+      btnPainBenchmark.disabled = true;
+      try {
+        await runner.runAutomatedBenchmark([500, 1000, 2000, 5000, 10000, 25000, 50000, 100000]);
+      } finally {
+        btnRunBenchmark.disabled = false;
+        btnPainBenchmark.disabled = false;
+      }
+    });
+  }
 
   // Boucle d'animation
   function animate(t: number) {

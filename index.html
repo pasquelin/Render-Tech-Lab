@@ -240,6 +240,10 @@
               <option value="1000">1 000 objets</option>
               <option value="2000" selected>2 000 objets (S3 Stress CPU)</option>
               <option value="5000">5 000 objets</option>
+              <option value="10000">🔥 10 000 objets (Pain Test)</option>
+              <option value="25000">🔥 25 000 objets (Pain Test)</option>
+              <option value="50000">☠️ 50 000 objets (Extreme Pain)</option>
+              <option value="100000">☠️ 100 000 objets (Torture Test)</option>
             </select>
           </div>
         </div>
@@ -272,13 +276,16 @@
 
         <!-- Courbe Crossover -->
         <div class="panel-section">
-          <div class="panel-title">Courbe de Croisement (Crossover)</div>
+          <div class="panel-title">Courbe de Croisement & Tests de Douleur</div>
           <div id="chart-container">
             <canvas id="canvas-chart" width="380" height="220"></canvas>
           </div>
-          <div style="margin-top: 10px;">
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
             <button id="btn-benchmark" class="primary" style="width: 100%;">
-              ▶ Lancer le Benchmark Automatisé (500 → 5k)
+              ▶ Benchmark Standard (500 → 5k)
+            </button>
+            <button id="btn-pain-benchmark" style="width: 100%; background: #7c2d12; border-color: #f97316; color: #ffedd5;">
+              🔥 Tests de Douleur (10k → 100k)
             </button>
           </div>
           <div id="bench-status" style="margin-top: 8px;">

@@ -32,16 +32,18 @@ if (sceneBuffer.indirectData[1] !== 0) {
   throw new Error('instanceCount indirect initial doit être 0');
 }
 
-console.log('--- TEST 3: Validation de la simulation mathématique Crossover ---');
-const sampleCounts = [500, 1000, 2000, 5000];
+console.log('--- TEST 3: Validation de la simulation mathématique Crossover (avec Tests de Douleur) ---');
+const sampleCounts = [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
 const classicResults: BenchmarkResult[] = [];
 const gpuDrivenResults: BenchmarkResult[] = [];
 
 sampleCounts.forEach((count) => {
+  // Dégradation linéaire CPU Three.js (1.6µs par objet + coût de base)
   const submitA = 0.1 + count * 0.0016;
-  const submitB = 0.25;
-  const ratio = (submitA / submitB).toFixed(2);
-  console.log(`Palier ${count} obj : Test A = ${submitA.toFixed(2)} ms | Test B = ${submitB.toFixed(2)} ms | Ratio = ${ratio}x`);
+  // Coût d'encodage quasi constant GPU-driven (passe compute + 1 draw indirect)
+  const submitB = 0.25 + Math.log10(count / 500) * 0.03;
+  const ratio = (submitA / submitB).toFixed(1);
+  console.log(`Palier ${count >= 1000 ? count / 1000 + 'k' : count} obj : Test A = ${submitA.toFixed(2)} ms | Test B = ${submitB.toFixed(2)} ms | Ratio = ${ratio}x`);
 
   classicResults.push({
     mode: 'classic',

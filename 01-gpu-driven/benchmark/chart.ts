@@ -30,14 +30,17 @@ export class CrossoverChart {
     const plotW = w - padLeft - padRight;
     const plotH = h - padTop - padBottom;
 
-    // Paliers standards
-    const paliers = [500, 1000, 2000, 5000];
-    const maxObjects = 5000;
+    // Extraction dynamique des paliers testés
+    const paliersSet = new Set<number>();
+    classicResults.forEach((r) => paliersSet.add(r.objectCount));
+    gpuDrivenResults.forEach((r) => paliersSet.add(r.objectCount));
+    const paliers = Array.from(paliersSet).sort((a, b) => a - b);
+    const maxObjects = paliers.length > 0 ? Math.max(...paliers) : 5000;
 
     // Calcul du Y max
     let maxSubmit = 5.0; // minimum 5ms
     for (const r of [...classicResults, ...gpuDrivenResults]) {
-      if (r.avgSubmitMs > maxSubmit) maxSubmit = r.avgSubmitMs * 1.2;
+      if (r.avgSubmitMs > maxSubmit) maxSubmit = r.avgSubmitMs * 1.15;
     }
 
     // Grille horizontale
@@ -69,7 +72,8 @@ export class CrossoverChart {
       ctx.lineTo(x, padTop + plotH);
       ctx.stroke();
 
-      ctx.fillText(`${p >= 1000 ? p / 1000 + 'k' : p}`, x, h - padBottom + 18);
+      const label = p >= 1000 ? `${p / 1000}k` : `${p}`;
+      ctx.fillText(label, x, h - padBottom + 18);
     }
 
     // Titres des axes

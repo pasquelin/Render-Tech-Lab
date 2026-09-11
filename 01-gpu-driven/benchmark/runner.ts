@@ -159,25 +159,30 @@ export class BenchmarkRunner {
   }
 
   /**
-   * Lance la campagne de banc automatisée sur les 4 paliers (500, 1000, 2000, 5000)
+   * Lance la campagne de banc automatisée incluant les paliers standards et les tests de douleur
+   * (500, 1 000, 2 000, 5 000, 10 000, 25 000, 50 000, 100 000 objets)
    */
-  public async runAutomatedBenchmark(): Promise<CrossoverReport> {
+  public async runAutomatedBenchmark(customPaliers?: number[]): Promise<CrossoverReport> {
     this.isBenchmarking = true;
-    const paliers = [500, 1000, 2000, 5000];
+    const paliers = customPaliers || [500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
     const classicResults: BenchmarkResult[] = [];
     const gpuDrivenResults: BenchmarkResult[] = [];
-
-    const WARMUP_FRAMES = 20;
-    const SAMPLE_FRAMES = 50;
 
     for (let pIdx = 0; pIdx < paliers.length; pIdx++) {
       const count = paliers[pIdx];
       await this.setupPalier(count);
 
+      // Échantillonnage adaptatif pour les paliers extrêmes (évite le freeze CPU sur Test A)
+      const WARMUP_FRAMES = count >= 25000 ? 5 : 15;
+      const SAMPLE_FRAMES = count >= 50000 ? 10 : count >= 25000 ? 20 : 40;
+
       // --- 1. Mesure Test A (Classic) ---
       this.setMode('classic');
       if (this.onBenchmarkProgress) {
-        this.onBenchmarkProgress(`Test A (Classic) - ${count} objets`, (pIdx * 2) / (paliers.length * 2));
+        this.onBenchmarkProgress(
+          `Test A (Classic) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
+          (pIdx * 2) / (paliers.length * 2)
+        );
       }
 
       const classicSamples: number[] = [];
@@ -216,10 +221,12 @@ export class BenchmarkRunner {
         drawCalls: count,
       });
 
-      // --- 2. Mesure Test B (GPU-Driven) ---
       this.setMode('gpu-driven');
       if (this.onBenchmarkProgress) {
-        this.onBenchmarkProgress(`Test B (GPU-Driven) - ${count} objets`, (pIdx * 2 + 1) / (paliers.length * 2));
+        this.onBenchmarkProgress(
+          `Test B (GPU-Driven) - ${count >= 1000 ? count / 1000 + 'k' : count} objets`,
+          (pIdx * 2 + 1) / (paliers.length * 2)
+        );
       }
 
       const gpuSamples: number[] = [];
