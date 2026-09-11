@@ -161,6 +161,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     currentModuleId = moduleId;
     if (selectModule) selectModule.value = moduleId;
 
+    const navTitle = document.getElementById('nav-module-title');
+    if (navTitle) navTitle.innerText = moduleId;
+
     if (moduleId === '00-baseline') {
       canvasWebGpu.style.display = 'none';
       canvasWebGL.style.display = 'none';
@@ -191,16 +194,23 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Mise à jour visuelle des boutons Test A / Test B avec daisyUI (Cohérence Nordic)
   function updateModeButtons(mode: 'classic' | 'gpu-driven') {
+    const telemetryMode = document.getElementById('viewport-telemetry-mode');
+    const telemetryDetail = document.getElementById('viewport-telemetry-detail');
+
     if (mode === 'classic') {
       btnClassic.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
       btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
       statMode.innerText = 'Test A (Three.js)';
       statMode.className = 'text-primary font-medium';
+      if (telemetryMode) telemetryMode.innerText = 'Three.js WebGL Pipeline';
+      if (telemetryDetail) telemetryDetail.innerText = 'CPU Frustum Culling + Draw Calls';
     } else {
       btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
       btnClassic.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
       statMode.innerText = 'Test B (GPU-Driven)';
       statMode.className = 'text-primary font-medium';
+      if (telemetryMode) telemetryMode.innerText = 'WebGPU Native Pipeline';
+      if (telemetryDetail) telemetryDetail.innerText = 'Indirect Draw + WGSL Culling';
     }
   }
 
