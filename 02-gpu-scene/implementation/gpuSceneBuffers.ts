@@ -50,9 +50,36 @@ export class GPUSceneBuffers {
 
   private initialDrawArray: Uint32Array | null = null;
   private zeroCounters = new Uint32Array([0, 0, 0, 0]);
+  private counterStaging: GPUBuffer | null = null;
 
   constructor(device: GPUDevice) {
     this.device = device;
+  }
+
+  /**
+   * Détruit la génération de tampons courante.
+   * `allocate()` est rappelé à chaque scénario : sans cela une campagne de 12
+   * scénarios laisse 84 GPUBuffer orphelins en VRAM.
+   */
+  public dispose() {
+    for (const b of [
+      this.objectBuffer,
+      this.geometryBuffer,
+      this.materialBuffer,
+      this.drawBuffer,
+      this.visibleIndicesBuffer,
+      this.cameraBuffer,
+      this.countersBuffer,
+    ]) {
+      b?.destroy();
+    }
+    this.objectBuffer = null;
+    this.geometryBuffer = null;
+    this.materialBuffer = null;
+    this.drawBuffer = null;
+    this.visibleIndicesBuffer = null;
+    this.cameraBuffer = null;
+    this.countersBuffer = null;
   }
 
   public allocate(
@@ -60,6 +87,7 @@ export class GPUSceneBuffers {
     geometries: GPUGeometryData[],
     materials: GPUMaterialData[]
   ) {
+    this.dispose();
     this.totalObjects = objects.length;
     this.totalGeometries = Math.max(1, geometries.length);
     this.totalMaterials = Math.max(1, materials.length);
@@ -193,6 +221,46 @@ export class GPUSceneBuffers {
     }
 
     this.device.queue.writeBuffer(this.materialBuffer, 0, array as unknown as BufferSource);
+  }
+
+  /** Total des octets VRAM détenus par les 7 tampons de scène. */
+  public get totalBytes(): number {
+    return [
+      this.objectBuffer,
+      this.geometryBuffer,
+      this.materialBuffer,
+      this.drawBuffer,
+      this.visibleIndicesBuffer,
+      this.cameraBuffer,
+      this.countersBuffer,
+    ].reduce((sum, b) => sum + (b ? b.size : 0), 0);
+  }
+
+  /**
+   * Relit les compteurs atomiques remplis par la passe compute.
+   * Les valeurs correspondent à la dernière frame soumise (ils sont remis à
+   * zéro au début de chaque `render()`).
+   */
+  public async readCounters(): Promise<{ visible: number; culled: number } | null> {
+    if (!this.countersBuffer) return null;
+
+    if (!this.counterStaging) {
+      this.counterStaging = this.device.createBuffer({
+        label: 'GPUScene.CountersStaging',
+        size: 16,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+      });
+    }
+
+    const encoder = this.device.createCommandEncoder({ label: 'GPUScene.CounterReadback' });
+    encoder.copyBufferToBuffer(this.countersBuffer, 0, this.counterStaging, 0, 16);
+    this.device.queue.submit([encoder.finish()]);
+
+    await this.counterStaging.mapAsync(GPUMapMode.READ);
+    const view = new Uint32Array(this.counterStaging.getMappedRange().slice(0));
+    this.counterStaging.unmap();
+
+    return { visible: view[0], culled: view[1] };
   }
 
   public resetCounters() {

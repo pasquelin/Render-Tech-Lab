@@ -387,6 +387,20 @@ export class GPUSceneRenderer {
     };
   }
 
+  /** Compteurs réels de visibilité produits par la passe compute. */
+  public readCullingCounters(): Promise<{ visible: number; culled: number } | null> {
+    return this.buffers.readCounters();
+  }
+
+  /** Empreinte VRAM des tampons de scène (hors méga vertex/index). */
+  public getSceneBufferBytes(): number {
+    return (
+      this.buffers.totalBytes +
+      (this.megaVertexBuffer?.size ?? 0) +
+      (this.megaIndexBuffer?.size ?? 0)
+    );
+  }
+
   public resize(width: number, height: number) {
     this.canvas.width = width;
     this.canvas.height = height;

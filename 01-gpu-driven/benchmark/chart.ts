@@ -6,6 +6,11 @@ export class CrossoverChart {
   private lastClassic: BenchmarkResult[] = [];
   private lastGpuDriven: BenchmarkResult[] = [];
   private lastCrossover: number | null = null;
+  /**
+   * Le canvas de graphe est partagé entre modules : un graphe inactif ne doit
+   * jamais peindre, sinon un simple resize remplace le tracé du module affiché.
+   */
+  public active = true;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -23,6 +28,12 @@ export class CrossoverChart {
     this.render([], [], null);
   }
 
+  /** Donne ou retire à ce graphe la propriété du canvas partagé. */
+  public setActive(active: boolean) {
+    this.active = active;
+    if (active) this.render(this.lastClassic, this.lastGpuDriven, this.lastCrossover);
+  }
+
   public render(
     classicResults: BenchmarkResult[] = [],
     gpuDrivenResults: BenchmarkResult[] = [],
@@ -33,7 +44,7 @@ export class CrossoverChart {
     this.lastCrossover = crossoverObjectCount;
 
     const ctx = this.ctx;
-    if (!ctx) return;
+    if (!ctx || !this.active) return;
 
     // Support Retina / HiDPI pour une netteté maximale sur Mac
     const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;

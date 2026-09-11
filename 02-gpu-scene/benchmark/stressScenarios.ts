@@ -5,6 +5,7 @@ import type {
   GPUMaterialData,
   SceneStressConfig,
 } from '../types.ts';
+import { createPseudoRandom } from '../../01-gpu-driven/common/sceneGenerator.ts';
 
 export interface GeneratedGPUScene {
   objects: GPUObjectData[];
@@ -145,7 +146,14 @@ export function createVariedMaterials(count: number): {
 }
 
 // Générateur de la scène complète selon la configuration de stress
-export function generateStressScene(config: SceneStressConfig): GeneratedGPUScene {
+export function generateStressScene(
+  config: SceneStressConfig,
+  seed: number = 42
+): GeneratedGPUScene {
+  // Disposition déterministe : sans graine, deux exécutions du même scénario
+  // ne mesurent pas la même répartition spatiale et la campagne n'est pas
+  // reproductible d'une session ou d'une machine à l'autre.
+  const rng = createPseudoRandom(seed);
   const { geometries, mergedVertices, mergedIndices, threeGeometries } =
     createVariedGeometries(config.geometryCount);
   const { materials, threeMaterials } = createVariedMaterials(config.materialCount);
@@ -173,25 +181,28 @@ export function generateStressScene(config: SceneStressConfig): GeneratedGPUScen
   // vue subarray, au lieu de N petits Float32Array(16).
   const transformPool = new Float32Array(config.objectCount * 16);
 
+  // Même règle que les updateDynamicObjects() du renderer et du baseline.
+  const dynamicCount = Math.floor(config.objectCount * config.dynamicRatio);
+
   for (let i = 0; i < config.objectCount; i++) {
     const geomId = i % geometries.length;
     const matId = i % materials.length;
 
     // Répartition dans l'espace
     position.set(
-      (Math.random() - 0.5) * spread * 2,
-      (Math.random() - 0.5) * spread,
-      (Math.random() - 0.5) * spread * 2
+      (rng() - 0.5) * spread * 2,
+      (rng() - 0.5) * spread,
+      (rng() - 0.5) * spread * 2
     );
 
     rotation.set(
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2
+      rng() * Math.PI * 2,
+      rng() * Math.PI * 2,
+      rng() * Math.PI * 2
     );
     quaternion.setFromEuler(rotation);
 
-    const s = 0.8 + Math.random() * 0.6;
+    const s = 0.8 + rng() * 0.6;
     scale.set(s, s, s);
 
     tempMatrix.compose(position, quaternion, scale);
@@ -200,7 +211,9 @@ export function generateStressScene(config: SceneStressConfig): GeneratedGPUScen
     tempMatrix.toArray(transformArray);
 
     const radius = geometries[geomId].boundingRadius * s;
-    const isDynamic = Math.random() < config.dynamicRatio;
+    // Les deux updateDynamicObjects() animent le préfixe [0, dynamicCount) :
+    // le flag doit décrire ce même ensemble, pas un tirage indépendant.
+    const isDynamic = i < dynamicCount;
 
     objects.push({
       transform: transformArray,

@@ -3,7 +3,8 @@ import { BenchmarkRunner } from '../01-gpu-driven/benchmark/runner.ts';
 import { formatMarkdownReport } from '../01-gpu-driven/benchmark/reporter.ts';
 import type { FrameMeasurement as FrameMeasurement01, CrossoverReport } from '../01-gpu-driven/types.ts';
 
-import { GPUSceneBenchmarkRunner } from '../02-gpu-scene/benchmark/runner.ts';
+import { GPUSceneBenchmarkRunner, PAIN_MATRIX } from '../02-gpu-scene/benchmark/runner.ts';
+import { formatGpuSceneReport } from '../02-gpu-scene/benchmark/reporter.ts';
 import { GPUSceneChart } from '../02-gpu-scene/benchmark/chart.ts';
 import type { SceneStressConfig, GpuSceneBenchResult } from '../02-gpu-scene/types.ts';
 
@@ -16,10 +17,8 @@ import {
   Copy,
   RefreshCw,
   Zap,
-  Activity,
-  Check,
   X,
-  Menu,
+  Check,
 } from 'lucide';
 
 function refreshIcons() {
@@ -32,10 +31,8 @@ function refreshIcons() {
       Copy,
       RefreshCw,
       Zap,
-      Activity,
-      Check,
       X,
-      Menu,
+      Check,
     },
   });
 }
@@ -222,6 +219,19 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
   },
 };
 
+// Configurations étalon Spec 13 pour 00-baseline
+const BASELINE_00_SCENARIOS: Record<
+  string,
+  { objects: string; submit: string; cpuFrame: string; fps: string; drawCalls: string; desc: string }
+> = {
+  S0: { objects: '1', submit: '0.08 ms', cpuFrame: '0.25 ms', fps: '60 FPS', drawCalls: '3', desc: 'S0 · Baseline minimale (1 objet unique, témoin zéro).' },
+  S1: { objects: '500', submit: '0.12 ms', cpuFrame: '0.45 ms', fps: '60 FPS', drawCalls: '3', desc: 'S1 · 500 objets instanciés (instancing valide).' },
+  S2: { objects: '1 000', submit: '0.18 ms', cpuFrame: '0.70 ms', fps: '60 FPS', drawCalls: '3', desc: 'S2 · 1 000 objets instanciés (montée en charge).' },
+  S3: { objects: '2 000', submit: '3.35 ms', cpuFrame: '4.15 ms', fps: '60 FPS', drawCalls: '2 002', desc: 'S3 · 2 000 objets uniques (coude CPU franchi à 3.35 ms).' },
+  S4: { objects: '200', submit: '0.45 ms', cpuFrame: '1.10 ms', fps: '60 FPS', drawCalls: '202', desc: 'S4 · 30 lumières dynamiques (goulot passes GPU).' },
+  S5: { objects: '5 000', submit: '8.45 ms', cpuFrame: '11.8 ms', fps: '54 FPS', drawCalls: '5 002', desc: 'S5 · 5 000 objets uniques hostile (chute à 54 FPS).' },
+};
+
 window.addEventListener('DOMContentLoaded', async () => {
   const canvasWebGpu = document.getElementById('canvas-webgpu') as HTMLCanvasElement;
   const canvasWebGL = document.getElementById('canvas-webgl') as HTMLCanvasElement;
@@ -230,6 +240,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const selectModule = document.getElementById('select-module') as HTMLSelectElement | null;
   const btnBaselineReportView = document.getElementById('btn-baseline-report-view') as HTMLButtonElement | null;
+  const btnBaselineView01 = document.getElementById('btn-baseline-view-01') as HTMLButtonElement | null;
+  const btnBaselineView02 = document.getElementById('btn-baseline-view-02') as HTMLButtonElement | null;
+  const btnLaunch01 = document.getElementById('btn-launch-01') as HTMLButtonElement | null;
+  const btnLaunch02 = document.getElementById('btn-launch-02') as HTMLButtonElement | null;
   const btnBackToGpu = document.getElementById('btn-back-to-gpu') as HTMLButtonElement | null;
 
   const btnClassic = document.getElementById('btn-classic') as HTMLButtonElement;
@@ -250,6 +264,23 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnOpenReports = document.getElementById('btn-open-reports') as HTMLButtonElement | null;
   const openReportHint = document.getElementById('open-report-hint') as HTMLElement | null;
 
+  // Styles de statut : une base unique + une teinte, au lieu de répéter la
+  // chaîne complète à chaque affectation (les copies avaient déjà divergé sur
+  // `whitespace-nowrap truncate`, ce qui faisait changer la hauteur de la boîte).
+  const STATUS_BASE =
+    'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight whitespace-nowrap truncate';
+  const HINT_BASE = 'text-[10px] text-center font-mono truncate';
+
+  const setBenchStatus = (text: string, tone = 'text-base-content/80') => {
+    benchStatus.innerText = text;
+    benchStatus.className = `${STATUS_BASE} ${tone}`;
+  };
+  const setReportHint = (text: string, tone = 'text-base-content/50') => {
+    if (!openReportHint) return;
+    openReportHint.innerText = text;
+    openReportHint.className = `${HINT_BASE} ${tone}`;
+  };
+
   // Dialog daisyUI
   const reportModal = document.getElementById('report-modal') as HTMLDialogElement | null;
   const modalTitle = document.getElementById('modal-report-title') as HTMLElement | null;
@@ -260,7 +291,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnCopyReport = document.getElementById('btn-copy-report') as HTMLButtonElement | null;
   const btnModalOpenFinder = document.getElementById('btn-modal-open-finder') as HTMLButtonElement | null;
 
-  let currentModuleId = '01-gpu-driven';
+  let currentModuleId = '00-baseline';
   let rawReportContent = '';
 
   // Initialisation des coureurs de test
@@ -271,11 +302,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   let chart02: GPUSceneChart | null = null;
 
   if (webGpuSupported01) {
-    benchStatus.innerText = '✅ Pipeline WebGPU natif actif';
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-base-content/80 whitespace-nowrap truncate';
+    setBenchStatus('✅ Pipeline WebGPU natif actif');
   } else {
-    benchStatus.innerText = '⚠️ WebGPU non disponible (mode secours)';
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-warning whitespace-nowrap truncate';
+    setBenchStatus('⚠️ WebGPU non disponible (mode secours)', 'text-warning');
   }
 
   // Redimensionnement réactif
@@ -298,7 +327,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     const telemetryMode = document.getElementById('viewport-telemetry-mode');
     const telemetryDetail = document.getElementById('viewport-telemetry-detail');
 
-    if (module === '01-gpu-driven') {
+    if (module === '00-baseline') {
+      if (telemetryMode) telemetryMode.innerText = 'Three.js Reference Floor';
+      if (telemetryDetail) telemetryDetail.innerText = 'Spec 13 Normalized Matrix (S0–S5)';
+    } else if (module === '01-gpu-driven') {
       if (mode === 'classic') {
         if (telemetryMode) telemetryMode.innerText = 'Three.js WebGL Pipeline';
         if (telemetryDetail) telemetryDetail.innerText = 'CPU Frustum Culling + Draw Calls';
@@ -337,7 +369,30 @@ window.addEventListener('DOMContentLoaded', async () => {
   function populateSelectorForModule(moduleId: string) {
     selectCount.innerHTML = '';
 
-    if (moduleId === '01-gpu-driven') {
+    if (moduleId === '00-baseline') {
+      const options = [
+        { val: 'S0', label: 'S0 · 1 objet témoin' },
+        { val: 'S1', label: 'S1 · 500 instanciés' },
+        { val: 'S2', label: 'S2 · 1 000 instanciés' },
+        { val: 'S3', label: 'S3 · 2 000 uniques', selected: true },
+        { val: 'S4', label: 'S4 · 30 lumières dynamiques' },
+        { val: 'S5', label: 'S5 · 5 000 hostile' },
+      ];
+      for (const opt of options) {
+        const o = document.createElement('option');
+        o.value = opt.val;
+        o.innerText = opt.label;
+        if (opt.selected) {
+          o.selected = true;
+          o.classList.add('active');
+        }
+        selectCount.appendChild(o);
+      }
+      btnRunBenchmark.innerHTML = '<i data-lucide="file-text" class="w-3.5 h-3.5"></i><span>Consulter le Rapport Étalon</span>';
+      if (btnPainBenchmark) {
+        btnPainBenchmark.style.display = 'none';
+      }
+    } else if (moduleId === '01-gpu-driven') {
       const options = [
         { val: '500', label: '500 objets uniques' },
         { val: '1000', label: '1 000 objets uniques' },
@@ -421,10 +476,30 @@ window.addEventListener('DOMContentLoaded', async () => {
       canvasWebGpu.style.display = 'none';
       canvasWebGL.style.display = 'none';
       if (viewBaseline) viewBaseline.classList.remove('hidden');
+      populateSelectorForModule('00-baseline');
+      const sc = BASELINE_00_SCENARIOS['S3'];
+      statObjects.innerText = sc.objects;
+      statSubmit.innerText = sc.submit;
+      statCpuFrame.innerText = sc.cpuFrame;
+      statFps.innerText = sc.fps;
+      statDrawCalls.innerText = sc.drawCalls;
+      statMode.innerText = 'Three.js Baseline';
+      statMode.className = 'text-primary font-medium';
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-lab-primary font-medium shadow-xs';
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
+      updateTelemetry('00-baseline', 'classic');
+      setBenchStatus(sc.desc);
+      refreshIcons();
       return;
     }
 
+    canvasWebGpu.style.display = '';
+    canvasWebGL.style.display = '';
     if (viewBaseline) viewBaseline.classList.add('hidden');
+
+    // Le canvas de graphe est partagé : un seul propriétaire peint à la fois.
+    runner01.chart.setActive(moduleId === '01-gpu-driven');
+    chart02?.setActive(moduleId === '02-gpu-scene');
 
     if (moduleId === '01-gpu-driven') {
       populateSelectorForModule('01-gpu-driven');
@@ -437,13 +512,21 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (!runner02) {
         benchStatus.innerText = '⏳ Initialisation du banc 02-gpu-scene...';
         runner02 = new GPUSceneBenchmarkRunner(canvasWebGpu, canvasWebGL);
-        await runner02.init();
+        const ready = await runner02.init();
+
+        if (!ready) {
+          runner02 = null;
+          setBenchStatus(
+            "⚠️ 02-gpu-scene indisponible : WebGPU ou la feature 'indirect-first-instance' manque.",
+            'text-warning'
+          );
+          return;
+        }
 
         chart02 = new GPUSceneChart(chartCanvas);
 
         runner02.onProgress = (stage, progress) => {
-          benchStatus.innerText = `⏳ [${Math.round(progress * 100)}%] ${stage}...`;
-          benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-primary';
+          setBenchStatus(`⏳ [${Math.round(progress * 100)}%] ${stage}...`, 'text-primary');
         };
 
         runner02.onMetricsUpdate = (m, _mode, count) => {
@@ -451,10 +534,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         };
       }
 
+      runner01.chart.setActive(false);
+      chart02?.setActive(true);
       runner02.setMode(runner02.currentMode);
       updateModeButtons(runner02.currentMode);
       benchStatus.innerText = 'Prêt (02-gpu-scene actif).';
-      if (chart02) chart02.render([]);
     }
   }
 
@@ -517,16 +601,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   runner01.onBenchmarkProgress = (stage: string, progress: number) => {
-    benchStatus.innerText = `⏳ [${Math.round(progress * 100)}%] ${stage}...`;
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-primary';
+    setBenchStatus(`⏳ [${Math.round(progress * 100)}%] ${stage}...`, 'text-primary');
   };
 
   runner01.onBenchmarkComplete = async (report: CrossoverReport) => {
     const mdReport = formatMarkdownReport(report, '01-gpu-driven');
-    benchStatus.innerText = `🏁 Crossover : ${
-      report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
-    }`;
-    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-primary font-bold';
+    setBenchStatus(
+      `🏁 Crossover : ${
+        report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
+      }`,
+      'text-primary font-bold'
+    );
 
     try {
       const res = await fetch('/api/save-report', {
@@ -541,6 +626,27 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Dev fallback
     }
   };
+
+  /**
+   * Écrit le rapport d'un module sur disque via le plugin Vite.
+   * Passage obligé pour tout module : un rapport servi par l'UI doit avoir été
+   * généré à partir de mesures, pas écrit à la main.
+   */
+  async function saveModuleReport(testId: string, results: GpuSceneBenchResult[]) {
+    try {
+      const markdown = formatGpuSceneReport(results, navigator.userAgent);
+      const res = await fetch('/api/save-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId, markdown }),
+      });
+      if (res.ok) {
+        benchStatus.innerText += ' | 💾 REPORT.md archivé';
+      }
+    } catch {
+      // Serveur de dev absent : la campagne reste valide, seul l'archivage échoue.
+    }
+  }
 
   // --- Gestion du Modal daisyUI de Consultation du Rapport ---
   async function openReportModal(testId = currentModuleId) {
@@ -602,10 +708,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // --- Révélation dans le Finder ---
   async function triggerOpenFinder(testId = currentModuleId) {
-    if (openReportHint) {
-      openReportHint.innerText = '⏳ Révélation dans le Finder...';
-      openReportHint.className = 'text-[10px] text-info text-center font-mono truncate';
-    }
+    setReportHint('⏳ Révélation dans le Finder...', 'text-info');
     try {
       const res = await fetch('/api/open-folder', {
         method: 'POST',
@@ -615,16 +718,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (res.ok) {
         const data = await res.json();
         const displayPath = data.targetFile || data.targetDir || 'reports/';
-        if (openReportHint) {
-          openReportHint.innerText = `✅ Finder ouvert : ${displayPath}`;
-          openReportHint.className = 'text-[10px] text-success text-center font-mono truncate';
-          setTimeout(() => {
-            if (openReportHint) {
-              openReportHint.innerText = `${testId}/results/REPORT.md & reports/`;
-              openReportHint.className = 'text-[10px] text-base-content/40 text-center font-mono truncate';
-            }
-          }, 6000);
-        }
+        setReportHint(`✅ Finder ouvert : ${displayPath}`, 'text-success');
+        setTimeout(() => {
+          setReportHint(`${testId}/results/REPORT.md & reports/`, 'text-base-content/40');
+        }, 6000);
         if (modalFeedback) {
           modalFeedback.innerText = `✅ Finder ouvert : ${displayPath}`;
           setTimeout(() => {
@@ -632,17 +729,11 @@ window.addEventListener('DOMContentLoaded', async () => {
           }, 4000);
         }
       } else {
-        if (openReportHint) {
-          openReportHint.innerText = '⚠️ Chemin : ./reports/';
-          openReportHint.className = 'text-[10px] text-warning text-center font-mono truncate';
-        }
+        setReportHint('⚠️ Chemin : ./reports/', 'text-warning');
       }
     } catch (err: any) {
       console.warn('Erreur ouverture dossier :', err);
-      if (openReportHint) {
-        openReportHint.innerText = '📁 ./reports/';
-        openReportHint.className = 'text-[10px] text-base-content/50 text-center font-mono truncate';
-      }
+      setReportHint('📁 ./reports/');
     }
   }
 
@@ -655,7 +746,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Bascule Test A / Test B
   btnClassic.addEventListener('click', () => {
-    if (currentModuleId === '01-gpu-driven') {
+    if (currentModuleId === '00-baseline') {
+      return;
+    } else if (currentModuleId === '01-gpu-driven') {
       updateModeButtons('classic');
       runner01.setMode('classic');
     } else if (currentModuleId === '02-gpu-scene' && runner02) {
@@ -665,7 +758,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   btnGpuDriven.addEventListener('click', () => {
-    if (currentModuleId === '01-gpu-driven') {
+    if (currentModuleId === '00-baseline') {
+      switchModule('01-gpu-driven');
+      return;
+    } else if (currentModuleId === '01-gpu-driven') {
       updateModeButtons('gpu-driven');
       runner01.setMode('gpu-driven');
     } else if (currentModuleId === '02-gpu-scene' && runner02) {
@@ -686,6 +782,19 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    if (currentModuleId === '00-baseline') {
+      const sc = BASELINE_00_SCENARIOS[val];
+      if (sc) {
+        statObjects.innerText = sc.objects;
+        statSubmit.innerText = sc.submit;
+        statCpuFrame.innerText = sc.cpuFrame;
+        statFps.innerText = sc.fps;
+        statDrawCalls.innerText = sc.drawCalls;
+        setBenchStatus(sc.desc);
+      }
+      return;
+    }
+
     if (currentModuleId === '01-gpu-driven') {
       const count = parseInt(val, 10);
       benchStatus.innerText = `Scène ${count} objets...`;
@@ -701,8 +810,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Bouton 1 : Benchmark Standard / Matrice 4D
+  // Boutons du tableau de bord 00-baseline
+  if (btnLaunch01) {
+    btnLaunch01.addEventListener('click', () => switchModule('01-gpu-driven'));
+  }
+  if (btnLaunch02) {
+    btnLaunch02.addEventListener('click', () => switchModule('02-gpu-scene'));
+  }
+  if (btnBaselineView01) {
+    btnBaselineView01.addEventListener('click', () => openReportModal('01-gpu-driven'));
+  }
+  if (btnBaselineView02) {
+    btnBaselineView02.addEventListener('click', () => openReportModal('02-gpu-scene'));
+  }
+
+  // Bouton 1 : Benchmark Standard / Matrice 4D / Rapport 00
   btnRunBenchmark.addEventListener('click', async () => {
+    if (currentModuleId === '00-baseline') {
+      openReportModal('00-baseline');
+      return;
+    }
+
     btnRunBenchmark.disabled = true;
     if (btnPainBenchmark) btnPainBenchmark.disabled = true;
 
@@ -713,6 +841,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         benchStatus.innerText = '⏳ Exécution de la matrice de stress 4D...';
         const results = await runner02.runFullMatrix();
         if (chart02) chart02.render(results);
+        await saveModuleReport('02-gpu-scene', results);
         benchStatus.innerText = '🏁 Matrice 4D complétée avec succès.';
       }
     } finally {
@@ -732,27 +861,9 @@ window.addEventListener('DOMContentLoaded', async () => {
           await runner01.runAutomatedBenchmark([500, 1000, 2000, 5000, 10000, 25000, 50000, 100000]);
         } else if (currentModuleId === '02-gpu-scene' && runner02) {
           benchStatus.innerText = '⏳ Stress test topologies (10 → 1 000)...';
-          const painScenarios: SceneStressConfig[] = [
-            { name: '10 topos', dimension: 'A-geometry', objectCount: 2000, geometryCount: 10, materialCount: 10, dynamicRatio: 0.1, targetVisibility: 1 },
-            { name: '100 topos', dimension: 'A-geometry', objectCount: 2000, geometryCount: 100, materialCount: 10, dynamicRatio: 0.1, targetVisibility: 1 },
-            { name: '500 topos', dimension: 'A-geometry', objectCount: 5000, geometryCount: 500, materialCount: 20, dynamicRatio: 0.1, targetVisibility: 1 },
-            { name: '1 000 topos', dimension: 'A-geometry', objectCount: 10000, geometryCount: 1000, materialCount: 50, dynamicRatio: 0.1, targetVisibility: 1 },
-          ];
-          const painResults: GpuSceneBenchResult[] = [];
-          for (const sc of painScenarios) {
-            await runner02.applyConfig(sc);
-            painResults.push({
-              mode: 'gpu-scene',
-              config: sc,
-              avgCpuSubmitMs: 0.15 + (sc.geometryCount / 1000) * 0.1,
-              avgCpuFrameMs: 0.25,
-              drawCalls: sc.geometryCount,
-              culledObjects: 0,
-              visibleObjects: sc.objectCount,
-              gpuMemoryBytes: sc.objectCount * 96,
-            });
-          }
+          const painResults = await runner02.runCampaign(PAIN_MATRIX, 'Stress topologies achevé');
           if (chart02) chart02.render(painResults);
+          await saveModuleReport('02-gpu-scene', painResults);
           benchStatus.innerText = '🏁 Stress topologies terminé.';
         }
       } finally {
@@ -762,9 +873,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Initialisation par défaut : module 01-gpu-driven
-  populateSelectorForModule('01-gpu-driven');
-  updateModeButtons('gpu-driven');
+  // Initialisation par défaut : module 00-baseline
+  await switchModule('00-baseline');
   refreshIcons();
 
   // Boucle de rendu

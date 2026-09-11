@@ -31,13 +31,18 @@ export interface SceneStressConfig {
   targetVisibility: number; // Ex: 0.1 (10% visible), 0.5, 1.0
 }
 
+/**
+ * Résultat d'un tier A/B.
+ * `null` signifie « non instrumenté sur ce mode » — jamais une valeur estimée :
+ * un rapport ne doit pas pouvoir présenter une constante comme une mesure.
+ */
 export interface GpuSceneBenchResult {
   mode: 'classic' | 'gpu-scene';
   config: SceneStressConfig;
   avgCpuSubmitMs: number;
   avgCpuFrameMs: number;
   drawCalls: number;
-  culledObjects: number;
-  visibleObjects: number;
-  gpuMemoryBytes: number;
+  culledObjects: number | null;
+  visibleObjects: number | null;
+  gpuMemoryBytes: number | null;
 }

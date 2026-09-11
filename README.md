@@ -11,9 +11,18 @@
 [![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1e6fbf)](LICENSE)
 
-**[Modules](#the-eight-modules)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)** · **[Reports](reports/README.md)** · **[Watchlist](#conditional-watchlist)**
+**[Master Test Plan](MASTER_TEST_PLAN.md)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)** · **[Reports](reports/README.md)** · **[Watchlist](#conditional-watchlist)**
 
 </div>
+
+---
+
+## Master Test Plan & Execution Contract
+
+The laboratory is governed by **[`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md)**, defining 14 isolated unit test blocks (from `00-baseline` through `13-full-gpu-driven`) before developing proprietary mathematical optimization models.
+
+> **Philosophical Principle :**  
+> Nanite is an architectural inspiration, not a specification to duplicate blindly. The lab determines experimentally which properties make GPU-driven rendering viable in WebGPU / Three.js, using simple, reproducible unit tests.
 
 ---
 
@@ -52,10 +61,10 @@ Instead of jumping prematurely to a monolithic Nanite clone, the laboratory buil
 | [**00-baseline**](00-baseline/README.md) | Baseline Spec 13 Witness — S0–S5 load curve, reference floor | **Validé** | [hypothesis.md](00-baseline/hypothesis.md) |
 | [**01-gpu-driven**](01-gpu-driven/README.md) | GPU-Driven Indirect Draw & Frustum Culling Compute WGSL (1 draw call) | **Validé** | [hypothesis.md](01-gpu-driven/hypothesis.md) |
 | [**02-gpu-scene**](02-gpu-scene/README.md) | Heterogeneous GPU Scene (`Object`, `Geometry`, `Material`, `Draw` buffers, 4D stress) | **En cours (Actif)** | [hypothesis.md](02-gpu-scene/hypothesis.md) |
-| [**03-gpu-lod**](03-gpu-lod/README.md) | GPU LOD selection by screen-space projected error in compute | *Prévu* | hypothesis.md |
-| [**04-meshlets**](04-meshlets/README.md) | Meshlet hierarchy (meshoptimizer), cluster-level culling & compaction | *Prévu* | hypothesis.md |
-| [**05-hiz**](05-hiz/README.md) | Hi-Z depth pyramid & two-phase occlusion culling (90% occlusion stress) | *Prévu* | hypothesis.md |
-| [**06-gpu-material**](06-gpu-material/README.md) | Visibility buffer & deferred material shading | *Prévu* | hypothesis.md |
+| **03-gpu-lod** | GPU LOD selection by screen-space projected error in compute | *Prévu* | hypothesis.md |
+| **04-meshlets** | Meshlet hierarchy (meshoptimizer), cluster-level culling & compaction | *Prévu* | hypothesis.md |
+| **05-hiz** | Hi-Z depth pyramid & two-phase occlusion culling (90% occlusion stress) | *Prévu* | hypothesis.md |
+| **06-gpu-material** | Visibility buffer & deferred material shading | *Prévu* | hypothesis.md |
 
 Each module holds the same five drawers: `hypothesis.md` (scoping sheet and final verdict), `baseline/` (the current engine, without the technique), `implementation/` (the experimental prototype), `benchmark/` (automated, reproducible load scenarios) and `results/` (captures, figures, visual comparisons).
 

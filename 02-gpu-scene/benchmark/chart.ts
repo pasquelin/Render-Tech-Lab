@@ -4,6 +4,11 @@ export class GPUSceneChart {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private lastResults: GpuSceneBenchResult[] = [];
+  /**
+   * Le canvas de graphe est partagé entre modules : un graphe inactif ne doit
+   * jamais peindre, sinon un simple resize remplace le tracé du module affiché.
+   */
+  private active = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -13,14 +18,18 @@ export class GPUSceneChart {
       const ro = new ResizeObserver(() => this.render(this.lastResults));
       ro.observe(this.canvas);
     }
+  }
 
-    this.render([]);
+  /** Donne ou retire à ce graphe la propriété du canvas partagé. */
+  public setActive(active: boolean) {
+    this.active = active;
+    if (active) this.render(this.lastResults);
   }
 
   public render(results: GpuSceneBenchResult[] = []) {
     this.lastResults = results;
     const ctx = this.ctx;
-    if (!ctx) return;
+    if (!ctx || !this.active) return;
 
     const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
     const rect = this.canvas.getBoundingClientRect();

@@ -5,7 +5,7 @@ import type { MeshInstanceDef } from '../types.ts';
  * Générateur déterministe (pseudo-aléatoire sans dépendance externe)
  * garantissant que Test A et Test B reçoivent exactement la même disposition spatiale.
  */
-function createPseudoRandom(seed: number) {
+export function createPseudoRandom(seed: number) {
   let s = seed % 2147483647;
   if (s <= 0) s += 2147483646;
   return function () {

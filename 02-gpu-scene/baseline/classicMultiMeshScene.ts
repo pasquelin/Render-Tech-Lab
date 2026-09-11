@@ -8,14 +8,14 @@ export class ClassicMultiMeshScene {
   /** Conteneur dédié : permet un détachement en O(1) sans toucher aux lumières. */
   private meshRoot = new THREE.Group();
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: false,
-      powerPreference: 'high-performance',
-    });
+  /**
+   * @param renderer Renderer partagé du banc : un canvas n'a qu'un seul contexte
+   *                 WebGL, en instancier un second ici désynchroniserait l'état
+   *                 GL et fausserait `info.render.calls`.
+   */
+  constructor(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement) {
+    this.renderer = renderer;
     this.renderer.setSize(canvas.clientWidth || 800, canvas.clientHeight || 600, false);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#1c212a');

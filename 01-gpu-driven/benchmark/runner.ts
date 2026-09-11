@@ -8,12 +8,13 @@ import { generateTestInstances, createBaseGeometry } from '../common/sceneGenera
 import { ClassicThreeScene } from '../baseline/classicScene.ts';
 import { GpuDrivenRenderer } from '../implementation/gpuDrivenRenderer.ts';
 import { CrossoverChart } from './chart.ts';
+import { getSharedDevice, getSharedGLRenderer, configureCanvas } from '../../src/common/gpuContext.ts';
 
 export class BenchmarkRunner {
   private device: GPUDevice | null = null;
   private canvasWebGpu: HTMLCanvasElement;
   private canvasWebGL: HTMLCanvasElement;
-  private chart: CrossoverChart;
+  public readonly chart: CrossoverChart;
 
   private classicScene: ClassicThreeScene | null = null;
   private gpuDrivenRenderer: GpuDrivenRenderer | null = null;
@@ -46,25 +47,11 @@ export class BenchmarkRunner {
   }
 
   public async init(): Promise<boolean> {
-    // 1. Initialisation WebGPU pour le Test B
-    const nav = navigator as Navigator & { gpu?: GPU };
-    if (nav.gpu) {
-      try {
-        const adapter = await nav.gpu.requestAdapter();
-        if (adapter) {
-          this.device = await adapter.requestDevice();
-        }
-      } catch (err) {
-        console.warn('WebGPU requestDevice non disponible :', err);
-      }
-    }
+    // 1. Device WebGPU partagé pour le Test B (un seul device pour tout le banc)
+    this.device = await getSharedDevice();
 
-    // 2. Initialisation WebGLRenderer de Three.js pour le Test A
-    this.classicRenderer = new THREE.WebGLRenderer({
-      canvas: this.canvasWebGL,
-      antialias: false,
-      powerPreference: 'high-performance',
-    });
+    // 2. WebGLRenderer Three.js partagé pour le Test A (un seul contexte par canvas)
+    this.classicRenderer = getSharedGLRenderer(this.canvasWebGL);
     this.classicRenderer.setSize(this.canvasWebGL.clientWidth, this.canvasWebGL.clientHeight, false);
 
     this.resize(this.canvasWebGpu.clientWidth, this.canvasWebGpu.clientHeight);
@@ -106,14 +93,7 @@ export class BenchmarkRunner {
 
     // Initialisation Test B
     if (this.device) {
-      const nav = navigator as Navigator & { gpu: GPU };
-      const ctx = this.canvasWebGpu.getContext('webgpu') as unknown as GPUCanvasContext;
-      const format = nav.gpu.getPreferredCanvasFormat();
-      ctx.configure({
-        device: this.device,
-        format: format,
-        alphaMode: 'opaque',
-      });
+      const { context: ctx, format } = configureCanvas(this.canvasWebGpu, this.device);
 
       this.gpuDrivenRenderer = new GpuDrivenRenderer(
         this.device,
