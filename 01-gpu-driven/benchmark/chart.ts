@@ -18,8 +18,8 @@ export class CrossoverChart {
     const w = this.canvas.width;
     const h = this.canvas.height;
 
-    // Fond sombre
-    ctx.fillStyle = '#11151c';
+    // Fond sombre Nordic Polar Night
+    ctx.fillStyle = '#242933';
     ctx.fillRect(0, 0, w, h);
 
     const padLeft = 60;
@@ -43,11 +43,11 @@ export class CrossoverChart {
       if (r.avgSubmitMs > maxSubmit) maxSubmit = r.avgSubmitMs * 1.15;
     }
 
-    // Grille horizontale
-    ctx.strokeStyle = '#222d3d';
+    // Grille horizontale Nordic
+    ctx.strokeStyle = '#3b4252';
     ctx.lineWidth = 1;
     const gridSteps = 5;
-    ctx.fillStyle = '#6b7d96';
+    ctx.fillStyle = '#d8dee9';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'right';
 
@@ -77,7 +77,7 @@ export class CrossoverChart {
     }
 
     // Titres des axes
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#d8dee9';
     ctx.font = '12px sans-serif';
     ctx.fillText('Nombre d\'objets uniques', padLeft + plotW / 2, h - 15);
 
@@ -108,50 +108,50 @@ export class CrossoverChart {
         const x = padLeft + (r.objectCount / maxObjects) * plotW;
         const y = padTop + plotH - (r.avgSubmitMs / maxSubmit) * plotH;
         ctx.beginPath();
-        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
       });
     };
 
-    // Courbe Test A (Classic Three.js - Rouge orangé)
-    drawCurve(classicResults, '#ef4444');
+    // Courbe Test A (Classic Three.js - Nordic Muted Coral / Terracotta #d08770)
+    drawCurve(classicResults, '#d08770');
 
-    // Courbe Test B (GPU-driven - Cyan électrique)
-    drawCurve(gpuDrivenResults, '#06b6d4');
+    // Courbe Test B (GPU-driven - Nordic Frost Cyan #88c0d0)
+    drawCurve(gpuDrivenResults, '#88c0d0');
 
-    // Mise en évidence du point de croisement (Crossover)
+    // Mise en évidence du point de croisement (Crossover - Nordic Gold #ebcb8b)
     if (crossoverObjectCount !== null) {
       const xCross = padLeft + (crossoverObjectCount / maxObjects) * plotW;
 
-      ctx.strokeStyle = '#f59e0b';
+      ctx.strokeStyle = '#ebcb8b';
       ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(xCross, padTop);
       ctx.lineTo(xCross, padTop + plotH);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = '#f59e0b';
-      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = '#ebcb8b';
+      ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`Crossover ~${Math.round(crossoverObjectCount)} obj`, xCross, padTop - 12);
+      ctx.fillText(`Crossover ~${Math.round(crossoverObjectCount)} obj`, xCross, padTop - 10);
     }
 
     // Légende en haut à droite
     ctx.textAlign = 'left';
-    ctx.font = '12px sans-serif';
+    ctx.font = '11px sans-serif';
 
     // Légende Classic
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(w - 220, padTop + 10, 14, 14);
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillText('Test A : Three.js classique O(N)', w - 200, padTop + 22);
+    ctx.fillStyle = '#d08770';
+    ctx.fillRect(w - 210, padTop + 8, 12, 12);
+    ctx.fillStyle = '#eceff4';
+    ctx.fillText('Test A : Three.js classique O(N)', w - 192, padTop + 18);
 
     // Légende GPU-driven
-    ctx.fillStyle = '#06b6d4';
-    ctx.fillRect(w - 220, padTop + 32, 14, 14);
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillText('Test B : GPU-driven O(1)', w - 200, padTop + 44);
+    ctx.fillStyle = '#88c0d0';
+    ctx.fillRect(w - 210, padTop + 26, 12, 12);
+    ctx.fillStyle = '#eceff4';
+    ctx.fillText('Test B : GPU-driven O(1)', w - 192, padTop + 36);
   }
 }

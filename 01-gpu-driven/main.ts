@@ -136,10 +136,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   if (!webGpuSupported) {
     benchStatus.innerText = '⚠️ WebGPU non disponible. Mode secours actif.';
-    benchStatus.className = 'alert alert-warning bg-warning/10 text-warning border border-warning/20 py-2 px-3 text-[11px] font-mono leading-tight';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-warning';
   } else {
     benchStatus.innerText = '✅ WebGPU natif actif (Metal / Direct3D / Vulkan)';
-    benchStatus.className = 'alert alert-success bg-success/10 text-success border border-success/20 py-2 px-3 text-[11px] font-mono leading-tight';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-base-content/80';
   }
 
   // Redimensionnement réactif
@@ -189,20 +189,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Mise à jour visuelle des boutons Test A / Test B avec daisyUI
+  // Mise à jour visuelle des boutons Test A / Test B avec daisyUI (Cohérence Nordic)
   function updateModeButtons(mode: 'classic' | 'gpu-driven') {
     if (mode === 'classic') {
-      btnClassic.className = 'btn btn-sm join-item flex-1 btn-error text-error-content shadow-xs';
-      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-neutral';
-      statMode.innerText = 'Test A (Three.js WebGL)';
-      statMode.className = 'text-error font-bold';
-      statSubmit.className = 'text-base font-bold text-error';
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
+      statMode.innerText = 'Test A (Three.js)';
+      statMode.className = 'text-primary font-medium';
     } else {
-      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-info text-info-content shadow-xs';
-      btnClassic.className = 'btn btn-sm join-item flex-1 btn-neutral';
-      statMode.innerText = 'Test B (GPU-Driven WebGPU)';
-      statMode.className = 'text-cyan-400 font-bold';
-      statSubmit.className = 'text-base font-bold text-cyan-400';
+      btnGpuDriven.className = 'btn btn-sm join-item flex-1 btn-primary text-primary-content font-medium shadow-xs';
+      btnClassic.className = 'btn btn-sm join-item flex-1 btn-ghost text-base-content/70 font-medium';
+      statMode.innerText = 'Test B (GPU-Driven)';
+      statMode.className = 'text-primary font-medium';
     }
   }
 
@@ -241,7 +239,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   runner.onBenchmarkProgress = (stage: string, progress: number) => {
     benchStatus.innerText = `⏳ [${Math.round(progress * 100)}%] ${stage}...`;
-    benchStatus.className = 'alert alert-info bg-info/10 text-info border border-info/20 py-2 px-3 text-[11px] font-mono leading-tight';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-primary';
   };
 
   runner.onBenchmarkComplete = async (report: CrossoverReport) => {
@@ -249,7 +247,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     benchStatus.innerText = `🏁 Crossover : ${
       report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
     }`;
-    benchStatus.className = 'alert alert-success bg-success/10 text-success border border-success/20 py-2 px-3 text-[11px] font-mono leading-tight';
+    benchStatus.className = 'alert alert-neutral bg-base-100 border border-base-content/15 py-2 px-3 text-[11px] font-mono leading-tight text-primary font-bold';
 
     try {
       const res = await fetch('/api/save-report', {
