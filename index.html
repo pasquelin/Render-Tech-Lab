@@ -29,13 +29,13 @@
           <div class="flex items-center gap-2 shrink-0">
             <label for="select-module" class="text-xs text-base-content/60 hidden sm:inline font-medium whitespace-nowrap">Banc d'essai :</label>
             <select id="select-module" class="select select-bordered select-xs sm:select-sm font-semibold text-primary bg-base-300 border-base-content/15 focus:border-primary focus:outline-none">
-              <option value="00-baseline">00 · Baseline Spec 13 S0–S5 (Validé)</option>
-              <option value="01-gpu-driven" selected>01 · GPU-Driven Indirect Draw (Validé)</option>
-              <option value="02-gpu-scene">02 · GPU Scene &amp; Scène Hétérogène (Banc Actif)</option>
-              <option value="03-gpu-lod" disabled>03 · GPU LOD &amp; Screen-Space Error (Prévu)</option>
-              <option value="04-meshlets" disabled>04 · Meshlets &amp; Cluster Culling (Prévu)</option>
-              <option value="05-hiz" disabled>05 · Hi-Z Occlusion Pyramid (Prévu)</option>
-              <option value="06-gpu-material" disabled>06 · Visibility Buffer &amp; Deferred Shading (Prévu)</option>
+              <option value="00-baseline">00 · Baseline Spec 13 S0–S5</option>
+              <option value="01-gpu-driven" class="active" selected>01 · GPU-Driven Indirect Draw</option>
+              <option value="02-gpu-scene">02 · GPU Scene &amp; Scène Hétérogène</option>
+              <option value="03-gpu-lod" disabled>03 · GPU LOD &amp; Screen-Space Error</option>
+              <option value="04-meshlets" disabled>04 · Meshlets &amp; Cluster Culling</option>
+              <option value="05-hiz" disabled>05 · Hi-Z Occlusion Pyramid</option>
+              <option value="06-gpu-material" disabled>06 · Visibility Buffer &amp; Deferred Shading</option>
             </select>
           </div>
 
@@ -215,12 +215,12 @@
                 <select id="select-count" class="select select-bordered select-sm w-full bg-base-100 font-mono text-xs focus:outline-none focus:border-primary border-base-content/15">
                   <option value="500">500 objets uniques</option>
                   <option value="1000">1 000 objets uniques</option>
-                  <option value="2000" selected>⚡ 2 000 objets (S3 Coude CPU)</option>
+                  <option value="2000" class="active" selected>⚡ 2 000 objets</option>
                   <option value="5000">5 000 objets uniques</option>
-                  <option value="10000">🔥 10 000 objets (Pain Test)</option>
-                  <option value="25000">🔥 25 000 objets (Pain Test)</option>
-                  <option value="50000">☠️ 50 000 objets (Extreme Pain)</option>
-                  <option value="100000">☠️ 100 000 objets (Torture Test)</option>
+                  <option value="10000">🔥 10 000 objets</option>
+                  <option value="25000">🔥 25 000 objets</option>
+                  <option value="50000">☠️ 50 000 objets</option>
+                  <option value="100000">☠️ 100 000 objets</option>
                 </select>
               </div>
             </div>

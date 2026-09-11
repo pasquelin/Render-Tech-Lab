@@ -102,3 +102,10 @@ html, body {
   border-color: oklch(86.163% 0.142 94.818);
 }
 
+/* Option active du test dans les sélecteurs */
+select option.active {
+  background-color: oklch(24.731% 0.02 264.094);
+  color: oklch(86.133% 0.141 139.549);
+  font-weight: 600;
+}
+

@@ -25,12 +25,12 @@ export function createVariedGeometries(count: number): {
   const threeGeoms: THREE.BufferGeometry[] = [];
   const geomDataList: GPUGeometryData[] = [];
 
-  const allVertices: number[] = [];
-  const allIndices: number[] = [];
-
   let currentVertexOffset = 0;
   let currentIndexOffset = 0;
 
+  // Passe 1 : création des géométries et comptage, pour allouer les méga-tampons
+  // à leur taille exacte (l'accumulation via number[] + copie finale coûtait
+  // deux fois la mémoire et une passe de copie complète).
   for (let i = 0; i < count; i++) {
     // Variations procédurales de formes pour simuler des géométries réelles hétérogènes
     let geom: THREE.BufferGeometry;
@@ -53,26 +53,10 @@ export function createVariedGeometries(count: number): {
     threeGeoms.push(geom);
 
     const pos = geom.getAttribute('position');
-    const norm = geom.getAttribute('normal');
     const idx = geom.getIndex();
 
     const vertexCount = pos.count;
     const indexCount = idx ? idx.count : 0;
-
-    // Enregistrement des données de sommets entrelacés (Pos 3D + Norm 3D)
-    for (let v = 0; v < vertexCount; v++) {
-      allVertices.push(
-        pos.getX(v), pos.getY(v), pos.getZ(v),
-        norm ? norm.getX(v) : 0, norm ? norm.getY(v) : 1, norm ? norm.getZ(v) : 0
-      );
-    }
-
-    // Enregistrement des indices
-    if (idx) {
-      for (let j = 0; j < indexCount; j++) {
-        allIndices.push(idx.getX(j));
-      }
-    }
 
     geom.computeBoundingSphere();
     const radius = geom.boundingSphere ? geom.boundingSphere.radius : 1.5;
@@ -90,10 +74,41 @@ export function createVariedGeometries(count: number): {
     currentIndexOffset += indexCount;
   }
 
+  // Passe 2 : remplissage des méga-tampons à taille exacte, par accès direct
+  // aux tableaux sous-jacents (getX/getY/getZ coûtaient 6 appels par sommet).
+  const mergedVertices = new Float32Array(currentVertexOffset * 6);
+  const mergedIndices = new Uint32Array(currentIndexOffset);
+
+  for (let i = 0; i < threeGeoms.length; i++) {
+    const geom = threeGeoms[i];
+    const data = geomDataList[i];
+    const pos = geom.getAttribute('position');
+    const norm = geom.getAttribute('normal');
+    const idx = geom.getIndex();
+
+    const posArray = pos.array as ArrayLike<number>;
+    const normArray = norm ? (norm.array as ArrayLike<number>) : null;
+
+    let out = data.vertexOffset * 6;
+    for (let v = 0; v < pos.count; v++) {
+      const p = v * 3;
+      mergedVertices[out++] = posArray[p];
+      mergedVertices[out++] = posArray[p + 1];
+      mergedVertices[out++] = posArray[p + 2];
+      mergedVertices[out++] = normArray ? normArray[p] : 0;
+      mergedVertices[out++] = normArray ? normArray[p + 1] : 1;
+      mergedVertices[out++] = normArray ? normArray[p + 2] : 0;
+    }
+
+    if (idx) {
+      mergedIndices.set(idx.array as ArrayLike<number>, data.indexOffset);
+    }
+  }
+
   return {
     geometries: geomDataList,
-    mergedVertices: new Float32Array(allVertices),
-    mergedIndices: new Uint32Array(allIndices),
+    mergedVertices,
+    mergedIndices,
     threeGeometries: threeGeoms,
   };
 }
@@ -154,6 +169,10 @@ export function generateStressScene(config: SceneStressConfig): GeneratedGPUScen
   const quaternion = new THREE.Quaternion();
   const scale = new THREE.Vector3(1, 1, 1);
 
+  // Une seule allocation pour toutes les transforms : chaque objet reçoit une
+  // vue subarray, au lieu de N petits Float32Array(16).
+  const transformPool = new Float32Array(config.objectCount * 16);
+
   for (let i = 0; i < config.objectCount; i++) {
     const geomId = i % geometries.length;
     const matId = i % materials.length;
@@ -177,7 +196,7 @@ export function generateStressScene(config: SceneStressConfig): GeneratedGPUScen
 
     tempMatrix.compose(position, quaternion, scale);
 
-    const transformArray = new Float32Array(16);
+    const transformArray = transformPool.subarray(i * 16, i * 16 + 16);
     tempMatrix.toArray(transformArray);
 
     const radius = geometries[geomId].boundingRadius * s;

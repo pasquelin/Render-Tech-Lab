@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GPUSceneBuffers } from './gpuSceneBuffers.ts';
+import { GPUSceneBuffers, BYTES_PER_OBJECT, packObject } from './gpuSceneBuffers.ts';
 import { CULLING_WGSL } from './gpuSceneCullingShader.ts';
 import type { GeneratedGPUScene } from '../benchmark/stressScenarios.ts';
 
@@ -92,13 +92,31 @@ export class GPUSceneRenderer {
   private renderPipeline!: GPURenderPipeline;
   private depthTexture!: GPUTexture;
 
-  private megaVertexBuffer!: GPUBuffer;
-  private megaIndexBuffer!: GPUBuffer;
+  private megaVertexBuffer: GPUBuffer | null = null;
+  private megaIndexBuffer: GPUBuffer | null = null;
 
   private cullingBindGroup!: GPUBindGroup;
   private renderBindGroup!: GPUBindGroup;
 
   public sceneData: GeneratedGPUScene | null = null;
+
+  // Vue de profondeur mise en cache : ne change qu'au resize, pas à chaque frame.
+  private depthView!: GPUTextureView;
+
+  // Scratch réutilisés par updateCamera() — évite 3 allocations par frame.
+  private camScratch = new Float32Array(64); // 256 octets
+  private camViewProj = new THREE.Matrix4();
+  private camFrustum = new THREE.Frustum();
+
+  // Scratch réutilisés par updateDynamicObjects() — dimensionnés dans setScene().
+  private objScratch: ArrayBuffer = new ArrayBuffer(0);
+  private objFloatView: Float32Array = new Float32Array(0);
+  private objUintView: Uint32Array = new Uint32Array(0);
+  private tempMatrix = new THREE.Matrix4();
+  private tempEuler = new THREE.Euler();
+  private tempQuat = new THREE.Quaternion();
+  private tempPos = new THREE.Vector3();
+  private tempScale = new THREE.Vector3();
 
   constructor(device: GPUDevice, canvas: HTMLCanvasElement) {
     this.device = device;
@@ -179,13 +197,27 @@ export class GPUSceneRenderer {
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
+    this.depthView = this.depthTexture.createView();
   }
 
   public setScene(sceneData: GeneratedGPUScene) {
     this.sceneData = sceneData;
 
+    // Libération de la génération précédente : setScene() est rappelé à chaque
+    // scénario de la matrice, sinon la VRAM des scènes passées s'accumule.
+    this.megaVertexBuffer?.destroy();
+    this.megaIndexBuffer?.destroy();
+
     // Allocation et upload des buffers de scène hétérogènes
     this.buffers.allocate(sceneData.objects, sceneData.geometries, sceneData.materials);
+
+    // Redimensionnement du scratch d'upload des objets dynamiques (96 octets par objet)
+    const scratchBytes = sceneData.objects.length * BYTES_PER_OBJECT;
+    if (this.objScratch.byteLength < scratchBytes) {
+      this.objScratch = new ArrayBuffer(scratchBytes);
+      this.objFloatView = new Float32Array(this.objScratch);
+      this.objUintView = new Uint32Array(this.objScratch);
+    }
 
     // Méga vertex buffer (positions + normales entrelacées)
     this.megaVertexBuffer = this.device.createBuffer({
@@ -231,19 +263,16 @@ export class GPUSceneRenderer {
     if (!this.buffers.cameraBuffer) return;
 
     camera.updateMatrixWorld();
-    const projMat = camera.projectionMatrix;
-    const viewMat = camera.matrixWorldInverse;
-    const viewProj = new THREE.Matrix4().multiplyMatrices(projMat, viewMat);
+    const viewProj = this.camViewProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
 
     // Calcul des 6 plans de frustum
-    const frustum = new THREE.Frustum();
-    frustum.setFromProjectionMatrix(viewProj);
+    this.camFrustum.setFromProjectionMatrix(viewProj);
 
-    const buffer = new Float32Array(64); // 256 octets
+    const buffer = this.camScratch;
     viewProj.toArray(buffer, 0);
 
     for (let i = 0; i < 6; i++) {
-      const p = frustum.planes[i];
+      const p = this.camFrustum.planes[i];
       const offset = 16 + i * 4;
       buffer[offset + 0] = p.normal.x;
       buffer[offset + 1] = p.normal.y;
@@ -260,13 +289,7 @@ export class GPUSceneRenderer {
     const dynamicCount = Math.floor(this.sceneData.objects.length * dynamicRatio);
     if (dynamicCount === 0) return;
 
-    const arrayBuffer = new ArrayBuffer(dynamicCount * 96);
-    const floatView = new Float32Array(arrayBuffer);
-    const tempMatrix = new THREE.Matrix4();
-    const tempEuler = new THREE.Euler();
-    const tempQuat = new THREE.Quaternion();
-    const tempPos = new THREE.Vector3();
-    const tempScale = new THREE.Vector3();
+    const { tempMatrix, tempEuler, tempQuat, tempPos, tempScale, objFloatView, objUintView } = this;
 
     for (let i = 0; i < dynamicCount; i++) {
       const obj = this.sceneData.objects[i];
@@ -280,23 +303,20 @@ export class GPUSceneRenderer {
       tempQuat.setFromEuler(tempEuler);
 
       tempMatrix.compose(tempPos, tempQuat, tempScale);
+      // La transform CPU est relue à la frame suivante (fromArray ci-dessus),
+      // donc elle doit rester à jour ; packObject la recopie ensuite dans le scratch.
       tempMatrix.toArray(obj.transform);
-
-      const offsetFloat = i * 24;
-      floatView.set(obj.transform, offsetFloat);
-      floatView[offsetFloat + 16] = obj.boundingCenterRadius[0];
-      floatView[offsetFloat + 17] = obj.boundingCenterRadius[1];
-      floatView[offsetFloat + 18] = obj.boundingCenterRadius[2];
-      floatView[offsetFloat + 19] = obj.boundingCenterRadius[3];
-
-      const uintView = new Uint32Array(arrayBuffer);
-      uintView[offsetFloat + 20] = obj.geometryId;
-      uintView[offsetFloat + 21] = obj.materialId;
-      uintView[offsetFloat + 22] = obj.flags;
-      uintView[offsetFloat + 23] = 0;
+      packObject(objFloatView, objUintView, i, obj);
     }
 
-    this.device.queue.writeBuffer(this.buffers.objectBuffer, 0, arrayBuffer as unknown as BufferSource);
+    // Un seul transfert contigu, borné aux objets réellement mis à jour.
+    this.device.queue.writeBuffer(
+      this.buffers.objectBuffer,
+      0,
+      this.objScratch as unknown as BufferSource,
+      0,
+      dynamicCount * BYTES_PER_OBJECT
+    );
   }
 
   public render(): { submitMs: number; drawCalls: number } {
@@ -336,7 +356,7 @@ export class GPUSceneRenderer {
         },
       ],
       depthStencilAttachment: {
-        view: this.depthTexture.createView(),
+        view: this.depthView,
         depthClearValue: 1.0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',

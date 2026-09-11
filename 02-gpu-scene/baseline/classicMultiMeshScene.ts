@@ -5,6 +5,8 @@ export class ClassicMultiMeshScene {
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
   private meshes: THREE.Mesh[] = [];
+  /** Conteneur dédié : permet un détachement en O(1) sans toucher aux lumières. */
+  private meshRoot = new THREE.Group();
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({
@@ -33,16 +35,37 @@ export class ClassicMultiMeshScene {
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(50, 100, 50);
     this.scene.add(dirLight);
+
+    this.scene.add(this.meshRoot);
   }
 
   public populate(meshes: THREE.Mesh[]) {
-    // Nettoyage de l'ancienne scène
+    // Détachement en un seul coup : scene.remove() par mesh était en O(n²)
+    // (indexOf + splice pour chacun des n meshes).
+    this.meshRoot.clear();
+
+    // Les géométries et matériaux sont partagés entre meshes : on déduplique
+    // avant de libérer, sinon la VRAM de chaque scénario de la matrice fuit.
+    const staleGeometries = new Set<THREE.BufferGeometry>();
+    const staleMaterials = new Set<THREE.Material>();
     for (const m of this.meshes) {
-      this.scene.remove(m);
+      staleGeometries.add(m.geometry);
+      for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
+        staleMaterials.add(mat);
+      }
     }
+    for (const m of meshes) {
+      staleGeometries.delete(m.geometry);
+      for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
+        staleMaterials.delete(mat);
+      }
+    }
+    for (const g of staleGeometries) g.dispose();
+    for (const mat of staleMaterials) mat.dispose();
+
     this.meshes = meshes;
     for (const m of this.meshes) {
-      this.scene.add(m);
+      this.meshRoot.add(m);
     }
   }
 

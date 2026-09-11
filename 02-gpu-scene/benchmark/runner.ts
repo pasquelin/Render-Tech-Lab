@@ -164,21 +164,11 @@ export class GPUSceneBenchmarkRunner {
       await this.applyConfig(config);
 
       // 1. Mesure Test A (Three.js Classic)
-      this.setMode('classic');
-      for (let w = 0; w < WARMUP; w++) {
-        this.renderTick(performance.now());
-        await new Promise((r) => requestAnimationFrame(r));
-      }
-      let sumSubmitClassic = 0;
-      let drawCallsClassic = 0;
-      for (let i = 0; i < SAMPLES; i++) {
-        const t = performance.now();
-        const res = this.renderTick(t);
-        sumSubmitClassic += res.submitMs;
-        drawCallsClassic = res.drawCalls;
-        await new Promise((r) => requestAnimationFrame(r));
-      }
-      const avgClassic = sumSubmitClassic / SAMPLES;
+      const { avg: avgClassic, drawCalls: drawCallsClassic } = await this.measureMode(
+        'classic',
+        WARMUP,
+        SAMPLES
+      );
 
       results.push({
         mode: 'classic',
@@ -192,21 +182,11 @@ export class GPUSceneBenchmarkRunner {
       });
 
       // 2. Mesure Test B (GPU-Scene)
-      this.setMode('gpu-scene');
-      for (let w = 0; w < WARMUP; w++) {
-        this.renderTick(performance.now());
-        await new Promise((r) => requestAnimationFrame(r));
-      }
-      let sumSubmitGpu = 0;
-      let drawCallsGpu = 0;
-      for (let i = 0; i < SAMPLES; i++) {
-        const t = performance.now();
-        const res = this.renderTick(t);
-        sumSubmitGpu += res.submitMs;
-        drawCallsGpu = res.drawCalls;
-        await new Promise((r) => requestAnimationFrame(r));
-      }
-      const avgGpu = sumSubmitGpu / SAMPLES;
+      const { avg: avgGpu, drawCalls: drawCallsGpu } = await this.measureMode(
+        'gpu-scene',
+        WARMUP,
+        SAMPLES
+      );
 
       const gpuRes: GpuSceneBenchResult = {
         mode: 'gpu-scene',
@@ -228,6 +208,36 @@ export class GPUSceneBenchmarkRunner {
     }
 
     return results;
+  }
+
+  /**
+   * Protocole de mesure d'un mode : warmup puis échantillonnage.
+   * Partagé par Test A et Test B — les deux doivent suivre exactement le même
+   * protocole pour rester comparables.
+   */
+  private async measureMode(
+    mode: 'classic' | 'gpu-scene',
+    warmup: number,
+    samples: number
+  ): Promise<{ avg: number; drawCalls: number }> {
+    const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
+
+    this.setMode(mode);
+    for (let w = 0; w < warmup; w++) {
+      this.renderTick(performance.now());
+      await nextFrame();
+    }
+
+    let sumSubmit = 0;
+    let drawCalls = 0;
+    for (let i = 0; i < samples; i++) {
+      const res = this.renderTick(performance.now());
+      sumSubmit += res.submitMs;
+      drawCalls = res.drawCalls;
+      await nextFrame();
+    }
+
+    return { avg: sumSubmit / samples, drawCalls };
   }
 
   public resize(width: number, height: number) {

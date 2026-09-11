@@ -1,5 +1,38 @@
 import type { GPUObjectData, GPUGeometryData, GPUMaterialData } from '../types.ts';
 
+/**
+ * Layout WGSL d'un GPUObject : 16 floats transform + 4 floats bounding sphere
+ * + 4 u32 metadata = 24 slots de 4 octets = 96 octets.
+ * Source unique de vérité : toute écriture du buffer objet passe par packObject().
+ */
+export const SLOTS_PER_OBJECT = 24;
+export const BYTES_PER_OBJECT = SLOTS_PER_OBJECT * 4;
+
+/** Écrit un objet dans les vues partagées d'un même ArrayBuffer, au slot `index`. */
+export function packObject(
+  floatView: Float32Array,
+  uintView: Uint32Array,
+  index: number,
+  obj: GPUObjectData
+) {
+  const o = index * SLOTS_PER_OBJECT;
+
+  // Transform matrix (16 floats)
+  floatView.set(obj.transform, o);
+
+  // Bounding Sphere (4 floats : x, y, z, radius)
+  floatView[o + 16] = obj.boundingCenterRadius[0];
+  floatView[o + 17] = obj.boundingCenterRadius[1];
+  floatView[o + 18] = obj.boundingCenterRadius[2];
+  floatView[o + 19] = obj.boundingCenterRadius[3];
+
+  // Metadata (4 u32 : geometryId, materialId, flags, padding)
+  uintView[o + 20] = obj.geometryId;
+  uintView[o + 21] = obj.materialId;
+  uintView[o + 22] = obj.flags;
+  uintView[o + 23] = 0;
+}
+
 export class GPUSceneBuffers {
   private device: GPUDevice;
 
@@ -33,7 +66,7 @@ export class GPUSceneBuffers {
 
     // 1. ObjectBuffer : 96 octets par objet (16 floats transform + 4 floats sphere + 4 u32 meta)
     // Alignement WGSL : 24 floats (96 bytes)
-    const objBytes = Math.max(256, this.totalObjects * 96);
+    const objBytes = Math.max(256, this.totalObjects * BYTES_PER_OBJECT);
     this.objectBuffer = this.device.createBuffer({
       label: 'GPUScene.ObjectBuffer',
       size: objBytes,
@@ -95,28 +128,12 @@ export class GPUSceneBuffers {
 
   public uploadObjects(objects: GPUObjectData[]) {
     if (!this.objectBuffer || objects.length === 0) return;
-    const arrayBuffer = new ArrayBuffer(objects.length * 96);
+    const arrayBuffer = new ArrayBuffer(objects.length * BYTES_PER_OBJECT);
     const floatView = new Float32Array(arrayBuffer);
     const uintView = new Uint32Array(arrayBuffer);
 
     for (let i = 0; i < objects.length; i++) {
-      const obj = objects[i];
-      const offsetFloat = i * 24;
-
-      // Transform matrix (16 floats)
-      floatView.set(obj.transform, offsetFloat);
-
-      // Bounding Sphere (4 floats : x, y, z, radius)
-      floatView[offsetFloat + 16] = obj.boundingCenterRadius[0];
-      floatView[offsetFloat + 17] = obj.boundingCenterRadius[1];
-      floatView[offsetFloat + 18] = obj.boundingCenterRadius[2];
-      floatView[offsetFloat + 19] = obj.boundingCenterRadius[3];
-
-      // Metadata (4 u32 : geometryId, materialId, flags, padding)
-      uintView[offsetFloat + 20] = obj.geometryId;
-      uintView[offsetFloat + 21] = obj.materialId;
-      uintView[offsetFloat + 22] = obj.flags;
-      uintView[offsetFloat + 23] = 0;
+      packObject(floatView, uintView, i, objects[i]);
     }
 
     this.device.queue.writeBuffer(this.objectBuffer, 0, arrayBuffer as unknown as BufferSource);

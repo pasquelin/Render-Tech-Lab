@@ -140,7 +140,7 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
     targetVisibility: 1.0,
   },
   'dim-a-100': {
-    name: 'Dim A : 100 topologies (S3 Cible)',
+    name: 'Dim A : 100 topologies',
     dimension: 'A-geometry',
     objectCount: 2000,
     geometryCount: 100,
@@ -176,7 +176,7 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
     targetVisibility: 1.0,
   },
   'dim-c-50': {
-    name: 'Dim C : 50% dynamique (Gate 3)',
+    name: 'Dim C : 50% dynamique',
     dimension: 'C-dynamic',
     objectCount: 2000,
     geometryCount: 10,
@@ -185,7 +185,7 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
     targetVisibility: 1.0,
   },
   'dim-c-100': {
-    name: 'Dim C : 100% dynamique (Torture)',
+    name: 'Dim C : 100% dynamique',
     dimension: 'C-dynamic',
     objectCount: 2000,
     geometryCount: 10,
@@ -203,7 +203,7 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
     targetVisibility: 0.5,
   },
   'pain-500': {
-    name: 'Pain : 500 topologies (5k obj)',
+    name: 'Pain : 500 topologies',
     dimension: 'A-geometry',
     objectCount: 5000,
     geometryCount: 500,
@@ -212,7 +212,7 @@ const SCENE_02_PRESETS: { [key: string]: SceneStressConfig } = {
     targetVisibility: 1.0,
   },
   'pain-1000': {
-    name: 'Torture : 1 000 topologies (10k obj)',
+    name: 'Torture : 1 000 topologies',
     dimension: 'A-geometry',
     objectCount: 10000,
     geometryCount: 1000,
@@ -341,18 +341,21 @@ window.addEventListener('DOMContentLoaded', async () => {
       const options = [
         { val: '500', label: '500 objets uniques' },
         { val: '1000', label: '1 000 objets uniques' },
-        { val: '2000', label: '⚡ 2 000 objets (S3 Coude CPU)', selected: true },
+        { val: '2000', label: '⚡ 2 000 objets', selected: true },
         { val: '5000', label: '5 000 objets uniques' },
-        { val: '10000', label: '🔥 10 000 objets (Pain Test)' },
-        { val: '25000', label: '🔥 25 000 objets (Pain Test)' },
-        { val: '50000', label: '☠️ 50 000 objets (Extreme Pain)' },
-        { val: '100000', label: '☠️ 100 000 objets (Torture Test)' },
+        { val: '10000', label: '🔥 10 000 objets' },
+        { val: '25000', label: '🔥 25 000 objets' },
+        { val: '50000', label: '☠️ 50 000 objets' },
+        { val: '100000', label: '☠️ 100 000 objets' },
       ];
       for (const opt of options) {
         const o = document.createElement('option');
         o.value = opt.val;
         o.innerText = opt.label;
-        if (opt.selected) o.selected = true;
+        if (opt.selected) {
+          o.selected = true;
+          o.classList.add('active');
+        }
         selectCount.appendChild(o);
       }
       btnRunBenchmark.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Benchmark Standard (500 → 5k)</span>';
@@ -362,22 +365,25 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     } else if (moduleId === '02-gpu-scene') {
       const options = [
-        { key: 'dim-a-10', label: '⚡ Dim A · 10 topologies (2k obj, 10 mat)' },
-        { key: 'dim-a-100', label: '⚡ Dim A · 100 topologies (2k obj, S3)', selected: true },
-        { key: 'dim-b-10', label: '⚡ Dim B · 10 matériaux (2k obj, 10 topo)' },
-        { key: 'dim-b-100', label: '⚡ Dim B · 100 matériaux (2k obj, 10 topo)' },
-        { key: 'dim-c-25', label: '⚡ Dim C · 25% dynamique (2k obj)' },
-        { key: 'dim-c-50', label: '⚡ Dim C · 50% dynamique (Gate 3)' },
-        { key: 'dim-c-100', label: '🔥 Dim C · 100% dynamique (Torture)' },
-        { key: 'dim-d-50', label: '⚡ Dim D · 50% visibilité (2k obj)' },
-        { key: 'pain-500', label: '🔥 Pain · 500 topologies (5k obj)' },
-        { key: 'pain-1000', label: '☠️ Torture · 1 000 topologies (10k obj)' },
+        { key: 'dim-a-10', label: '⚡ Dim A · 10 topologies' },
+        { key: 'dim-a-100', label: '⚡ Dim A · 100 topologies', selected: true },
+        { key: 'dim-b-10', label: '⚡ Dim B · 10 matériaux' },
+        { key: 'dim-b-100', label: '⚡ Dim B · 100 matériaux' },
+        { key: 'dim-c-25', label: '⚡ Dim C · 25% dynamique' },
+        { key: 'dim-c-50', label: '⚡ Dim C · 50% dynamique' },
+        { key: 'dim-c-100', label: '🔥 Dim C · 100% dynamique' },
+        { key: 'dim-d-50', label: '⚡ Dim D · 50% visibilité' },
+        { key: 'pain-500', label: '🔥 Pain · 500 topologies' },
+        { key: 'pain-1000', label: '☠️ Torture · 1 000 topologies' },
       ];
       for (const opt of options) {
         const o = document.createElement('option');
         o.value = opt.key;
         o.innerText = opt.label;
-        if (opt.selected) o.selected = true;
+        if (opt.selected) {
+          o.selected = true;
+          o.classList.add('active');
+        }
         selectCount.appendChild(o);
       }
       btnRunBenchmark.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Matrice 4D Complète (Dim A, B, C)</span>';
@@ -393,7 +399,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Bascule globale de module
   async function switchModule(moduleId: string) {
     currentModuleId = moduleId;
-    if (selectModule) selectModule.value = moduleId;
+    if (selectModule) {
+      selectModule.value = moduleId;
+      for (const opt of Array.from(selectModule.options)) {
+        if (opt.value === moduleId) {
+          opt.classList.add('active');
+        } else {
+          opt.classList.remove('active');
+        }
+      }
+    }
 
     const navTitle = document.getElementById('nav-module-title');
     if (navTitle) navTitle.innerText = moduleId;
@@ -662,6 +677,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Changement de charge / scénario
   selectCount.addEventListener('change', async (e) => {
     const val = (e.target as HTMLSelectElement).value;
+
+    for (const opt of Array.from(selectCount.options)) {
+      if (opt.value === val) {
+        opt.classList.add('active');
+      } else {
+        opt.classList.remove('active');
+      }
+    }
+
     if (currentModuleId === '01-gpu-driven') {
       const count = parseInt(val, 10);
       benchStatus.innerText = `Scène ${count} objets...`;
