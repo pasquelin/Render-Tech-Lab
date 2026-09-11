@@ -19,7 +19,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const statFps = document.getElementById('stat-fps') as HTMLElement;
   const statDrawCalls = document.getElementById('stat-drawcalls') as HTMLElement;
   const benchStatus = document.getElementById('bench-status') as HTMLElement;
-  const resultsJson = document.getElementById('results-json') as HTMLPreElement;
+  const btnOpenReports = document.getElementById('btn-open-reports') as HTMLButtonElement | null;
+  const openReportHint = document.getElementById('open-report-hint') as HTMLElement | null;
 
   const runner = new BenchmarkRunner(canvasWebGpu, canvasWebGL, chartCanvas);
   const webGpuSupported = await runner.init();
@@ -96,7 +97,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       report.crossoverObjectCount ? Math.round(report.crossoverObjectCount) + ' objets' : 'Immédiat'
     }`;
     benchStatus.style.color = '#10b981';
-    resultsJson.innerText = mdReport;
 
     try {
       const res = await fetch('/api/save-report', {
@@ -105,12 +105,36 @@ window.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({ testId: '01-gpu-driven', markdown: mdReport }),
       });
       if (res.ok) {
-        benchStatus.innerText += ' | 💾 REPORT.md sauvegardé sur disque';
+        benchStatus.innerText += ' | 💾 REPORT.md actualisé sur disque';
       }
     } catch {
       // Ignore si exécuté hors du serveur de dev Vite
     }
   };
+
+  if (btnOpenReports) {
+    btnOpenReports.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folder: 'reports' }),
+        });
+        if (res.ok) {
+          if (openReportHint) {
+            openReportHint.innerText = '✅ Dossier des rapports ouvert dans le Finder';
+            openReportHint.style.color = '#10b981';
+            setTimeout(() => {
+              openReportHint.innerText = 'Chemins : 01-gpu-driven/results/REPORT.md & reports/';
+              openReportHint.style.color = '#64748b';
+            }, 3000);
+          }
+        }
+      } catch (err) {
+        console.warn('Erreur ouverture dossier :', err);
+      }
+    });
+  }
 
   // Interactions boutons
   btnClassic.addEventListener('click', () => {

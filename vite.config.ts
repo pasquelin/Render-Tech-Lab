@@ -39,8 +39,49 @@ function saveReportPlugin(): Plugin {
               res.end(JSON.stringify({ error: err.message }));
               return;
             }
+
             res.statusCode = 400;
             res.end(JSON.stringify({ error: 'Missing markdown content' }));
+          });
+        } else {
+          res.statusCode = 404;
+          res.end();
+        }
+      });
+
+      server.middlewares.use('/api/open-folder', (req, res) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              const target =
+                data.folder === 'local'
+                  ? path.resolve(server.config.root, '01-gpu-driven', 'results')
+                  : path.resolve(server.config.root, 'reports');
+
+              import('node:child_process').then(({ exec }) => {
+                const cmd =
+                  process.platform === 'darwin'
+                    ? `open "${target}"`
+                    : process.platform === 'win32'
+                    ? `start "" "${target}"`
+                    : `xdg-open "${target}"`;
+                exec(cmd);
+              });
+
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, target }));
+              return;
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: err.message }));
+              return;
+            }
           });
         } else {
           res.statusCode = 404;

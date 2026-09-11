@@ -293,10 +293,18 @@
           </div>
         </div>
 
-        <!-- Rapport JSON -->
+        <!-- Rapports d'analyse -->
         <div class="panel-section">
-          <div class="panel-title">Export Résultats (JSON)</div>
-          <pre id="results-json">{ "status": "En attente du benchmark" }</pre>
+          <div class="panel-title">Rapports & Suivi R&D</div>
+          <div style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 12px;">
+            Les résultats sont archivés directement dans le fichier unique <code>REPORT.md</code> du module.
+          </div>
+          <button id="btn-open-reports" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: #0f172a; border-color: #38bdf8; color: #f1f5f9; font-size: 0.85rem; padding: 10px;">
+            📁 Ouvrir le dossier des rapports
+          </button>
+          <div id="open-report-hint" style="font-size: 0.72rem; color: #64748b; margin-top: 8px; text-align: center;">
+            Chemins : <code>01-gpu-driven/results/REPORT.md</code> & <code>reports/</code>
+          </div>
         </div>
       </div>
     </main>
