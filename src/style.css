@@ -59,3 +59,8 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(82.901% 0.031 222.959 / 0.35);
 }
+
+/* Jamais de retour à la ligne dans les boutons applicatifs */
+.btn {
+  white-space: nowrap;
+}
