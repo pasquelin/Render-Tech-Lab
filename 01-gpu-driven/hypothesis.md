@@ -1,71 +1,71 @@
-# Protocole R&D : 01-gpu-driven (Architecture GPU-Driven)
+# R&D Protocol: 01-gpu-driven (GPU-Driven Architecture)
 
-> **Règle gouvernante :** On ne complexifie le moteur que lorsqu'une mesure reproductible démontre que l'architecture actuelle limite réellement le produit.
+> **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.
 
 ---
 
-## 1. Hypothèse
-- **Problème identifié :** Dans Three.js standard, le rendu de scènes comportant un nombre élevé d'objets uniques (scénario S3 : $\ge 2\,000$ objets) sature le thread principal en CPU submission (`submitMs`). Le culling CPU requiert de traverser le graphe de scène, d'évaluer le frustum objet par objet, et d'encoder individuellement des milliers de draw calls, ce qui crée un goulot d'étranglement bien avant la saturation du GPU.
-- **Hypothèse technique :** Déporter le frustum culling et la génération des commandes de dessin dans un Compute Shader WebGPU écrivant dans un buffer `drawIndexedIndirect`, tout en conservant une scène aplatie en `StorageBuffer` GPU sans retour CPU (zéro round-trip), réduira `submitMs` à une valeur constante $O(1)$ et débloquera le taux de rafraîchissement.
-- **Seuil de déclenchement (Trigger / Crossover) :** L'architecture GPU-driven est justifiée si le point de croisement (*crossover point*) survient à $\le 2\,000$ objets uniques, avec un gain sur le frametime CPU d'au moins 50% sur le scénario S3 ($2\,000$ objets), sans dégradation inacceptable du frametime GPU ($\le +0.5\,\text{ms}$ pour la passe compute).
-- **Gain attendu (KPI chiffré) :** 
-  - `CPU submitMs` réduit de $> 70\%$ sur 2 000 objets.
-  - Taux d'images par seconde stabilisé à 60 FPS constants sur scènes denses.
-  - 1 seul draw call CPU au lieu de $N$ draw calls.
+## 1. Hypothesis
+- **Problem observed:** In standard Three.js, rendering scenes with a high count of unique objects (scenario S3: $\ge 2\,000$ objects) saturates the main thread with CPU submission (`submitMs`). CPU culling requires walking the scene graph, testing the frustum object by object, and encoding thousands of draw calls one at a time — a bottleneck that hits long before the GPU saturates.
+- **Technical hypothesis:** Moving frustum culling and draw-command generation into a WebGPU compute shader that writes a `drawIndexedIndirect` buffer, while keeping the scene flattened into a GPU `StorageBuffer` with no CPU read-back (zero round-trip), will reduce `submitMs` to a constant $O(1)$ and unlock the frame rate.
+- **Trigger threshold (crossover):** The GPU-driven architecture is justified if the crossover point lands at $\le 2\,000$ unique objects, with at least a 50% CPU frametime gain on scenario S3 ($2\,000$ objects), and no unacceptable GPU frametime regression ($\le +0.5\,\text{ms}$ for the compute pass).
+- **Expected gain (quantified KPI):**
+  - `CPU submitMs` down by $> 70\%$ at 2 000 objects.
+  - Frame rate held at a steady 60 FPS on dense scenes.
+  - A single CPU draw call instead of $N$ draw calls.
 
 ---
 
 ## 2. Prototype
-- **Description du banc d'essai :** 
-  - Même scène procédurale générant $N$ maillages uniques disposés dans un volume 3D avec caméra orbitale / trajectoire oscillante.
-  - Comparaison directe entre **Test A** (Three.js classique avec `WebGPURenderer`) et **Test B** (Mini-renderer GPU-driven avec `IndirectStorageBufferAttribute` et compute pass).
-- **Périmètre d'isolation :** Les deux tests partagent rigoureusement les mêmes géométries, matériaux PBR et matrices de projection caméra.
-- **Fichiers sources :** 
+- **Bench description:**
+  - The same procedural scene generating $N$ unique meshes spread through a 3D volume, with an orbital / oscillating camera path.
+  - A head-to-head between **Test A** (classic Three.js on `WebGPURenderer`) and **Test B** (GPU-driven mini-renderer using `IndirectStorageBufferAttribute` and a compute pass).
+- **Isolation boundary:** Both tests share exactly the same geometries, PBR materials and camera projection matrices.
+- **Source files:**
   - `01-gpu-driven/baseline/` (Test A)
   - `01-gpu-driven/implementation/` (Test B)
-  - `01-gpu-driven/benchmark/` (Runner & Métriques)
+  - `01-gpu-driven/benchmark/` (runner & metrics)
 
 ---
 
 ## 3. Benchmark
-- **Scénarios de test :** Paliers de charge à 500, 1 000, 2 000 et 5 000 objets.
-- **Matériel cible :** macOS (Metal via WebGPU), Chrome/Edge avec WebGPU activé.
-- **Métriques relevées :**
+- **Test scenarios:** Load tiers at 500, 1 000, 2 000 and 5 000 objects.
+- **Target hardware:** macOS (Metal through WebGPU), Chrome/Edge with WebGPU enabled.
+- **Metrics recorded:**
   - `CPU frame time` (`ms`)
   - `CPU submitMs` (`ms`)
-  - `GPU frame time` via timestamp queries (`ms`)
-  - `Draw calls CPU count`
-  - `GPU Compute dispatches`
-  - Consommation mémoire VRAM (`MB`)
+  - `GPU frame time` through timestamp queries (`ms`)
+  - CPU draw-call count
+  - GPU compute dispatches
+  - VRAM usage (`MB`)
 
 ---
 
 ## 4. Profiling
-- **Outils utilisés :** Performance Timeline / User Timing API, Chrome Tracing (`chrome://tracing`), Metal System Trace / WebGPU Timestamp Queries.
-- **Observations goulots :** Analyse de la courbe de charge CPU submission vs coût fixe du dispatch compute.
-- **Comportement thermique & stabilité :** Absence de memory leak et stabilité des allocations de buffers indirects.
+- **Tools used:** Performance Timeline / User Timing API, Chrome Tracing (`chrome://tracing`), Metal System Trace / WebGPU timestamp queries.
+- **Bottleneck observations:** Analysis of the CPU submission load curve against the fixed cost of the compute dispatch.
+- **Thermal behaviour & stability:** No memory leaks, and stable allocation of the indirect buffers.
 
 ---
 
 ## 5. Gain
-- **Résultats bruts :**
-  - Palier 500 objets : Baseline `... ms` vs GPU-driven `... ms` (Delta : `... %`)
-  - Palier 1 000 objets : Baseline `... ms` vs GPU-driven `... ms` (Delta : `... %`)
-  - Palier 2 000 objets : Baseline `... ms` vs GPU-driven `... ms` (Delta : `... %`)
-  - Palier 5 000 objets : Baseline `... ms` vs GPU-driven `... ms` (Delta : `... %`)
-- **Point de croisement constaté :** `... objets`
-- **Confirmation de l'hypothèse :** [ ] Validée / [ ] Invalidée
+- **Raw results:**
+  - 500-object tier: baseline `... ms` vs GPU-driven `... ms` (delta: `... %`)
+  - 1 000-object tier: baseline `... ms` vs GPU-driven `... ms` (delta: `... %`)
+  - 2 000-object tier: baseline `... ms` vs GPU-driven `... ms` (delta: `... %`)
+  - 5 000-object tier: baseline `... ms` vs GPU-driven `... ms` (delta: `... %`)
+- **Observed crossover point:** `... objects`
+- **Hypothesis confirmed:** [ ] Validated / [ ] Invalidated
 
 ---
 
-## 6. Coût
-- **Complexité du code :** Gestion explicite des StorageBuffers de scène, maintenance des shaders de culling compute WGSL/TSL.
-- **Overhead mémoire / bande passante :** VRAM additionnelle pour le buffer de commandes indirectes et le buffer de records d'instances.
-- **Coût d'intégration :** Évaluation du passage Niveau A (TSL direct) vs Niveau B (Three.js common backend) vs Niveau C (Fork expérimental).
+## 6. Cost
+- **Code complexity:** Explicit management of the scene storage buffers, plus maintenance of the WGSL/TSL culling compute shaders.
+- **Memory / bandwidth overhead:** Extra VRAM for the indirect command buffer and the instance record buffer.
+- **Integration cost:** Weighing Level A (direct TSL) against Level B (Three.js common backend) and Level C (experimental fork).
 
 ---
 
-## 7. Décision
-- **Verdict :** [ ] Intégration dans le moteur principal / [ ] Maintien en veille (Watchlist) / [ ] Abandon
-- **Justification :** 
-- **Prochaines étapes :** (Phase 3 : Ajout de la sélection LOD screen-space GPU).
+## 7. Decision
+- **Verdict:** [ ] Merge into the main engine / [ ] Keep on the watchlist / [ ] Drop
+- **Rationale:** 
+- **Next steps:** (Phase 3 — add GPU screen-space LOD selection.)

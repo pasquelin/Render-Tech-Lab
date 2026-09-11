@@ -1,17 +1,20 @@
 # 06-virtual-textures — Virtual Textures & Mip Streaming (SVT)
 
 ## Description
-Sparse Virtual Texturing (SVT) avec GPU feedback buffer et streaming dynamique de tuiles de textures compressées (KTX2/Basis) pour maîtriser l'empreinte VRAM.
+Sparse virtual texturing with a GPU feedback buffer and dynamic streaming of compressed texture tiles (KTX2/Basis) to keep the VRAM footprint under control.
 
-## Protocole de validation
-Chaque étude suit rigoureusement le cycle gouvernant :
-$$\text{Hypothèse} \rightarrow \text{Prototype} \rightarrow \text{Benchmark} \rightarrow \text{Profiling} \rightarrow \text{Gain} \rightarrow \text{Coût} \rightarrow \text{Décision}$$
+## Validation protocol
+Every study follows the governing cycle, in order:
 
-Remplir et maintenir [`hypothesis.md`](hypothesis.md) à chaque étape de l'investigation.
+```text
+Hypothesis → Prototype → Benchmark → Profiling → Gain → Cost → Decision
+```
 
-## Structure du module
-- `hypothesis.md` : Fiche de cadrage, protocole expérimental, métriques et décision finale.
-- `baseline/` : Implémentation ou scène de référence (moteur actuel sans la technique).
-- `implementation/` : Prototype expérimental de la nouvelle architecture / passe.
-- `benchmark/` : Scripts de test automatisés et scénarios de charge reproductibles.
-- `results/` : Traces de capture, métriques chiffrées, graphiques et comparaisons visuelles.
+Fill in and keep [`hypothesis.md`](hypothesis.md) up to date at every step of the investigation.
+
+## Module layout
+- `hypothesis.md` — scoping sheet, experimental protocol, metrics and final verdict.
+- `baseline/` — reference implementation or scene (current engine, without the technique).
+- `implementation/` — experimental prototype of the new architecture / pass.
+- `benchmark/` — automated test scripts and reproducible load scenarios.
+- `results/` — capture traces, measured metrics, charts and visual comparisons.

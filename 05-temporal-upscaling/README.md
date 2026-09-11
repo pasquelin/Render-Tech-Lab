@@ -1,7 +1,7 @@
-# 00-baseline — Reference Floor (Baseline)
+# 05-tsr — Temporal Super Resolution (TSR / TAAU)
 
 ## Description
-Reference WebGPU/TSL harness measuring the current engine across the S0 to S5 scenarios. It is the zero point every other module is compared against.
+Temporal upscaling and anti-aliasing algorithms (sub-pixel reprojection with jittering and motion vectors) to lower native resolution without giving up sharpness.
 
 ## Validation protocol
 Every study follows the governing cycle, in order:

@@ -1,10 +1,10 @@
-# Rapports & Synthèses d'Arbitrage
+# Reports & Arbitration Summaries
 
-Ce dossier regroupe les bilans consolidés, graphiques comparatifs et décisions d'architecture validées ou rejetées.
+This folder holds the consolidated findings, comparison charts and architecture decisions — accepted or rejected.
 
-## Format des rapports
-Chaque rapport d'arbitrage résume :
-1. Le problème produit réel constaté sur le terrain ou en banc S0-S5.
-2. Le comparatif de performance (Baseline vs Prototype).
-3. Le ratio Gain / Coût (complexité d'intégration, overhead VRAM/CPU).
-4. La décision formelle (Intégration moteur principal, Rejet, ou Veille Watchlist).
+## Report format
+Every arbitration report states:
+1. The real product problem seen in the field or on the S0–S5 bench.
+2. The performance comparison (baseline vs prototype).
+3. The gain / cost ratio (integration complexity, VRAM/CPU overhead).
+4. The formal decision (merge into the main engine, reject, or keep on the watchlist).

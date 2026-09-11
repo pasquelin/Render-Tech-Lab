@@ -1,4 +1,4 @@
-# R&D Protocol: Virtual Textures & Mip Streaming (SVT)
+# R&D Protocol: Dynamic Global Illumination (Lumen-inspired)
 
 > **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.
 

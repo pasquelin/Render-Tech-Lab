@@ -1,7 +1,7 @@
-# 00-baseline — Reference Floor (Baseline)
+# 02-nanite-inspired — Meshlet & Cluster Culling (Nanite-inspired)
 
 ## Description
-Reference WebGPU/TSL harness measuring the current engine across the S0 to S5 scenarios. It is the zero point every other module is compared against.
+Virtualized geometry architecture built on meshlet partitioning, GPU cluster culling and continuous level-of-detail selection.
 
 ## Validation protocol
 Every study follows the governing cycle, in order:

@@ -1,7 +1,7 @@
-# 00-baseline — Reference Floor (Baseline)
+# 04-lumen-inspired — Dynamic Global Illumination (Lumen-inspired / SSGI / Radiance Cascades)
 
 ## Description
-Reference WebGPU/TSL harness measuring the current engine across the S0 to S5 scenarios. It is the zero point every other module is compared against.
+Real-time dynamic global illumination techniques (TSL SSGI, radiance cascades, indirect-bounce approximations) adapted to WebGPU constraints.
 
 ## Validation protocol
 Every study follows the governing cycle, in order:

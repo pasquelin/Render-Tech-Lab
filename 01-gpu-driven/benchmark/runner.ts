@@ -21,7 +21,7 @@ export class BenchmarkRunner {
   private camera: THREE.PerspectiveCamera;
   private baseGeometry: THREE.BufferGeometry;
 
-  private currentMode: 'classic' | 'gpu-driven' = 'gpu-driven';
+  public currentMode: 'classic' | 'gpu-driven' = 'gpu-driven';
   private currentCount: number = 2000;
   private isBenchmarking: boolean = false;
   private frameCount: number = 0;

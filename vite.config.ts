@@ -6,6 +6,7 @@ function saveReportPlugin(): Plugin {
   return {
     name: 'save-report-plugin',
     configureServer(server) {
+      // 1. Sauvegarde du rapport Markdown sur disque
       server.middlewares.use('/api/save-report', (req, res) => {
         if (req.method === 'POST') {
           let body = '';
@@ -19,12 +20,12 @@ function saveReportPlugin(): Plugin {
               const markdown = data.markdown;
 
               if (markdown) {
-                // 1. Sauvegarde dans le dossier de résultats du test : <testId>/results/REPORT.md
+                // Sauvegarde locale au module
                 const testReportPath = path.resolve(server.config.root, testId, 'results', 'REPORT.md');
                 fs.mkdirSync(path.dirname(testReportPath), { recursive: true });
                 fs.writeFileSync(testReportPath, markdown, 'utf-8');
 
-                // 2. Sauvegarde synchronisée dans le dossier global reports/<testId>.md
+                // Sauvegarde synchronisée dans reports/
                 const globalReportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
                 fs.mkdirSync(path.dirname(globalReportPath), { recursive: true });
                 fs.writeFileSync(globalReportPath, markdown, 'utf-8');
@@ -49,6 +50,38 @@ function saveReportPlugin(): Plugin {
         }
       });
 
+      // 2. Lecture du rapport pour affichage dans l'application
+      server.middlewares.use('/api/get-report', (req, res) => {
+        try {
+          const url = new URL(req.url || '', 'http://localhost');
+          const rawId = url.searchParams.get('testId') || '01-gpu-driven';
+          const testId = path.basename(rawId);
+          const reportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
+          const localReportPath = path.resolve(server.config.root, testId, 'results', 'REPORT.md');
+
+          let content = '';
+          if (fs.existsSync(reportPath)) {
+            content = fs.readFileSync(reportPath, 'utf-8');
+          } else if (fs.existsSync(localReportPath)) {
+            content = fs.readFileSync(localReportPath, 'utf-8');
+          }
+
+          if (content) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.end(content);
+          } else {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.end(`Rapport "${testId}" non trouvé. Exécutez d'abord le benchmark.`);
+          }
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.end(`Erreur serveur : ${err.message}`);
+        }
+      });
+
+      // 3. Révélation du dossier ou fichier dans le Finder / Explorer de l'OS
       server.middlewares.use('/api/open-folder', (req, res) => {
         if (req.method === 'POST') {
           let body = '';
@@ -58,24 +91,58 @@ function saveReportPlugin(): Plugin {
           req.on('end', () => {
             try {
               const data = JSON.parse(body || '{}');
-              const target =
-                data.folder === 'local'
-                  ? path.resolve(server.config.root, '01-gpu-driven', 'results')
+              const rawId = data.testId || '01-gpu-driven';
+              const testId = path.basename(rawId);
+              const folderType = data.folder || 'reports';
+
+              const targetDir =
+                folderType === 'local'
+                  ? path.resolve(server.config.root, testId, 'results')
                   : path.resolve(server.config.root, 'reports');
 
+              const targetFile =
+                folderType === 'local'
+                  ? path.resolve(targetDir, 'REPORT.md')
+                  : path.resolve(targetDir, `${testId}.md`);
+
+              if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+              }
+
               import('node:child_process').then(({ exec }) => {
-                const cmd =
-                  process.platform === 'darwin'
-                    ? `open "${target}"`
-                    : process.platform === 'win32'
-                    ? `start "" "${target}"`
-                    : `xdg-open "${target}"`;
-                exec(cmd);
+                let cmd = '';
+                if (process.platform === 'darwin') {
+                  // Sur macOS : si le fichier cible existe, on le révèle dans Finder avec -R
+                  // Sinon on ouvre directement le dossier.
+                  if (fs.existsSync(targetFile)) {
+                    cmd = `open -R "${targetFile}"`;
+                  } else {
+                    cmd = `open "${targetDir}"`;
+                  }
+                } else if (process.platform === 'win32') {
+                  cmd = fs.existsSync(targetFile)
+                    ? `explorer.exe /select,"${targetFile}"`
+                    : `explorer.exe "${targetDir}"`;
+                } else {
+                  cmd = `xdg-open "${targetDir}"`;
+                }
+
+                exec(cmd, (error) => {
+                  if (error) {
+                    console.error('Erreur ouverture Finder/Explorer :', error.message);
+                  }
+                });
               });
 
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, target }));
+              res.end(
+                JSON.stringify({
+                  success: true,
+                  targetDir,
+                  targetFile: fs.existsSync(targetFile) ? targetFile : null,
+                })
+              );
               return;
             } catch (err: any) {
               res.statusCode = 500;
@@ -95,7 +162,7 @@ function saveReportPlugin(): Plugin {
 export default defineConfig({
   plugins: [saveReportPlugin()],
   server: {
-    port: 5173,
+    port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
     open: false,
   },
   build: {

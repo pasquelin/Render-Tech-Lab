@@ -1,73 +1,73 @@
 # 01-gpu-driven — GPU-Driven Rendering Pipeline
 
 ## Description
-Architecture de rendu pilotée par le GPU pour Three.js / WebGPU. L'objectif fondamental est d'éliminer le goulot d'étranglement de soumission CPU (`submitMs` / boucle séquentielle de draw calls) en transférant l'évaluation de visibilité (culling), le choix de niveau de détail (LOD) et l'émission des commandes de rendu directement sur le GPU via compute shaders et `drawIndexedIndirect`.
+A GPU-driven rendering architecture for Three.js / WebGPU. The core goal is to remove the CPU submission bottleneck (`submitMs` / the sequential draw-call loop) by moving visibility evaluation (culling), level-of-detail selection and render-command emission onto the GPU itself, through compute shaders and `drawIndexedIndirect`.
 
-> **Principe invariant : Zéro retour de visibilité vers le CPU.**  
-> Aucun `mapAsync(READ)` ni lecture bloquante de compteurs de visibilité n'est toléré dans la boucle de frame.
-
----
-
-## Les 5 Phases d'Évolution du Laboratoire
-
-```
-Phase 1 : Suppression du CPU Submit (Frustum culling GPU + Indirect Buffer)
-   │
-   ▼
-Phase 2 : Descente d'Abstraction (Niveau A TSL → Niveau B Common Backend → Niveau C Fork)
-   │
-   ▼
-Phase 3 : Sélection LOD GPU (Métrique Screen-Space Error sans round-trip)
-   │
-   ▼
-Phase 4 : Partitionnement en Meshlets & Cluster Culling (Approche Nanite)
-   │
-   ▼
-Phase 5 : Hi-Z Occlusion Culling (Pyramide de profondeur + indirect compaction)
-```
+> **Invariant: zero visibility read-back to the CPU.**
+> No `mapAsync(READ)`, no blocking read of visibility counters, is tolerated inside the frame loop.
 
 ---
 
-## Matrice des 4 Bancs d'Essai Comparatifs (Scène étalon : 2 000 objets)
+## The five phases of the lab
 
-| Banc | Nom | Culling & LOD | Soumission | Mesure clé |
+```
+Phase 1: Remove CPU submit (GPU frustum culling + indirect buffer)
+   │
+   ▼
+Phase 2: Descend the abstraction (Level A TSL → Level B common backend → Level C fork)
+   │
+   ▼
+Phase 3: GPU LOD selection (screen-space error metric, no round-trip)
+   │
+   ▼
+Phase 4: Meshlet partitioning & cluster culling (Nanite-style)
+   │
+   ▼
+Phase 5: Hi-Z occlusion culling (depth pyramid + indirect compaction)
+```
+
+---
+
+## The four comparative benches (reference scene: 2 000 objects)
+
+| Bench | Name | Culling & LOD | Submission | Key measurement |
 |:---:|---|---|---|---|
-| **Test A** | **Three.js Classique** | CPU Frustum culling objet par objet | 2 000 `drawIndexed` séquentiels via `WebGPURenderer` | Baseline de référence CPU submit |
-| **Test B** | **GPU Culling** | Compute Pass GPU Frustum + compactage atomique | 1 appel `drawIndexedIndirect` | Effondrement de `submitMs` |
-| **Test C** | **GPU Culling + LOD** | GPU Frustum + Screen-space error metric (LOD0..LOD3) | `drawIndexedIndirect` multi-LOD | Réduction géométrie sans surcoût CPU |
-| **Test D** | **GPU Culling + LOD + Hi-Z** | GPU Frustum + Hi-Z occlusion + LOD | `drawIndexedIndirect` compacté | Rejet précoce des objets masqués |
+| **Test A** | **Classic Three.js** | Per-object CPU frustum culling | 2 000 sequential `drawIndexed` through `WebGPURenderer` | CPU submit reference baseline |
+| **Test B** | **GPU culling** | GPU compute pass, frustum + atomic compaction | A single `drawIndexedIndirect` | Collapse of `submitMs` |
+| **Test C** | **GPU culling + LOD** | GPU frustum + screen-space error metric (LOD0..LOD3) | Multi-LOD `drawIndexedIndirect` | Geometry reduction at no CPU cost |
+| **Test D** | **GPU culling + LOD + Hi-Z** | GPU frustum + Hi-Z occlusion + LOD | Compacted `drawIndexedIndirect` | Early rejection of occluded objects |
 
 ---
 
-## Recherche du Point de Croisement (*Crossover Point*)
+## Finding the crossover point
 
-Le banc teste automatiquement 4 paliers de complexité :
-- **500 objets**
-- **1 000 objets**
-- **2 000 objets** (Stress soumission CPU — Spec 13 / Scénario S3)
-- **5 000 objets**
+The harness automatically sweeps four complexity tiers:
+- **500 objects**
+- **1 000 objects**
+- **2 000 objects** (CPU submission stress — scenario S3)
+- **5 000 objects**
 
-L'objectif est d'identifier la courbe de charge et le seuil exact où l'overhead de dispatch compute GPU devient inférieur au coût d'encodage de commandes CPU de Three.js.
+The point is to trace the load curve and find the exact threshold where GPU compute dispatch overhead becomes cheaper than Three.js's CPU command encoding.
 
 ```text
 CPU submit (ms)
   ▲
-3 │                     ╱ (Three.js classique - O(N))
+3 │                     ╱ (classic Three.js — O(N))
   │                   ╱
 2 │                 ╱
-  │   ────────────╱───────── (GPU-driven - O(1) CPU)
+  │   ────────────╱───────── (GPU-driven — O(1) on the CPU)
 1 │             ╱
   │           ╱
-0 ┼─────────▲───────────────► Nombre d'objets
+0 ┼─────────▲───────────────► Object count
   0        1k      2k      5k
-           └─ Crossover Point
+           └─ Crossover point
 ```
 
 ---
 
-## Structure du Dossier
-- [`hypothesis.md`](hypothesis.md) : Protocole d'arbitrage R&D, critères de décision et seuils de bascule.
-- `baseline/` : Scène et moteur de rendu Test A (Three.js standard).
-- `implementation/` : Mini-renderer expérimental Test B (StorageBuffers plats, compute shader, indirect draw).
-- `benchmark/` : Harnais de mesure automatisé, instrumentation haute précision et profilage.
-- `results/` : Données collectées (JSON), courbes de crossover et traces WebGPU.
+## Module layout
+- [`hypothesis.md`](hypothesis.md) — R&D arbitration protocol, decision criteria and switch-over thresholds.
+- `baseline/` — Test A scene and renderer (standard Three.js).
+- `implementation/` — Test B experimental mini-renderer (flat storage buffers, compute shader, indirect draw).
+- `benchmark/` — automated measurement harness, high-precision instrumentation and profiling.
+- `results/` — collected data (JSON), crossover curves and WebGPU traces.

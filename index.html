@@ -204,16 +204,203 @@
         padding: 8px;
         border-radius: 4px;
       }
+      .module-switcher {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #0c1017;
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 6px;
+      }
+      .module-switcher select {
+        background: transparent;
+        border: none;
+        color: #38bdf8;
+        font-weight: 600;
+        font-size: 0.84rem;
+        padding: 0;
+        margin: 0;
+        outline: none;
+        cursor: pointer;
+        width: auto;
+      }
+      /* Styles Modal Rapport */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .modal-card {
+        background: #0d121c;
+        border: 1px solid #1e293b;
+        border-radius: 10px;
+        width: 100%;
+        max-width: 960px;
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid #1e293b;
+        background: #090e17;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+      }
+      .modal-title {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #f8fafc;
+      }
+      .modal-subtitle {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-family: monospace;
+      }
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 22px 26px;
+        color: #cbd5e1;
+        font-size: 0.88rem;
+        line-height: 1.65;
+      }
+      .modal-body h1 {
+        font-size: 1.4rem;
+        color: #f1f5f9;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #1e293b;
+      }
+      .modal-body h2 {
+        font-size: 1.15rem;
+        color: #38bdf8;
+        margin-top: 18px;
+        margin-bottom: 10px;
+      }
+      .modal-body h3 {
+        font-size: 1rem;
+        color: #e2e8f0;
+        margin-top: 14px;
+        margin-bottom: 6px;
+      }
+      .modal-body p {
+        margin-bottom: 10px;
+      }
+      .modal-body blockquote {
+        border-left: 3px solid #38bdf8;
+        background: rgba(56, 189, 248, 0.07);
+        padding: 8px 14px;
+        margin: 12px 0;
+        border-radius: 0 4px 4px 0;
+        color: #94a3b8;
+      }
+      .modal-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+        font-size: 0.82rem;
+      }
+      .modal-body th, .modal-body td {
+        border: 1px solid #334155;
+        padding: 7px 12px;
+        text-align: left;
+      }
+      .modal-body th {
+        background: #111827;
+        color: #f1f5f9;
+        font-weight: 600;
+      }
+      .modal-body tr:nth-child(even) {
+        background: rgba(30, 41, 59, 0.3);
+      }
+      .modal-body code {
+        background: #111827;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #38bdf8;
+        border: 1px solid #1f2937;
+      }
+      .modal-body pre {
+        background: #05070a;
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        border: 1px solid #1e293b;
+        margin: 12px 0;
+      }
+      .modal-body pre code {
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: #e2e8f0;
+      }
+      .modal-body ul, .modal-body ol {
+        margin: 8px 0 12px 24px;
+      }
+      .modal-body hr {
+        border: none;
+        border-top: 1px solid #1e293b;
+        margin: 18px 0;
+      }
+      .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-top: 1px solid #1e293b;
+        background: #090e17;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+      }
+      #view-baseline {
+        position: absolute;
+        inset: 0;
+        background: #0a0e17;
+        padding: 28px;
+        overflow-y: auto;
+        display: none;
+        color: #e2e8f0;
+      }
     </style>
   </head>
   <body>
     <header>
       <div class="logo">
-        <span>render-tech-lab</span> / 01-gpu-driven
-        <div class="badge">Protocole R&D</div>
+        <span>render-tech-lab</span>
+        <div class="badge">R&D Lab</div>
       </div>
-      <div style="font-size: 0.85rem; color: var(--text-dim);">
-        Cycle gouvernant : Hypothèse → Prototype → Benchmark → Crossover
+
+      <!-- Sélecteur de banc d'essai R&D (Module switcher) -->
+      <div class="module-switcher">
+        <label for="select-module" style="font-size: 0.78rem; color: var(--text-dim);">Module R&D :</label>
+        <select id="select-module">
+          <option value="01-gpu-driven" selected>01 - GPU-Driven Indirect Draw (Actif)</option>
+          <option value="00-baseline">00 - Baseline Spec 13 (S0–S5)</option>
+          <option value="02-nanite-inspired" disabled>02 - Nanite-inspired Meshlets (Prévu)</option>
+          <option value="03-virtual-shadow-maps" disabled>03 - Virtual Shadow Maps (Prévu)</option>
+          <option value="04-lumen-inspired" disabled>04 - Lumen-inspired SDF (Prévu)</option>
+          <option value="05-tsr" disabled>05 - Temporal Super Resolution (Prévu)</option>
+          <option value="06-virtual-textures" disabled>06 - Virtual Textures (Prévu)</option>
+          <option value="07-render-graph" disabled>07 - Render Graph Asynchrone (Prévu)</option>
+        </select>
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px;">
+        <span>Cycle : Hypothèse → Proto → Benchmark → Crossover</span>
       </div>
     </header>
 
@@ -223,22 +410,128 @@
         <canvas id="canvas-webgl" class="render-canvas" style="display: none;"></canvas>
         <!-- Canvas WebGPU pour Test B -->
         <canvas id="canvas-webgpu" class="render-canvas"></canvas>
+
+        <!-- Vue dédiée au module 00-baseline -->
+        <div id="view-baseline">
+          <div style="max-width: 900px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #1e293b; padding-bottom: 14px;">
+              <div>
+                <h1 style="font-size: 1.5rem; color: #f1f5f9;">00 - Baseline Socle Normalisée (Spec 13)</h1>
+                <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 4px;">
+                  Point de référence étalon Three.js standard sur les scénarios S0 à S5
+                </p>
+              </div>
+              <button id="btn-baseline-report-view" class="primary" style="font-size: 0.8rem; padding: 8px 14px; display: flex; align-items: center; gap: 6px;">
+                📄 Voir le rapport 00-baseline.md
+              </button>
+            </div>
+
+            <div style="background: #0f1523; border: 1px solid #1e293b; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+              <h2 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 10px;">Règle d'or gouvernante</h2>
+              <blockquote style="border-left: 3px solid #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 10px 14px; border-radius: 0 4px 4px 0; color: #94a3b8; font-size: 0.88rem;">
+                « Aucune infrastructure majeure n'est adoptée sans qu'un banc démontre que l'architecture actuelle est le facteur limitant. »
+              </blockquote>
+            </div>
+
+            <h2 style="font-size: 1.15rem; color: #f1f5f9; margin-bottom: 12px;">Matrice des scénarios étalons Spec 13 :</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.84rem;">
+              <thead>
+                <tr style="background: #111827;">
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Scénario</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Intitulé</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Objets</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Mode</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Submit CPU</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Goulot Dominant</th>
+                  <th style="border: 1px solid #334155; padding: 8px 12px;">Déclencheur R&D</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #38bdf8;">S0</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Baseline minimale</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">1</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Unique</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace;">0.08 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #10b981;">Aucun</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #94a3b8;">Témoin zéro</td>
+                </tr>
+                <tr>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #38bdf8;">S1</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">500 instanciés</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">500</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Instanciation Three</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace;">0.12 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #10b981;">Aucun</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #94a3b8;">Validation instancing</td>
+                </tr>
+                <tr>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #38bdf8;">S2</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">1 000 instanciés</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">1 000</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Instanciation Three</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace;">0.18 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #10b981;">Aucun</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #94a3b8;">Montée en charge</td>
+                </tr>
+                <tr style="background: rgba(239, 68, 68, 0.1);">
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #ef4444;">S3</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold;">2 000 uniques</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">2 000</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Mesh distincts</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace; font-weight: bold; color: #ef4444;">3.35 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #ef4444; font-weight: bold;">CPU Soumission</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #f59e0b; font-weight: bold;">👉 Déclencheur 01-gpu-driven</td>
+                </tr>
+                <tr>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #38bdf8;">S4</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">30 lumières dynamiques</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">200</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">30 PointLights</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace;">0.45 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #f59e0b;">GPU Passes</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #94a3b8;">Déclencheur 04-lumen</td>
+                </tr>
+                <tr style="background: rgba(239, 68, 68, 0.15);">
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold; color: #ef4444;">S5</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-weight: bold;">Hostile</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">5 000</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px;">Mesh distincts + 8 lumières</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; font-family: monospace; font-weight: bold; color: #ef4444;">8.45 ms</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #ef4444; font-weight: bold;">CPU Soumission</td>
+                  <td style="border: 1px solid #334155; padding: 8px 12px; color: #f59e0b; font-weight: bold;">Justifie GPU-Driven + Hi-Z</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="display: flex; gap: 12px;">
+              <button id="btn-back-to-gpu" style="padding: 10px 16px; background: #0284c7; border-color: #38bdf8; color: white;">
+                ⚡ Passer au banc actif : 01-gpu-driven
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="sidebar">
         <!-- Contrôles Mode -->
         <div class="panel-section">
-          <div class="panel-title">Mode d'exécution</div>
-          <div class="btn-group">
-            <button id="btn-classic">Test A (Three.js)</button>
-            <button id="btn-gpu-driven" class="active">Test B (GPU-Driven)</button>
+          <div class="panel-title">
+            <span>1. Pipeline actif (Test A vs Test B)</span>
           </div>
-          <div style="margin-top: 10px;">
+          <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 8px; line-height: 1.35;">
+            Basculez entre les deux pipelines pour comparer immédiatement l'impact CPU :
+          </div>
+          <div class="btn-group">
+            <button id="btn-classic">Test A (Three.js WebGL)</button>
+            <button id="btn-gpu-driven" class="active">Test B (GPU-Driven WebGPU)</button>
+          </div>
+          <div style="margin-top: 12px;">
             <label style="font-size: 0.75rem; color: var(--text-dim);">Palier d'objets uniques</label>
             <select id="select-count">
               <option value="500">500 objets</option>
               <option value="1000">1 000 objets</option>
-              <option value="2000" selected>2 000 objets (S3 Stress CPU)</option>
+              <option value="2000" selected>2 000 objets (S3 Coude CPU)</option>
               <option value="5000">5 000 objets</option>
               <option value="10000">🔥 10 000 objets (Pain Test)</option>
               <option value="25000">🔥 25 000 objets (Pain Test)</option>
@@ -250,7 +543,7 @@
 
         <!-- Métriques en direct -->
         <div class="panel-section">
-          <div class="panel-title">Métriques en Direct (Frame)</div>
+          <div class="panel-title">2. Métriques en Direct (Frame)</div>
           <div class="stat-grid">
             <div class="stat-card">
               <div class="stat-label">CPU Submit Time</div>
@@ -276,7 +569,7 @@
 
         <!-- Courbe Crossover -->
         <div class="panel-section">
-          <div class="panel-title">Courbe de Croisement & Tests de Douleur</div>
+          <div class="panel-title">3. Courbe de Croisement & Douleur</div>
           <div id="chart-container">
             <canvas id="canvas-chart" width="380" height="220"></canvas>
           </div>
@@ -295,19 +588,54 @@
 
         <!-- Rapports d'analyse -->
         <div class="panel-section">
-          <div class="panel-title">Rapports & Suivi R&D</div>
-          <div style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 12px;">
-            Les résultats sont archivés directement dans le fichier unique <code>REPORT.md</code> du module.
+          <div class="panel-title">4. Rapports & Suivi R&D</div>
+          <div style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 10px;">
+            Rapports persistants uniques : <code>REPORT.md</code>
           </div>
-          <button id="btn-open-reports" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: #0f172a; border-color: #38bdf8; color: #f1f5f9; font-size: 0.85rem; padding: 10px;">
-            📁 Ouvrir le dossier des rapports
-          </button>
-          <div id="open-report-hint" style="font-size: 0.72rem; color: #64748b; margin-top: 8px; text-align: center;">
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-view-report" class="primary" style="flex: 1.2; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; padding: 9px;">
+              📄 Consulter le rapport
+            </button>
+            <button id="btn-open-reports" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: #1e293b; border-color: #38bdf8; color: #f1f5f9; font-size: 0.82rem; padding: 9px;">
+              📁 Révéler dans Finder
+            </button>
+          </div>
+          <div id="open-report-hint" style="font-size: 0.72rem; color: #64748b; margin-top: 8px; text-align: center; word-break: break-all;">
             Chemins : <code>01-gpu-driven/results/REPORT.md</code> & <code>reports/</code>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- Modal de consultation du rapport Markdown -->
+    <div id="report-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">📄</span>
+            <div>
+              <div class="modal-title" id="modal-report-title">Rapport d'analyse R&D — REPORT.md</div>
+              <div class="modal-subtitle" id="modal-report-path">reports/01-gpu-driven.md</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="btn-copy-report" style="font-size: 0.75rem; padding: 6px 10px;">📋 Copier Markdown</button>
+            <button id="btn-refresh-report" style="font-size: 0.75rem; padding: 6px 10px;">🔄 Recharger</button>
+            <button id="btn-close-modal" style="font-size: 1.1rem; line-height: 1; padding: 4px 8px; background: transparent; border: none; color: #94a3b8; cursor: pointer;">✕</button>
+          </div>
+        </div>
+        <div class="modal-body" id="modal-report-body">
+          <!-- Contenu Markdown mis en forme -->
+        </div>
+        <div class="modal-footer">
+          <div id="modal-feedback" style="font-size: 0.75rem; color: #10b981;"></div>
+          <div style="display: flex; gap: 10px;">
+            <button id="btn-modal-open-finder" style="font-size: 0.8rem; padding: 6px 12px; background: #0f172a; border-color: #38bdf8;">📁 Révéler dans Finder</button>
+            <button id="btn-modal-close" class="primary" style="font-size: 0.8rem; padding: 6px 16px;">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/01-gpu-driven/main.ts"></script>
   </body>

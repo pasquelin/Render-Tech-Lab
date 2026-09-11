@@ -2,6 +2,8 @@
   "name": "render-tech-lab",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "description": "Real-time rendering R&D lab for WebGPU / Three.js TSL — isolated modules, reproducible benchmarks, measured gain/cost decisions.",
   "type": "module",
   "scripts": {
     "start": "vite",

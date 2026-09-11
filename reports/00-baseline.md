@@ -1,37 +1,37 @@
-# Rapport de Référence Socle : 00-baseline
+# Reference Floor Report: 00-baseline
 
-**Périmètre :** Moteur Three.js standard de référence (Spec 11 & Spec 13)  
-**Dernière mise à jour :** 11/09/2026 16:43:47  
-**Objectif :** Établir la courbe de charge étalon S0 à S5 pour servir de point zéro à tous les modules R&D.
+**Scope:** standard Three.js reference engine
+**Last updated:** 2026-09-11 16:43:47
+**Goal:** establish the reference S0–S5 load curve, the zero point every R&D module is measured against.
 
-> **Règle gouvernante :** Aucune infrastructure majeure n'est adoptée sans qu'un banc démontre que l'architecture actuelle est le facteur limitant.
-
----
-
-## 1. Courbe de Charge Officielle S0–S5 (Three.js Standard)
-
-| Scénario | Intitulé | Objets | Instancié | Lumières | Submit CPU | Frame CPU | Draw Calls | Goulot Dominant |
-|:---:|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **S0** | Baseline minimale | 1 | Non | 1 | **0.08 ms** | 0.45 ms | 2 | Aucun |
-| **S1** | 500 instanciés | 500 | Oui | 2 | **0.12 ms** | 0.65 ms | 3 | Aucun |
-| **S2** | 1 000 instanciés | 1000 | Oui | 2 | **0.18 ms** | 0.85 ms | 3 | Aucun |
-| **S3** | 2 000 uniques | 2000 | Non | 2 | **3.35 ms** | 4.15 ms | 2002 | CPU Soumission |
-| **S4** | 30 lumières dynamiques | 200 | Oui | 30 | **0.45 ms** | 1.95 ms | 31 | GPU |
-| **S5** | Hostile | 5000 | Non | 8 | **8.45 ms** | 10.20 ms | 5008 | CPU Soumission |
+> **Governing rule:** no major infrastructure is adopted until a bench proves the current architecture is the limiting factor.
 
 ---
 
-## 2. Enseignements & Déclencheurs R&D
+## 1. Official S0–S5 load curve (standard Three.js)
 
-1. **Le Coude CPU de S3 (2 000 objets uniques) :**
-   - Sur S1 et S2 (instanciés), le moteur tient sans difficulté ($submit < 0.2\,\text{ms}$).
-   - Dès que les objets sont uniques (S3), le temps de soumission explose à **$3.35\,\text{ms}$** pour $2\,000$ draw calls.
-   - **Décision R&D :** C'est ce coude précis qui justifie l'ouverture du module [**01-gpu-driven**](../01-gpu-driven/README.md).
+| Scenario | Name | Objects | Instanced | Lights | CPU submit | CPU frame | Draw calls | Dominant bottleneck |
+|:---:|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **S0** | Minimal baseline | 1 | No | 1 | **0.08 ms** | 0.45 ms | 2 | None |
+| **S1** | 500 instanced | 500 | Yes | 2 | **0.12 ms** | 0.65 ms | 3 | None |
+| **S2** | 1 000 instanced | 1000 | Yes | 2 | **0.18 ms** | 0.85 ms | 3 | None |
+| **S3** | 2 000 unique | 2000 | No | 2 | **3.35 ms** | 4.15 ms | 2002 | CPU submission |
+| **S4** | 30 dynamic lights | 200 | Yes | 30 | **0.45 ms** | 1.95 ms | 31 | GPU |
+| **S5** | Hostile | 5000 | No | 8 | **8.45 ms** | 10.20 ms | 5008 | CPU submission |
 
-2. **Le Stress Passes de S4 (30 lumières) :**
-   - La soumission reste contenue, mais le frametime GPU augmente.
-   - **Décision R&D :** Sujet suivi par le module [**04-lumen-inspired**](../04-lumen-inspired/README.md).
+---
 
-3. **Le Scénario Hostile S5 :**
-   - Décrochage sévère ($8.45\,\text{ms}$ de soumission CPU).
-   - Justifie les techniques combinées : GPU-driven, LOD automatique (Meshoptimizer), et Hi-Z.
+## 2. Findings & R&D triggers
+
+1. **The S3 CPU knee (2 000 unique objects):**
+   - On S1 and S2 (instanced), the engine copes without effort ($\text{submit} < 0.2\,\text{ms}$).
+   - As soon as the objects become unique (S3), submission time explodes to **$3.35\,\text{ms}$** for $2\,000$ draw calls.
+   - **R&D decision:** this precise knee is what justifies opening the [**01-gpu-driven**](../01-gpu-driven/README.md) module.
+
+2. **The S4 pass stress (30 lights):**
+   - Submission stays contained, but GPU frametime rises.
+   - **R&D decision:** tracked by the [**04-lumen-inspired**](../04-lumen-inspired/README.md) module.
+
+3. **The S5 hostile scenario:**
+   - Severe breakdown ($8.45\,\text{ms}$ of CPU submission).
+   - Justifies the combined techniques: GPU-driven rendering, automatic LODs (meshoptimizer) and Hi-Z.

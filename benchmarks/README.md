@@ -1,17 +1,17 @@
-# Benchmarks Centraux
+# Shared Benchmarks
 
-Ce dossier regroupe les bancs de mesure standardisés et réutilisables par l'ensemble des modules d'architecture.
+This folder holds the standardised measurement harnesses that every architecture module reuses.
 
-## Catégories de mesure
-- `cpu/` : Mesures de charge de soumission CPU, temps d'encodage de commandes, garbage collection et impact multi-threads/workers.
-- `gpu/` : Profilage des temps de frame GPU (`timestamp-query`), coût des passes et temps d'exécution des compute shaders.
-- `memory/` : Suivi de l'empreinte VRAM, allocations tampons/textures, fuites de mémoire et bande passante.
-- `image-quality/` : Validation par écart quadratique moyen (RMS), PSNR, SSIM et comparaison différentielle par rapport aux Golden Stills.
+## Measurement categories
+- `cpu/` — CPU submission load, command encoding time, garbage collection and multi-thread/worker impact.
+- `gpu/` — GPU frame-time profiling (`timestamp-query`), per-pass cost and compute shader execution time.
+- `memory/` — VRAM footprint, buffer/texture allocations, memory leaks and bandwidth.
+- `image-quality/` — validation through root-mean-square deviation (RMS), PSNR, SSIM and differential comparison against the golden stills.
 
-## Scénarios de charge de référence (Courbe S0–S5)
-- **S0** : Baseline minimale
-- **S1** : 500 objets instanciés
-- **S2** : 1 000 objets instanciés
-- **S3** : 2 000 objets uniques (stress soumission CPU)
-- **S4** : 30 lumières dynamiques (stress passes GPU)
-- **S5** : Scénario hostile (cumul géométrie dense, lumières dynamiques, ombres)
+## Reference load scenarios (S0–S5 curve)
+- **S0** — minimal baseline
+- **S1** — 500 instanced objects
+- **S2** — 1 000 instanced objects
+- **S3** — 2 000 unique objects (CPU submission stress)
+- **S4** — 30 dynamic lights (GPU pass stress)
+- **S5** — hostile scenario (dense geometry, dynamic lights and shadows combined)

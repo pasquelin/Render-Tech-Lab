@@ -1,17 +1,20 @@
 # 03-virtual-shadow-maps — Virtual Shadow Maps (VSM)
 
 ## Description
-Gestion paginée d'atlas d'ombres virtuelles pour éliminer les artefacts de cascades et offrir des ombres nettes sur de grandes étendues avec géométrie dense.
+Paged virtual shadow atlas management, to remove cascade artefacts and deliver sharp shadows over large extents with dense geometry.
 
-## Protocole de validation
-Chaque étude suit rigoureusement le cycle gouvernant :
-$$\text{Hypothèse} \rightarrow \text{Prototype} \rightarrow \text{Benchmark} \rightarrow \text{Profiling} \rightarrow \text{Gain} \rightarrow \text{Coût} \rightarrow \text{Décision}$$
+## Validation protocol
+Every study follows the governing cycle, in order:
 
-Remplir et maintenir [`hypothesis.md`](hypothesis.md) à chaque étape de l'investigation.
+```text
+Hypothesis → Prototype → Benchmark → Profiling → Gain → Cost → Decision
+```
 
-## Structure du module
-- `hypothesis.md` : Fiche de cadrage, protocole expérimental, métriques et décision finale.
-- `baseline/` : Implémentation ou scène de référence (moteur actuel sans la technique).
-- `implementation/` : Prototype expérimental de la nouvelle architecture / passe.
-- `benchmark/` : Scripts de test automatisés et scénarios de charge reproductibles.
-- `results/` : Traces de capture, métriques chiffrées, graphiques et comparaisons visuelles.
+Fill in and keep [`hypothesis.md`](hypothesis.md) up to date at every step of the investigation.
+
+## Module layout
+- `hypothesis.md` — scoping sheet, experimental protocol, metrics and final verdict.
+- `baseline/` — reference implementation or scene (current engine, without the technique).
+- `implementation/` — experimental prototype of the new architecture / pass.
+- `benchmark/` — automated test scripts and reproducible load scenarios.
+- `results/` — capture traces, measured metrics, charts and visual comparisons.
