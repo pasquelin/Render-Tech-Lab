@@ -1,7 +1,7 @@
 # Reference Floor Report: 00-baseline
 
-**Scope:** standard Three.js reference engine
-**Last updated:** 2026-09-11 16:43:47
+**Scope:** standard Three.js reference engine  
+**Last updated:** 2026-09-11 14:54:57 UTC  
 **Goal:** establish the reference S0–S5 load curve, the zero point every R&D module is measured against.
 
 > **Governing rule:** no major infrastructure is adopted until a bench proves the current architecture is the limiting factor.
@@ -11,7 +11,7 @@
 ## 1. Official S0–S5 load curve (standard Three.js)
 
 | Scenario | Name | Objects | Instanced | Lights | CPU submit | CPU frame | Draw calls | Dominant bottleneck |
-|:---:|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|:---:|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **S0** | Minimal baseline | 1 | No | 1 | **0.08 ms** | 0.45 ms | 2 | None |
 | **S1** | 500 instanced | 500 | Yes | 2 | **0.12 ms** | 0.65 ms | 3 | None |
 | **S2** | 1 000 instanced | 1000 | Yes | 2 | **0.18 ms** | 0.85 ms | 3 | None |
@@ -30,8 +30,8 @@
 
 2. **The S4 pass stress (30 lights):**
    - Submission stays contained, but GPU frametime rises.
-   - **R&D decision:** tracked by the [**04-lumen-inspired**](../04-lumen-inspired/README.md) module.
+   - **R&D decision:** tracked by the [**04-global-illumination**](../04-global-illumination/README.md) module.
 
 3. **The S5 hostile scenario:**
    - Severe breakdown ($8.45\,\text{ms}$ of CPU submission).
-   - Justifies the combined techniques: GPU-driven rendering, automatic LODs (meshoptimizer) and Hi-Z.
+   - Justifies the combined techniques: GPU-driven rendering, automatic LODs (meshoptimizer) and Hi-Z culling.

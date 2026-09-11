@@ -20,7 +20,7 @@ Phase 2: Descend the abstraction (Level A TSL → Level B common backend → Lev
 Phase 3: GPU LOD selection (screen-space error metric, no round-trip)
    │
    ▼
-Phase 4: Meshlet partitioning & cluster culling (Nanite-style)
+Phase 4: Meshlet partitioning & cluster culling
    │
    ▼
 Phase 5: Hi-Z occlusion culling (depth pyramid + indirect compaction)

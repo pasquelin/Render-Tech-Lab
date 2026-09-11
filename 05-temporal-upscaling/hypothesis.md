@@ -1,4 +1,4 @@
-# R&D Protocol: Temporal Super Resolution (TSR / TAAU)
+# R&D Protocol: Temporal Upscaling & Anti-Aliasing (TAAU)
 
 > **Governing rule:** the engine only grows more complex once a reproducible measurement proves that the current architecture is genuinely limiting the product.
 

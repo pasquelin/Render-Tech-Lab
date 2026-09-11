@@ -1,7 +1,7 @@
-# 04-lumen-inspired — Dynamic Global Illumination (Lumen-inspired / SSGI / Radiance Cascades)
+# 04-global-illumination — Dynamic Global Illumination (SSGI / Radiance Cascades)
 
 ## Description
-Real-time dynamic global illumination techniques (TSL SSGI, radiance cascades, indirect-bounce approximations) adapted to WebGPU constraints.
+Real-time dynamic global illumination techniques (TSL screen-space GI, radiance cascades, indirect-bounce approximations) adapted to WebGPU constraints.
 
 ## Validation protocol
 Every study follows the governing cycle, in order:

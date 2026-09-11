@@ -21,12 +21,12 @@ export interface BaselineScenarioDef {
 }
 
 export const BASELINE_SCENARIOS: BaselineScenarioDef[] = [
-  { id: 'S0', name: 'Baseline minimale', description: 'Scène témoin minimale', objectCount: 1, isInstanced: false, lightCount: 1 },
-  { id: 'S1', name: '500 instanciés', description: 'Test de l\'instanciation standard Three.js', objectCount: 500, isInstanced: true, lightCount: 2 },
-  { id: 'S2', name: '1 000 instanciés', description: 'Montée en charge géométrie instanciée', objectCount: 1000, isInstanced: true, lightCount: 2 },
-  { id: 'S3', name: '2 000 uniques', description: 'Goulot d\'étranglement de soumission CPU', objectCount: 2000, isInstanced: false, lightCount: 2 },
-  { id: 'S4', name: '30 lumières dynamiques', description: 'Stress passes d\'éclairage et de forward/deferred', objectCount: 200, isInstanced: true, lightCount: 30 },
-  { id: 'S5', name: 'Hostile', description: 'Cumul géométrie dense et charge multiple', objectCount: 5000, isInstanced: false, lightCount: 8 },
+  { id: 'S0', name: 'Minimal baseline', description: 'Minimal control scene', objectCount: 1, isInstanced: false, lightCount: 1 },
+  { id: 'S1', name: '500 instanced', description: 'Standard Three.js instancing test', objectCount: 500, isInstanced: true, lightCount: 2 },
+  { id: 'S2', name: '1 000 instanced', description: 'Instanced geometry scale-up', objectCount: 1000, isInstanced: true, lightCount: 2 },
+  { id: 'S3', name: '2 000 unique', description: 'CPU submission bottleneck', objectCount: 2000, isInstanced: false, lightCount: 2 },
+  { id: 'S4', name: '30 dynamic lights', description: 'Lighting and forward/deferred pass stress', objectCount: 200, isInstanced: true, lightCount: 30 },
+  { id: 'S5', name: 'Hostile', description: 'Dense geometry combined with multiple loads', objectCount: 5000, isInstanced: false, lightCount: 8 },
 ];
 
 export class ReferenceEngineScene {

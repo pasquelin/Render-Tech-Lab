@@ -1,4 +1,4 @@
-# 02-nanite-inspired — Meshlet & Cluster Culling (Nanite-inspired)
+# 02-virtualized-geometry — Meshlet & Cluster Culling
 
 ## Description
 Virtualized geometry architecture built on meshlet partitioning, GPU cluster culling and continuous level-of-detail selection.

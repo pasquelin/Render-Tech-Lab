@@ -37,10 +37,10 @@ Hypothesis → Prototype → Benchmark → Profiling → Gain → Cost → Decis
 |---|---|---|
 | [**00-baseline**](00-baseline/README.md) | Reference WebGPU/TSL floor — S0–S5 load curve, golden stills | [hypothesis.md](00-baseline/hypothesis.md) |
 | [**01-gpu-driven**](01-gpu-driven/README.md) | GPU-driven rendering, frustum & Hi-Z culling (compute / indirect draw) | [hypothesis.md](01-gpu-driven/hypothesis.md) |
-| [**02-nanite-inspired**](02-nanite-inspired/README.md) | Virtualized geometry, meshlets & cluster culling | [hypothesis.md](02-nanite-inspired/hypothesis.md) |
+| [**02-virtualized-geometry**](02-virtualized-geometry/README.md) | Virtualized geometry, meshlets & cluster culling | [hypothesis.md](02-virtualized-geometry/hypothesis.md) |
 | [**03-virtual-shadow-maps**](03-virtual-shadow-maps/README.md) | Virtual shadow maps (VSM) & paged atlas | [hypothesis.md](03-virtual-shadow-maps/hypothesis.md) |
-| [**04-lumen-inspired**](04-lumen-inspired/README.md) | Dynamic global illumination (TSL SSGI, radiance cascades) | [hypothesis.md](04-lumen-inspired/hypothesis.md) |
-| [**05-tsr**](05-tsr/README.md) | Temporal super resolution (TSR / TAAU) & upscaling | [hypothesis.md](05-tsr/hypothesis.md) |
+| [**04-global-illumination**](04-global-illumination/README.md) | Dynamic global illumination (TSL screen-space GI, radiance cascades) | [hypothesis.md](04-global-illumination/hypothesis.md) |
+| [**05-temporal-upscaling**](05-temporal-upscaling/README.md) | Temporal upscaling & anti-aliasing (TAAU) | [hypothesis.md](05-temporal-upscaling/hypothesis.md) |
 | [**06-virtual-textures**](06-virtual-textures/README.md) | Sparse virtual texturing (SVT) & mip streaming | [hypothesis.md](06-virtual-textures/hypothesis.md) |
 | [**07-render-graph**](07-render-graph/README.md) | Render graph & transient resource aliasing | [hypothesis.md](07-render-graph/hypothesis.md) |
 
@@ -95,7 +95,7 @@ These subjects are neither rejected nor scheduled. They stay dormant and only op
 | Subject | Trigger that would reopen it |
 |---|---|
 | **Progressive path-traced final render** | A product-value decision (film/reference-image export), not raw performance |
-| **GPU-driven rendering, Hi-Z, meshlets** | A proven CPU knee on S3/S5, with a gain larger than the cost of forking Three.js |
+| **GPU-driven rendering, Hi-Z culling, meshlets** | A proven CPU knee on S3/S5, with a gain larger than the cost of forking Three.js |
 | **Render graph & transient aliasing** | Render-target allocations proven to dominate bandwidth |
 | **Texture streaming, mip residency** | A proven VRAM budget overrun on a real project |
 | **Dynamic resolution scaling (DRS)** | After the TSL batch, if frame time becomes unstable during interaction |

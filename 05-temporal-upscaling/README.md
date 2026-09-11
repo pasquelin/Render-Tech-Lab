@@ -1,4 +1,4 @@
-# 05-tsr — Temporal Super Resolution (TSR / TAAU)
+# 05-temporal-upscaling — Temporal Upscaling & Anti-Aliasing (TAAU)
 
 ## Description
 Temporal upscaling and anti-aliasing algorithms (sub-pixel reprojection with jittering and motion vectors) to lower native resolution without giving up sharpness.
