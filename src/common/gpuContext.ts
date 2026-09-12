@@ -17,6 +17,7 @@ let sharedDevice: GPUDevice | null = null;
 let sharedAdapter: GPUAdapter | null = null;
 export function getAdapterInfo(): GPUAdapterInfo | null { return sharedAdapter?.info ?? null; }
 let sharedGLRenderer: THREE.WebGLRenderer | null = null;
+let sharedGLCanvas: HTMLCanvasElement | null = null;
 
 /**
  * Device WebGPU unique du banc. Les features optionnelles réellement obtenues
@@ -65,6 +66,7 @@ export function configureCanvas(
 
 /** Renderer Three.js unique pour le canvas WebGL du Test A. */
 export function getSharedGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
+  if (sharedGLRenderer && sharedGLCanvas !== canvas) releaseSharedGLRenderer();
   if (!sharedGLRenderer) {
     sharedGLRenderer = new THREE.WebGLRenderer({
       canvas,
@@ -72,6 +74,14 @@ export function getSharedGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRende
       powerPreference: 'high-performance',
     });
     sharedGLRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    sharedGLCanvas = canvas;
   }
   return sharedGLRenderer;
+}
+
+export function releaseSharedGLRenderer(canvas?: HTMLCanvasElement): void {
+  if (!sharedGLRenderer || canvas && sharedGLCanvas !== canvas) return;
+  sharedGLRenderer.dispose();
+  sharedGLRenderer = null;
+  sharedGLCanvas = null;
 }

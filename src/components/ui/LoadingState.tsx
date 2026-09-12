@@ -1,0 +1,1 @@
+export function LoadingState({message}:{message:string}){return <section data-ui-state="loading" role="status" className="flex flex-col items-center justify-center text-center gap-3 p-6"><span className="loading loading-spinner loading-md text-primary" aria-hidden="true"/><p>{message}</p></section>;}

@@ -1,0 +1,4 @@
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary'|'secondary'|'danger'|'ghost'|'outline'; size?: 'xs'|'sm'|'md'; loading?: boolean };
+const variants = { primary:'btn-lab-primary', secondary:'btn-lab-secondary', danger:'btn-lab-danger', ghost:'btn-ghost', outline:'btn-outline' };
+export const Button = forwardRef<HTMLButtonElement, Props>(function Button({variant='primary',size='sm',loading=false,className='',children,disabled,...props},ref){return <button ref={ref} disabled={disabled||loading} aria-busy={loading||undefined} className={`btn btn-${size} ${variants[variant]} ${className}`} {...props}>{loading?<span className="loading loading-spinner loading-xs" aria-hidden="true"/>:null}{children}</button>;});

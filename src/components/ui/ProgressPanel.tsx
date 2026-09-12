@@ -1,0 +1,1 @@
+export function ProgressPanel({message,value,max}:{message:string;value?:number;max?:number}){return <section role="status" className="rounded-box border border-base-content/10 bg-base-200 p-4 space-y-2"><p className="text-sm">{message}</p>{value!==undefined&&max!==undefined?<progress className="progress progress-primary w-full" value={value} max={max}/>:null}</section>;}

@@ -1,36 +1,63 @@
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import type { Plugin } from 'vite';
+import { atomicWrite, comparisonRetention } from '../shared/archive/index.ts';
 
 const MAX_BODY_BYTES = 16 * 1024 * 1024;
 const RUN_ID = /^\d{8}T\d{9}Z-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 const COMMON_SOURCE_FILES = ['benchmarks/lodComparisonPlugin.ts', 'package.json', 'pnpm-lock.yaml'] as const;
 const LOD_SOURCE_FILES = [
-  '04-gpu-lod/cpuLodSelector.ts',
+  'index.html',
+  'src/main.tsx',
+  'src/App.tsx',
+  'src/style.css',
+  'src/components/UnifiedLab.tsx',
+  'src/components/LabShell.tsx',
+  'src/components/LabViewport.tsx',
+  'src/components/ViewportCanvases.tsx',
+  'src/components/LabSidebar.tsx',
+  'src/common/gpuContext.ts',
+  'shared/gpu/timing.ts',
+  '04-gpu-lod/implementation/gpuLodShader.ts',
+  '04-gpu-lod/implementation/nativeLodRenderer.ts',
+  '04-gpu-lod/implementation/nativeLodShaders.ts',
+  '04-gpu-lod/runner/nativeComparison.ts',
+  '04-gpu-lod/runner/nativePage.ts',
+  '04-gpu-lod/implementation/cpuLodSelector.ts',
   'shared/math/screenSpaceError.ts',
   'shared/scene/random.ts',
-  '04-gpu-lod/benchmark/variants.ts',
-  '04-gpu-lod/benchmark/sceneComparison.ts',
-  '04-gpu-lod/benchmark/comparisonTypes.ts',
-  '04-gpu-lod/benchmark/comparisonReporter.ts',
-  '04-gpu-lod/benchmark/comparisonPage.ts',
+  '04-gpu-lod/runner/variants.ts',
+  '04-gpu-lod/runner/sceneComparison.ts',
+  '04-gpu-lod/runner/comparisonTypes.ts',
+  '04-gpu-lod/runner/comparisonReporter.ts',
+  '04-gpu-lod/runner/comparisonPage.ts',
+  '04-gpu-lod/runner/ComparisonApp.tsx',
+  '04-gpu-lod/runner/comparisonMain.tsx',
+  '04-gpu-lod/comparison.html',
   ...COMMON_SOURCE_FILES,
 ] as const;
 const WORLD_SOURCE_FILES = [
   'index.html',
-  'src/main.ts',
+  'src/main.tsx',
+  'src/App.tsx',
   'src/style.css',
-  '14-open-world/worldScene.ts',
-  '14-open-world/worldTypes.ts',
-  '14-open-world/worldPage.ts',
-  '14-open-world/worldMatrix.ts',
+  'src/components/UnifiedLab.tsx',
+  'src/components/LabShell.tsx',
+  'src/components/LabViewport.tsx',
+  'src/components/ViewportCanvases.tsx',
+  'src/components/LabSidebar.tsx',
+  '14-open-world/implementation/worldScene.ts',
+  '14-open-world/implementation/adaptiveCulling.ts',
+  '14-open-world/contracts.ts',
+  '14-open-world/implementation/worldPage.ts',
+  '14-open-world/scenarios/worldMatrix.ts',
   '14-open-world/index.html',
-  '14-open-world/worldReporter.ts',
+  '14-open-world/runner/reporter.ts',
   'public/benchmark-assets/bistro/manifest.json',
   ...COMMON_SOURCE_FILES,
 ] as const;
@@ -111,33 +138,32 @@ async function captureSources(root: string, moduleId: ComparisonModuleId, report
     }
   })));
   let provenanceVerification = 'unavailable';
+  let publishLatest = true;
   if (report.provenance !== undefined) {
     const provenance = report.provenance;
-    if (!isRecord(provenance) || provenance.sourcesStable !== true) {
+    if (!isRecord(provenance)) {
       throw new ComparisonRequestError('Provenance absente ou instable : sauvegarde refusée.', 409);
     }
+    const stable = provenance.sourcesStable === true;
     for (const phase of ['before', 'after']) {
       const metadata = provenance[phase];
       const hashes = isRecord(metadata) ? metadata.sourceHashes : undefined;
       if (!isRecord(hashes) || Object.keys(hashes).length !== config.sourceFiles.length
-          || config.sourceFiles.some(file => !Object.hasOwn(hashes, file) || hashes[file] !== files[file].sha256)) {
+          || config.sourceFiles.some(file => !Object.hasOwn(hashes, file))) {
+        throw new ComparisonRequestError(`Sources modifiées ou empreintes incomplètes (${phase}) : sauvegarde refusée.`, 409);
+      }
+      if (stable && config.sourceFiles.some(file => hashes[file] !== files[file].sha256)) {
         throw new ComparisonRequestError(`Sources modifiées ou empreintes incomplètes (${phase}) : sauvegarde refusée.`, 409);
       }
     }
-    provenanceVerification = 'matched-before-and-after';
+    if (stable) provenanceVerification = 'matched-before-and-after';
+    else {
+      provenanceVerification = 'unstable-archived';
+      publishLatest = false;
+    }
   }
-  return { schemaVersion: 1, moduleId, capturedAt: new Date().toISOString(), provenanceVerification,
+  return { schemaVersion: 1, moduleId, capturedAt: new Date().toISOString(), provenanceVerification, publishLatest,
     sourceSetSha256: createHash('sha256').update(JSON.stringify(files)).digest('hex'), files };
-}
-
-async function atomicWrite(file: string, content: string) {
-  const temporary = `${file}.${randomUUID()}.tmp`;
-  try {
-    await writeFile(temporary, content, { flag: 'wx' });
-    await rename(temporary, file);
-  } finally {
-    await unlink(temporary).catch(() => undefined);
-  }
 }
 
 /** Writes only dedicated comparison files. Existing REPORT.md/latest.json are untouched. */
@@ -163,13 +189,17 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
       const json = `${JSON.stringify(snapshot.report, null, 2)}\n`;
       await mkdir(archives, { recursive: true });
       await mkdir(reports, { recursive: true });
-      await writeFile(path.join(archives, `${id}.sources.json`), `${JSON.stringify(sources, null, 2)}\n`, { flag: 'wx' });
+      const { publishLatest, ...archivedSources } = sources;
+      await writeFile(path.join(archives, `${id}.sources.json`), `${JSON.stringify(archivedSources, null, 2)}\n`, { flag: 'wx' });
       await writeFile(path.join(archives, `${id}.md`), snapshot.markdown, { flag: 'wx' });
       await writeFile(path.join(archives, `${id}.json`), json, { flag: 'wx' });
-      await atomicWrite(path.join(results, 'comparison-latest.json'), json);
-      await atomicWrite(path.join(results, 'COMPARISON.md'), snapshot.markdown);
-      await atomicWrite(path.join(reports, config.reportFile), snapshot.markdown);
-      return runInfo(id, snapshot.report, config.apiBase);
+      if (publishLatest) {
+        await atomicWrite(path.join(results, 'comparison-latest.json'), json);
+        await atomicWrite(path.join(results, 'COMPARISON.md'), snapshot.markdown);
+        await atomicWrite(path.join(reports, config.reportFile), snapshot.markdown);
+      }
+      await comparisonRetention(archives, true);
+      return { ...runInfo(id, snapshot.report, config.apiBase), published: publishLatest };
     });
     pending = operation.catch(() => undefined);
     return operation;

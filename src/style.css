@@ -42,6 +42,25 @@ html, body {
   width: 100%;
   overflow: hidden;
   user-select: none;
+  scrollbar-gutter: stable;
+}
+
+#root, .drawer, .drawer-content, #sidebar, #viewport-container {
+  min-width: 0;
+  min-height: 0;
+}
+
+#sidebar, [data-execution-view] {
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Barres de défilement sobres et fines */
@@ -87,7 +106,7 @@ html, body {
 .btn-lab-secondary:hover {
   background-color: oklch(35% 0.025 264);
   border-color: oklch(82.901% 0.031 222.959 / 0.55);
-  color: #ffffff;
+  color: oklch(100% 0 0);
 }
 
 .btn-lab-danger {
@@ -109,3 +128,21 @@ select option.active {
   font-weight: 600;
 }
 
+
+/* Execution locks remain visible even with the laboratory's custom button colors. */
+button:disabled,
+select:disabled,
+input:disabled,
+a[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: saturate(0.35);
+  box-shadow: none;
+}
+
+/* Use the sidebar's actual width, not the browser width, for the metrics row. */
+.lab-live-stats { container-type: inline-size; }
+.lab-live-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@container (min-width: 360px) {
+  .lab-live-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
