@@ -18,9 +18,11 @@ pnpm-debug.log*
 .env
 .env.local
 
-files_local
 .vite/
 benchmark-runs/
+.playwright-mcp/
+.worktrees/
+.agents/
 
-# Generated licensed Bistro benchmark assets (large local files)
-/public/benchmark-assets/bistro/
+/files_local/
+/public/benchmark-assets/
