@@ -129,33 +129,4 @@ export class TimestampBatch {
   }
 }
 
-export interface CompletionSample {
-  frames: number;
-  cpuEncodeSubmitMs: number;
-  queueWallMs: number;
-  gpuMs: null;
-  method: 'queue-completion';
-}
 
-// Dedicated queue, no concurrent producer; encodeAndSubmit performs REAL frames.
-// Out is caller-owned. Keep count/queue depth identical across variants.
-// This measures a block's completed throughput, NOT a per-frame GPU percentile.
-export async function measureCompletionBlock(
-  device: GPUDevice,
-  frames: number,
-  encodeAndSubmit: (index: number) => void,
-  out: CompletionSample,
-): Promise<void> {
-  if (!Number.isInteger(frames) || frames < 1) throw new Error('Invalid frame count');
-  await device.queue.onSubmittedWorkDone();
-  const start = performance.now();
-  for (let i = 0; i < frames; i++) encodeAndSubmit(i);
-  const submitted = performance.now();
-  await device.queue.onSubmittedWorkDone();
-  const completed = performance.now();
-  out.frames = frames;
-  out.cpuEncodeSubmitMs = submitted - start;
-  out.queueWallMs = completed - start;
-  out.gpuMs = null;
-  out.method = 'queue-completion';
-}

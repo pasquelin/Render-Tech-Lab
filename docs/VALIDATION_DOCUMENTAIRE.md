@@ -1,4 +1,6 @@
-# Bilan de transfert et validation documentaire
+# Bilan de transfert et validation documentaire — laboratoire
+
+Partie laboratoire : protocoles, recettes ou suivi documentaire. La conception du produit est conservée dans [Web Geometry](../../webGeometry/docs/architecture/DECISIONS_A_SPECIFIER.md). Les numéros historiques des sections sont conservés.
 
 Ce bilan décrit la passe de transfert initiale (25 documents). La [campagne comparative ajoutée ensuite](PREUVES_COMPARATIVES_OPTIMISATION.md) possède ses propres sources, mesures et limites ; les nombres et exclusions historiques ci-dessous ne sont pas l'inventaire de ce complément.
 
@@ -18,12 +20,12 @@ Les 19 documents de départ ont été complétés par six chapitres :
 
 | Chapitre ajouté | Connaissances conservées |
 |---|---|
-| [Construction et compression avancées](CONSTRUCTION_ET_COMPRESSION_AVANCEES.md) | partition, QEM multiattribut, métriques, prédiction, strips, palettes, pages et outils numériques |
-| [Projection, profondeur et couleur](PROJECTION_PROFONDEUR_ET_COULEUR.md) | sphères projetées, profondeur stable, reconstruction, atlas et matériau commun |
-| [Stratégies avancées](STRATEGIES_AVANCEES.md) | routage, imposteurs, groupes d’instances, parcours GPU, ombres paginées et raccords entre assets |
-| [Assemblages et procédural](ASSEMBLAGES_ET_PROCEDURAL.md) | transforms, prototypes, masques, matériaux, squelettes, particules, terrain et préparation asynchrone |
-| [Déformation, cellules et courbes](DEFORMATION_CELLULES_ET_COURBES.md) | déplacement borné, intervalles, BVH, voxelisation, échantillonnage, SGGX et fibres |
-| [Pipeline GPU et extensions](PIPELINE_GPU_ET_EXTENSIONS.md) | capacités, publication, couverture, départage, shading, streaming, rayons, tessellation et atténuation |
+| [Construction et compression avancées](../../webGeometry/docs/compilation/CONSTRUCTION_ET_COMPRESSION_AVANCEES.md) | partition, QEM multiattribut, métriques, prédiction, strips, palettes, pages et outils numériques |
+| [Projection, profondeur et couleur](../../webGeometry/docs/mathematiques/PROJECTION_PROFONDEUR_ET_COULEUR.md) | sphères projetées, profondeur stable, reconstruction, atlas et matériau commun |
+| [Stratégies avancées](../../webGeometry/docs/extensions/STRATEGIES_AVANCEES.md) | routage, imposteurs, groupes d’instances, parcours GPU, ombres paginées et raccords entre assets |
+| [Assemblages et procédural](../../webGeometry/docs/extensions/ASSEMBLAGES_ET_PROCEDURAL.md) | transforms, prototypes, masques, matériaux, squelettes, particules, terrain et préparation asynchrone |
+| [Déformation, cellules et courbes](../../webGeometry/docs/extensions/DEFORMATION_CELLULES_ET_COURBES.md) | déplacement borné, intervalles, BVH, voxelisation, échantillonnage, SGGX et fibres |
+| [Pipeline GPU et extensions](../../webGeometry/docs/runtime/PIPELINE_GPU_ET_EXTENSIONS.md) | capacités, publication, couverture, départage, shading, streaming, rayons, tessellation et atténuation |
 
 L’index, les liens transversaux, le chapitre matériaux, la préparation, les expériences et les oracles ont également été mis à jour. Les nouveaux chapitres ont reçu une relecture indépendante ; leurs constats concrets ont été corrigés.
 
@@ -105,10 +107,3 @@ Le transfert des extensions a ajouté ou précisé : découverte des pages, quan
 
 Ces exclusions sont intentionnelles. Après suppression, les éléments originaux non conservés ne pourront pas être reconstruits à l’identique depuis cette documentation.
 
-## 6. Travail restant pour notre implémentation
-
-Le format détaillé des sections, les plafonds de clusters, les codecs retenus, les budgets, les capacités du backend et les points d’intégration sont des décisions à prendre dans notre projet. Les critères pour les choisir et les vérifier figurent dans les documents ; ils ne constituent pas une information encore à extraire des supports temporaires.
-
-Les étapes de développement devront valider compilation et roundtrip d’assets, coupe CPU/GPU, corruption de formats, qualité d’image, coutures, profondeur/ID, annulation et recyclage, device loss, intégration et coût total. Chaque extension garde son banc et son repli. Les performances des futurs modules restent `not-run` ; aucun résultat d’un autre banc ne les valide implicitement.
-
-**Décision : les supports temporaires ne sont plus requis pour poursuivre ce développement sur le périmètre mathématique et stratégique documenté.** Les conserver ne fait plus partie d’une dépendance documentaire identifiée. Leur suppression n’a pas été exécutée par cet audit.

@@ -5,20 +5,22 @@
  * Réutilise les types et fonctions de 05-meshlets et 07-hiz.
  */
 
-import type { Meshlet } from '../../05-meshlets/types.ts';
+import type { Meshlet } from '../../05-meshlets/index.ts';
 import type {
   OcclusionResult,
   OcclusionGainEquation,
-} from '../types.ts';
+} from '../contracts.ts';
 import {
   queryHiZ,
   type HiZPyramidData,
-} from '../../07-hiz/implementation/hizPyramid.ts';
+} from '../../07-hiz/index.ts';
 
 export interface ScreenMeshlet {
   meshlet: Meshlet;
   screenBox: { x0: number; y0: number; x1: number; y1: number };
   depth: number;
+  /** Confiance de la projection/borne écran, entre 0 et 1. */
+  confidence?: number;
 }
 
 /**
@@ -27,15 +29,19 @@ export interface ScreenMeshlet {
 export function cullMeshletsByOcclusion(
   screenMeshlets: ScreenMeshlet[],
   hiZData: HiZPyramidData,
-  reversedZ: boolean = false
+  reversedZ: boolean = false,
+  threshold: number = 1
 ): OcclusionResult {
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) throw new Error('Seuil de confiance invalide');
   const visibleMeshlets: Meshlet[] = [];
   const occludedMeshlets: Meshlet[] = [];
   let trianglesRejected = 0;
 
   for (const item of screenMeshlets) {
     const res = queryHiZ(hiZData, item.screenBox, item.depth, reversedZ);
-    if (res.occluded) {
+    const confidence = item.confidence ?? 1;
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) throw new Error('Confiance invalide');
+    if (res.occluded && confidence >= threshold) {
       occludedMeshlets.push(item.meshlet);
       trianglesRejected += item.meshlet.triangleCount;
     } else {
@@ -62,19 +68,28 @@ export function cullMeshletsByOcclusion(
 export function evaluateOcclusionGain(params: {
   totalTriangles: number;
   occlusionRate: number; // 0..1
-  rasterCostPerKTriMs?: number; // Défaut: 0.005 ms par millier de triangles
-  baselineSubmitMs?: number;    // Défaut: 3.35 ms (banc 00-baseline S3)
-  hiZGenerationMs?: number;     // Défaut: 0.15 ms (génération GPU 1024x1024)
-  cullingMs?: number;           // Défaut: 0.08 ms (compute dispatch)
+  rasterCostPerKTriMs: number | null;
+  baselineSubmitMs: number | null;
+  hiZGenerationMs: number | null;
+  cullingMs: number | null;
 }): OcclusionGainEquation {
   const {
     totalTriangles,
     occlusionRate,
-    rasterCostPerKTriMs = 0.005,
-    baselineSubmitMs = 3.35,
-    hiZGenerationMs = 0.15,
-    cullingMs = 0.08,
+    rasterCostPerKTriMs,
+    baselineSubmitMs,
+    hiZGenerationMs,
+    cullingMs,
   } = params;
+
+  if (!Number.isFinite(totalTriangles) || totalTriangles < 0 || !Number.isFinite(occlusionRate) || occlusionRate < 0 || occlusionRate > 1) {
+    throw new Error('Entrées géométriques invalides');
+  }
+  const measured = [rasterCostPerKTriMs, baselineSubmitMs, hiZGenerationMs, cullingMs];
+  if (measured.some(value => value !== null && (!Number.isFinite(value) || value < 0))) throw new Error('Coût mesuré invalide');
+  if (rasterCostPerKTriMs === null || baselineSubmitMs === null || hiZGenerationMs === null || cullingMs === null) {
+    return { baselineCost: null, hiZGenerationCost: hiZGenerationMs, cullingCost: cullingMs, rasterCost: null, gainNet: null };
+  }
 
   // Triangles rasterisés après occlusion
   const visibleTriangles = totalTriangles * (1.0 - occlusionRate);
@@ -84,8 +99,7 @@ export function evaluateOcclusionGain(params: {
   const baselineRasterCost = (totalTriangles / 1000) * rasterCostPerKTriMs;
   const baselineCost = baselineSubmitMs + baselineRasterCost;
 
-  // Prototype GPU-driven avec Hi-Z : soumission quasi nulle (0.15 ms) + HiZ + culling + raster réduit
-  const totalPrototypeCost = hiZGenerationMs + cullingMs + rasterCost + 0.15;
+  const totalPrototypeCost = hiZGenerationMs + cullingMs + rasterCost;
   const gainNet = baselineCost - totalPrototypeCost;
 
   return {

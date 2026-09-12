@@ -1,0 +1,33 @@
+{
+  "archivedAt": "2026-09-12T15:05:40.987Z",
+  "result": {
+    "test": "12-visibility-buffer",
+    "status": "measured",
+    "reason": null,
+    "records": [
+      {
+        "test": "12-visibility-buffer",
+        "variant": "1080p",
+        "cpuMs": 0.06666666269302368,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-reconstruction-oracle",
+          "width": 1920,
+          "height": 1080,
+          "packedId": 2752618,
+          "reconstructedDepth": 0.32,
+          "visibilityBytes": 16588800,
+          "forwardBytes": 58060800,
+          "visibilityGpuMs": null,
+          "shadingGpuMs": null,
+          "imageReadbackVerified": false
+        }
+      }
+    ],
+    "gates": {
+      "correctness": true,
+      "detail": "Tous les invariants du runner ont été vérifiés."
+    },
+    "timestamp": "2026-09-12T15:05:40.987Z"
+  }
+}

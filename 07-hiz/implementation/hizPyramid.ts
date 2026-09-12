@@ -11,7 +11,7 @@ import type {
   HiZMip,
   HiZCost,
   HiZQueryResult,
-} from '../types.ts';
+} from '../contracts.ts';
 
 export interface HiZPyramidData {
   pyramid: HiZPyramid;
@@ -101,6 +101,12 @@ export function queryHiZ(
   testDepth: number,
   reversedZ: boolean = false
 ): HiZQueryResult {
+  if (!Number.isFinite(box.x0) || !Number.isFinite(box.y0) || !Number.isFinite(box.x1) || !Number.isFinite(box.y1) || !Number.isFinite(testDepth)) {
+    throw new Error('Requête Hi-Z non finie');
+  }
+  if (box.x1 < box.x0 || box.y1 < box.y0 || testDepth < 0 || testDepth > 1) {
+    throw new Error('Requête Hi-Z hors contrat');
+  }
   const { mips } = pyramidData.pyramid;
   const boxW = Math.max(1, box.x1 - box.x0);
   const boxH = Math.max(1, box.y1 - box.y0);

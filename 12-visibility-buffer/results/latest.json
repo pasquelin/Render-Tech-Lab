@@ -1,37 +1,30 @@
 {
-  "timestamp": "2026-09-11T21:28:57.378163+00:00",
   "test": "12-visibility-buffer",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "12-visibility-buffer",
+      "variant": "1080p",
+      "cpuMs": 0,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-reconstruction-oracle",
+        "width": 1920,
+        "height": 1080,
+        "packedId": 2752618,
+        "reconstructedDepth": 0.32,
+        "visibilityBytes": 16588800,
+        "forwardBytes": 58060800,
+        "visibilityGpuMs": null,
+        "shadingGpuMs": null,
+        "imageReadbackVerified": false
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Tous les invariants du runner ont été vérifiés."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "12-visibility-buffer/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T19:46:47.236Z"
 }

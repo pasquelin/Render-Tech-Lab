@@ -28,11 +28,11 @@
 1. **The S3 CPU knee (2 000 unique objects):**
    - On S1 and S2 (instanced), the engine copes without effort ($\text{submit} < 0.2\,\text{ms}$).
    - As soon as the objects become unique (S3), submission time explodes to **$3.35\,\text{ms}$** for $2\,000$ draw calls.
-   - **R&D decision:** this precise knee is what justifies opening the [**01-gpu-driven**](../../01-gpu-driven/README.md) module.
+   - **R&D decision:** this precise knee is what justifies opening the [**01-indirect-draw**](../../01-indirect-draw/README.md) module.
 
 2. **The S4 pass stress (30 lights):**
    - Submission stays contained, but GPU frametime rises.
-   - **R&D decision:** tracked by the [**04-global-illumination**](../../04-global-illumination/README.md) module.
+   - **R&D decision:** tracked by the [**04-global-illumination**](../../04-gpu-lod/README.md) module.
 
 3. **The S5 hostile scenario:**
    - Severe breakdown ($8.45\,\text{ms}$ of CPU submission).

@@ -58,8 +58,11 @@ export function configureCanvas(
   canvas: HTMLCanvasElement,
   device: GPUDevice
 ): { context: GPUCanvasContext; format: GPUTextureFormat } {
-  const context = canvas.getContext('webgpu') as GPUCanvasContext;
-  const format = navigator.gpu.getPreferredCanvasFormat();
+  const context = canvas.getContext('webgpu');
+  const gpu = (navigator as Navigator & { gpu?: GPU }).gpu;
+  if (!context) throw new Error('WebGPU canvas context unavailable');
+  if (!gpu) throw new Error('WebGPU indisponible');
+  const format = gpu.getPreferredCanvasFormat();
   context.configure({ device, format, alphaMode: 'opaque' });
   return { context, format };
 }

@@ -1,0 +1,47 @@
+{
+  "archivedAt": "2026-09-12T14:54:17.431Z",
+  "result": {
+    "test": "07-hiz",
+    "status": "measured",
+    "reason": null,
+    "records": [
+      {
+        "test": "07-hiz",
+        "variant": "1024-standard-z",
+        "cpuMs": 2.6333333253860474,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-hiz-oracle",
+          "resolution": 1024,
+          "convention": "standard-z",
+          "mips": 11,
+          "rootDepth": 0.8999999761581421,
+          "mipValuesVerified": true,
+          "logicalBytes": 5592404,
+          "gpuReadbackVerified": false
+        }
+      },
+      {
+        "test": "07-hiz",
+        "variant": "1024-reversed-z",
+        "cpuMs": 2.5,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-hiz-oracle",
+          "resolution": 1024,
+          "convention": "reversed-z",
+          "mips": 11,
+          "rootDepth": 0.10000000149011612,
+          "mipValuesVerified": true,
+          "logicalBytes": 5592404,
+          "gpuReadbackVerified": false
+        }
+      }
+    ],
+    "gates": {
+      "correctness": true,
+      "detail": "Tous les invariants du runner ont été vérifiés."
+    },
+    "timestamp": "2026-09-12T14:54:17.431Z"
+  }
+}

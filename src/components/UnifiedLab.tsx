@@ -1,3 +1,4 @@
+import { IntegrationFixtureLab } from './IntegrationFixtureLab.tsx';
 import { EmeraldLab } from './EmeraldLab.tsx';
 import type { IntegrationScene } from '../lab/emeraldView.ts';
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -20,7 +21,7 @@ export function UnifiedLab({ test, native }: { test: string; native: boolean }) 
 }
 function IntegrationLab() {
   const [scene, setScene] = useState<IntegrationScene>('emerald');
-  return scene === 'emerald' ? <EmeraldLab onScene={setScene}/> : <StandardLab test="15-virtualized-integration" native={false} onScene={setScene}/>;
+  return scene === 'emerald' ? <EmeraldLab onScene={setScene}/> : <IntegrationFixtureLab onScene={setScene}/>;
 }
 function StandardLab({ test, native, onScene }: { test: string; native: boolean; onScene?: (scene: IntegrationScene) => void }) {
   const webglRef = useRef<HTMLCanvasElement>(null);
@@ -47,12 +48,15 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
       if (!native) {
         setState(initialSnapshot(test));
         await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-        const webgl = webglRef.current, webgpu = webgpuRef.current, chart = chartRef.current;
-        if (!webgl || !webgpu || !chart || cancelled) return;
-        const session = new LabSession({ webgl, webgpu, chart });
+        if (cancelled) return;
+        const session = new LabSession({
+          get webgl() { return webglRef.current; },
+          get webgpu() { return webgpuRef.current; },
+          get chart() { return chartRef.current; },
+        });
         const unsubscribe = session.subscribe(setState);
         dispose = () => { unsubscribe(); session.dispose(); };
-        setActions(session.actions);
+        setActions({...session.actions,switchModule:id=>{if(id==='15-virtualized-integration'||test==='15-virtualized-integration')navigateLabRoute(id);else session.actions.switchModule(id);}});
         await session.start();
         return;
       }
@@ -61,6 +65,8 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
       patch({ ...initial, moduleId: test, showBaseline: false, showWebgl: test === '14-open-world', showWebgpu: test === '04-gpu-lod', showChart: test === '04-gpu-lod', showPain: true, running: true,
         execution: { status: 'running', phase: 'Initialisation du banc…', lastCampaign: null },
         ...(test === '14-open-world' ? { scenarioVal: '9', scenarioOptions: worldOptions, stats: { ...initial.stats, objects: '9 quartiers' } } : {}) });
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      if (cancelled) return;
       if (test === '14-open-world') {
         const { mountWorldWorkbench } = await import('../../14-open-world/implementation/worldPage.ts');
         const controller = mountWorldWorkbench(patch);

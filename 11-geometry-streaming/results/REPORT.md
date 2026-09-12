@@ -1,26 +1,15 @@
-> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+# 11-geometry-streaming — campagne intégrée
 
-# Rapport du Banc : 11-geometry-streaming (Résidence VRAM & Cycle LRU)
+Date : 2026-09-12T19:46:44.809Z.
+Statut : measured.
+Contrôle : Tous les invariants du runner ont été vérifiés.
+Exécution : oracle CPU. Aucun dispatch, timestamp ni readback GPU n’a été exécuté.
 
-**Date :** 2026-09-11T20:23:45.991Z  
-**Statut :** `INTEGRATE`  
-**Budget VRAM Alloué :** 4.0 Mo (Plafond infranchissable)
+| Stratégie | CPU (ms) | GPU (ms) | Éléments traités |
+|---|---:|---:|---:|
+| cold-load | 0.100 | non mesuré | non renseigné |
+| resident-hit | 0.000 | non mesuré | non renseigné |
+| eviction | 0.000 | non mesuré | non renseigné |
+| fallback-rerequest | 0.100 | non mesuré | non renseigné |
 
----
-
-## 1. Trace Temporelle du Cycle de Résidence
-
-| Trame | Action / Scénario | État Résidence | VRAM Résidente | Upload Trame | Éviction LRU | Stalls |
-|:---:|---|:---:|:---:|:---:|:---:|:---:|
-| Trame 1 | Chargement initial (2 Mo) | `fully-resident` | 2048 Ko | 2048 Ko | 0 Ko | 0 |
-| Trame 2 | Pleine saturation du budget (4 Mo) | `fully-resident` | 4096 Ko | 2048 Ko | 0 Ko | 0 |
-| Trame 3 | Éviction LRU sous pression mémoire | `eviction` | 4096 Ko | 2048 Ko | 2048 Ko | 0 |
-| Trame 4 | Re-request des pages évincées | `eviction` | 4096 Ko | 2048 Ko | 2048 Ko | 0 |
-
-
----
-
-## 2. Invariants de Streaming Validés
-- **Plafond VRAM infranchissable :** Même sous demande à 100% de la scène (10 Mo), la mémoire allouée en VRAM ne dépasse jamais les 4 Mo alloués.
-- **Politique LRU :** Éviction prioritaire des pages les plus anciennes non visibles cette trame.
-- **Réversibilité Re-request :** Rechargement fluide sans fuite de mémoire lorsque la caméra revisite un secteur.
+La durée de présentation de l’interface est exclue.

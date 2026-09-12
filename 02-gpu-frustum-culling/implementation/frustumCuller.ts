@@ -11,7 +11,7 @@ import type {
   CullingBoundingSphere,
   CullingInstance,
   CullingBatchResult,
-} from '../types.ts';
+} from '../contracts.ts';
 
 /**
  * Test conservateur sphère / plan :

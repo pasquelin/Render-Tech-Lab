@@ -18,7 +18,7 @@ test('native page preserves checked image and final measurements, supports resta
     querySelector() { return new FakeNode(); }
     append(...children: unknown[]) { for (const child of children) if (child instanceof FakeNode) { this.options.push(child); if (child.selected) this.value = child.value; } }
     replaceChildren(...children: unknown[]) { this.options = []; this.append(...children); }
-    before() {} after() {} prepend() {} setAttribute() {} showModal() {}
+    before() {} after() {} prepend() {} remove() {} setAttribute() {} showModal() {}
     getBoundingClientRect() { return { width: 360, height: 176 }; }
     drawnText: string[] = [];
     getContext() { return new Proxy({ putImageData: (image: unknown) => { this.image = image; }, fillText: (value: string) => { this.drawnText.push(value); } }, { get: (target, key) => key in target ? Reflect.get(target, key) : key === 'measureText' ? () => ({ width: 40 }) : key === 'createLinearGradient' ? () => ({ addColorStop() {} }) : () => {} }); }
@@ -100,10 +100,11 @@ test('native page preserves checked image and final measurements, supports resta
 
 test('the 04 mode switch is presented as preview-only', async () => {
   const source = await import('node:fs/promises').then(fs => fs.readFile(new URL('../src/components/LabSidebar.tsx', import.meta.url), 'utf8'));
-  assert.match(source, /Aperçu uniquement — la comparaison complète se lance avec le bouton ci-dessous\./);
-  assert.match(source, /<SegmentedControl[^>]+onChange=\{actions\.setMode\}/);
-  assert.match(source, /id:\s*'btn-classic',\s*value:\s*'classic'/);
-  assert.match(source, /id:\s*'btn-gpu-driven',\s*value:\s*'gpu-driven'/);
+  const ui = await import('node:fs/promises').then(fs => fs.readFile(new URL('../src/lab/moduleUi.ts', import.meta.url), 'utf8'));
+  assert.match(ui, /Aperçu uniquement — la comparaison complète se lance avec le bouton ci-dessous\./);
+  assert.match(source, /onChange=\{actions\.setMode\}/);
+  assert.match(ui, /id:\s*'btn-classic',\s*value:\s*'classic'/);
+  assert.match(ui, /id:\s*'btn-gpu-driven',\s*value:\s*'gpu-driven'/);
   assert.match(source, /disabled=\{state\.running\}/);
 });
 

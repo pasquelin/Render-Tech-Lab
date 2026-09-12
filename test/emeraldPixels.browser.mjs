@@ -1,0 +1,21 @@
+import {chromium} from 'playwright';import assert from 'node:assert/strict';import {mkdir,writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({channel:'chrome',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:1400,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const cdp=await page.context().newCDPSession(page);await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
+ const root='http://localhost:5174/?test=15-virtualized-integration';
+ // Keep this recipe on the source loaded by its explicit navigation; concurrent HMR edits must not erase a running campaign.
+ await page.routeWebSocket('**',socket=>{const server=socket.connectToServer();server.onMessage(message=>{let type;try{type=JSON.parse(String(message)).type;}catch{}if(type!=='update'&&type!=='full-reload')socket.send(message);});socket.onMessage(message=>server.send(message));});
+ await page.goto(root);await page.reload({waitUntil:'networkidle'});
+ const idle=async()=>{await page.locator('[data-emerald-availability="ready"]').waitFor({timeout:30000});assert.equal(await page.locator('canvas').count(),0);assert.equal(await page.getByRole('region',{name:'Usages du banc 15'}).count(),0);const heading=await page.locator('main h1').boundingBox();assert.ok(heading.y<220,JSON.stringify(heading));assert.match(await page.locator('main').innerText(),/Question du banc/);};
+ await idle();await page.locator('#select-module').selectOption('01-indirect-draw');await page.locator('[data-execution-view="idle"]').waitFor();await page.locator('#select-module').selectOption('15-virtualized-integration');await idle();
+ await mkdir('benchmark-runs/checks/emerald-pixels',{recursive:true});await page.screenshot({path:'benchmark-runs/checks/emerald-pixels/idle.png'});
+ await page.locator('main').getByRole('button',{name:'Explorer Emerald Square',exact:true}).click();await page.locator('[data-ui-state="loading"]').waitFor();
+ await page.locator('[data-emerald-status="ready"], [data-emerald-status="error"]').waitFor({timeout:180000});assert.equal(await page.locator('[data-emerald-status]').getAttribute('data-emerald-status'),'ready',await page.locator('main').innerText());
+ const canvas=page.locator('#canvas-emerald'),dimensions=await canvas.evaluate(c=>({css:[c.clientWidth,c.clientHeight],buffer:[c.width,c.height]}));assert.ok(dimensions.css[1]>300,JSON.stringify(dimensions));
+ const before=await canvas.screenshot({path:'benchmark-runs/checks/emerald-pixels/city.png'});
+ const pixels=await page.evaluate(async base64=>{const blob=await(await fetch(`data:image/png;base64,${base64}`)).blob(),bitmap=await createImageBitmap(blob),canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);const data=context.getImageData(0,0,canvas.width,canvas.height).data,colors=new Set();let changed=0;for(let i=0;i<data.length;i+=16){colors.add(`${data[i]},${data[i+1]},${data[i+2]}`);if(data[i]!==data[0]||data[i+1]!==data[1]||data[i+2]!==data[2])changed++;}return{colors:colors.size,changed};},before.toString('base64'));assert.ok(pixels.colors>100&&pixels.changed>1000,JSON.stringify(pixels));
+ const box=await canvas.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+120,box.y+box.height/2+40,{steps:12});await page.mouse.up();await page.waitForTimeout(300);assert.notDeepEqual(before,await canvas.screenshot({path:'benchmark-runs/checks/emerald-pixels/orbit.png'}));
+ await page.setViewportSize({width:1200,height:760});await page.waitForTimeout(400);assert.deepEqual(await canvas.evaluate(c=>[c.width,c.height]),await canvas.evaluate(c=>[c.clientWidth,c.clientHeight]));assert.ok(await canvas.isVisible());await page.getByRole('button',{name:'Arrêter l’exploration',exact:true}).click();await page.locator('[data-emerald-report]').waitFor();assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(errors,[]);
+ await writeFile('benchmark-runs/checks/emerald-pixels/result.json',JSON.stringify({dimensions,pixels,errors},null,2));console.log(JSON.stringify({dimensions,pixels,errors}));
+}finally{await browser.close();}

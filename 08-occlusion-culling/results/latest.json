@@ -1,37 +1,28 @@
 {
-  "timestamp": "2026-09-11T21:28:57.377380+00:00",
   "test": "08-occlusion-culling",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "08-occlusion-culling",
+      "variant": "50%",
+      "cpuMs": 0.30000001192092896,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-occlusion-oracle",
+        "expectedOcclusionRate": 0.5,
+        "actualOcclusionRate": 0.5,
+        "visible": 1000,
+        "occluded": 1000,
+        "cpuHiZMs": 0.30000001192092896,
+        "baselineGpuMs": null,
+        "rasterGpuMs": null
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Tous les invariants du runner ont été vérifiés."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "08-occlusion-culling/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T19:46:39.696Z"
 }

@@ -1,5 +1,6 @@
 import { idleExecution, type ExecutionState, type LabProgress } from './execution.ts';
 import { MODULE_DESCRIPTORS } from './modules.ts';
+import { moduleUi } from './moduleUi.ts';
 
 export type LabMode = 'classic' | 'gpu-driven';
 
@@ -113,6 +114,7 @@ export function emptyModal(): ReportModalState {
 
 export function initialSnapshot(moduleId = '00-baseline'): LabSnapshot {
   const desc = MODULE_DESCRIPTORS[moduleId] ?? MODULE_DESCRIPTORS['00-baseline'];
+  const ui = moduleUi(moduleId);
   return {
     moduleId,
     execution: idleExecution(),
@@ -135,8 +137,8 @@ export function initialSnapshot(moduleId = '00-baseline'): LabSnapshot {
     showBaseline: moduleId === '00-baseline',
     showWebgl: false,
     showWebgpu: false,
-    showChart: true,
-    showLodComparison: false,
+    showChart: false,
+    showLodComparison: Boolean(ui.comparisonHref),
     showPain: Boolean(desc.painLabel),
     hideOpenWorldLinks: false,
     benchLabel: desc.benchLabel,
@@ -152,8 +154,8 @@ export function initialSnapshot(moduleId = '00-baseline'): LabSnapshot {
     progress: null,
     reportModal: emptyModal(),
     classicActive: false,
-    countLabel: 'Charge de géométrie :',
-    modeHint: 'Commutez instantanément entre les pipelines :',
+    countLabel: ui.countLabel,
+    modeHint: ui.modeHint,
     runCardTitle: '3. Courbe de Croisement & Douleur',
   };
 }

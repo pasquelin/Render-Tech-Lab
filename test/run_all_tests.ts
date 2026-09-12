@@ -6,20 +6,20 @@
  * ainsi que les suites de validation mathématiques et d'oracles.
  */
 
-import { runBaselineSuite } from '../00-baseline/benchmark/test_baseline.ts';
-import { runIndirectSuite } from '../01-indirect-draw/benchmark/test_crossover.ts';
-import { runCullingSuite } from '../02-gpu-frustum-culling/benchmark/test_culling.ts';
-import { runSceneSuite } from '../03-gpu-scene/benchmark/test_scene.ts';
-import { LodBenchmarkRunner } from '../04-gpu-lod/benchmark/runner.ts';
-import { runMeshletsSuite } from '../05-meshlets/benchmark/test_meshlets.ts';
-import { runMeshletCullingSuite } from '../06-meshlet-culling/benchmark/test_meshlet_culling.ts';
-import { runHiZSuite } from '../07-hiz/benchmark/test_hiz.ts';
-import { runOcclusionSuite } from '../08-occlusion-culling/benchmark/test_occlusion.ts';
-import { runCompactionSuite } from '../09-gpu-compaction/benchmark/test_compaction.ts';
-import { runMaterialBatchingSuite } from '../10-material-batching/benchmark/test_material_batching.ts';
-import { runStreamingSuite } from '../11-geometry-streaming/benchmark/test_streaming.ts';
-import { runVisibilityBufferSuite } from '../12-visibility-buffer/benchmark/test_visibility_buffer.ts';
-import { runFullPipelineSuite } from '../13-full-gpu-driven/benchmark/test_full_pipeline.ts';
+import { runBaselineSuite } from '../00-baseline/tests/test_baseline.ts';
+import { runIndirectSuite } from '../01-indirect-draw/tests/test_crossover.ts';
+import { runCullingSuite } from '../02-gpu-frustum-culling/tests/test_culling.ts';
+import { runSceneSuite } from '../03-gpu-scene/tests/test_scene.ts';
+import { LodBenchmarkRunner } from '../04-gpu-lod/runner/index.ts';
+import { runMeshletsSuite } from '../05-meshlets/tests/test_meshlets.ts';
+import { runMeshletCullingSuite } from '../06-meshlet-culling/tests/test_meshlet_culling.ts';
+import { runHiZSuite } from '../07-hiz/tests/test_hiz.ts';
+import { runOcclusionSuite } from '../08-occlusion-culling/tests/test_occlusion.ts';
+import { runCompactionSuite } from '../09-gpu-compaction/tests/test_compaction.ts';
+import { runMaterialBatchingSuite } from '../10-material-batching/tests/test_material_batching.ts';
+import { runStreamingSuite } from '../11-geometry-streaming/tests/test_streaming.ts';
+import { runVisibilityBufferSuite } from '../12-visibility-buffer/tests/test_visibility_buffer.ts';
+import { runFullPipelineSuite } from '../13-full-gpu-driven/tests/test_full_pipeline.ts';
 
 interface SuiteResult {
   name: string;

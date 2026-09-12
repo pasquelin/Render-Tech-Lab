@@ -9,7 +9,7 @@ export const SelectControl = forwardRef<HTMLSelectElement, SelectHTMLAttributes<
   return <select ref={ref} {...props} className={`${selectControlClass} ${className}`} />;
 });
 
-export const Select = forwardRef<HTMLSelectElement, Props>(function Select({ id, label, help, error, className = 'select-sm w-full', children, ...props }, ref) {
+export const Select = forwardRef<HTMLSelectElement, Props>(function Select({ id, label, help, error, className = 'select-sm w-full max-w-full min-w-0', children, ...props }, ref) {
   const controlId = id ?? `select-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   return (
     <Field id={controlId} label={label} help={help} error={error}>

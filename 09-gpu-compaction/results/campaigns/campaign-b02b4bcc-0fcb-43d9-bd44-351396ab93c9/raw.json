@@ -1,0 +1,54 @@
+{
+  "archivedAt": "2026-09-12T14:11:25.545Z",
+  "result": {
+    "test": "09-gpu-compaction",
+    "status": "measured",
+    "reason": null,
+    "records": [
+      {
+        "test": "09-gpu-compaction",
+        "variant": "serial",
+        "cpuMs": 0.0333333412806193,
+        "gpuMs": 15.750485333333332,
+        "custom": {
+          "scope": "webgpu-physical",
+          "samples": 3,
+          "timing": "timestamp-query",
+          "correctnessReadback": true,
+          "instances": 100000
+        }
+      },
+      {
+        "test": "09-gpu-compaction",
+        "variant": "atomic",
+        "cpuMs": 0,
+        "gpuMs": 0,
+        "custom": {
+          "scope": "webgpu-physical",
+          "samples": 3,
+          "timing": "timestamp-query",
+          "correctnessReadback": true,
+          "instances": 100000
+        }
+      },
+      {
+        "test": "09-gpu-compaction",
+        "variant": "workgroup",
+        "cpuMs": 0,
+        "gpuMs": 0.02184533333333333,
+        "custom": {
+          "scope": "webgpu-physical",
+          "samples": 3,
+          "timing": "timestamp-query",
+          "correctnessReadback": true,
+          "instances": 100000
+        }
+      }
+    ],
+    "gates": {
+      "correctness": true,
+      "detail": "Readback physique conforme avant et après chaque variante."
+    },
+    "timestamp": "2026-09-12T14:11:25.545Z"
+  }
+}

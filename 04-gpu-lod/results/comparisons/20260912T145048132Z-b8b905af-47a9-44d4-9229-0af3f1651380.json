@@ -1,0 +1,146 @@
+{
+  "test": "04-gpu-lod-comparison",
+  "timestamp": "2026-09-12T14:50:48.103Z",
+  "completedAt": "2026-09-12T14:50:48.107Z",
+  "status": "rejected",
+  "config": {
+    "count": 2000,
+    "width": 1920,
+    "height": 1080,
+    "samples": 240,
+    "warmup": 60,
+    "seed": 417,
+    "order": "ABBA",
+    "backend": "webgpu-native"
+  },
+  "environment": {
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "hardwareConcurrency": 12,
+    "devicePixelRatio": 1,
+    "visibilityAtStart": "visible",
+    "performanceTimeOrigin": 1789224647883.4
+  },
+  "scene": {},
+  "preparation": {},
+  "controls": [],
+  "quality": {
+    "passed": false,
+    "timingsAccepted": false,
+    "failure": "Error: WebGPU native indisponible."
+  },
+  "blocks": [],
+  "errors": [],
+  "limitations": [
+    "A appelle le sélecteur CPU selectLodsOnCpu existant ; B calcule la sélection et la compaction en WGSL. Les deux résultats pilotent les mêmes trois dessins indexés indirects et le même raster WebGPU natif.",
+    "La règle D × H / (2 × distance × tan(FOV / 2)), avec seuils 250 et 60 pixels, mesure une taille projetée. Ce test ne met pas en œuvre une borne d’erreur géométrique par pixel.",
+    "Le raster utilise les API WebGPU natives. Les éventuels utilitaires Three.js de mathématiques ou de génération des géométries ne sont pas un WebGLRenderer ou WebGPURenderer.",
+    "Scène procédurale résidente : absence de Bistro, de streaming, d’animations, de textures PBR et d’ombres. Ce résultat ne valide pas une migration fonctionnellement équivalente du banc 14.",
+    "Les identités LOD, commandes indirectes et images A/A/B sont contrôlées sur trois poses avant mesure et une pose après mesure. La trajectoire complète et les autres entrées ne sont pas certifiées.",
+    "Les sélections GPU sont en précision flottante 32 bits. Une égalité constatée sur les poses de contrôle ne démontre pas une équivalence mathématique universelle avec le CPU JavaScript.",
+    "Les intervalles rAF vont du callback de chaque rendu au callback suivant, dernière image comprise. Ils mesurent la cadence des callbacks, pas le scanout ni la latence d’affichage physique.",
+    "Les timestamps GPU mesurent sélection, rangs locaux, compaction stable et raster pour B, raster seul pour A. A ne lance aucune passe de calcul vide. Une mesure absente ou invalide reste null ; un zéro peut être limité par la résolution du compteur.",
+    "Les lectures GPU et captures sont hors chronométrage. Aucun readback de sélection n’a lieu pendant les blocs mesurés ; les triangles et distributions LOD de B y restent non mesurés.",
+    "Les callbacks des instruments sont exécutés après les mesures CPU et limités à 500 ms ; leur coût demeure inclus dans les intervalles rAF. Timestamps et instrumentation ont un coût commun non isolé.",
+    "Les quantiles utilisent floor((N − 1) × p). Les images successives sont corrélées ; une campagne ne démontre ni une supériorité générale ni la significativité d’un petit écart.",
+    "Mémoire : seuls les octets de ressources explicitement allouées ou les estimations étiquetées sont rapportés. Aucun compteur de VRAM résidente, température GPU ou consommation électrique n’est inventé.",
+    "Une seule campagne graphique doit fonctionner à la fois ; la visibilité de cet onglet est contrôlée, les autres applications GPU ne sont pas détectées automatiquement."
+  ],
+  "failure": "Error: WebGPU native indisponible.",
+  "provenance": {
+    "before": {
+      "timestamp": "2026-09-12T14:50:48.102Z",
+      "node": "v26.8.2",
+      "os": {
+        "platform": "darwin",
+        "release": "25.6.0",
+        "arch": "arm64"
+      },
+      "cpu": {
+        "model": "Apple M2 Max",
+        "logicalCount": 12
+      },
+      "memoryBytes": 103079215104,
+      "commit": "3fdd4351698dc1230cc4ec4b5621e439257140bc",
+      "sourceHashes": {
+        "index.html": "ec90d46be0cdf38fdea8f224bd8439626c628f672854e34577857d21967b7054",
+        "src/main.tsx": "6e2af61c791ce3d6e969d92c67751e4d46059159ad66d9392d1da9312cdeb128",
+        "src/App.tsx": "9126423ea0e13e84900d96f86718c449f6c25f954d8961f7a81a4857eb7a235d",
+        "src/style.css": "6516a0836a5f18b38ba22172283a6b3c8760f03d11d35149b26e8ad70a92f337",
+        "src/components/UnifiedLab.tsx": "691edbf17bbb75a50963ad911f7f47f482d57296a4fe9e893059bc3473515e4d",
+        "src/components/LabShell.tsx": "95a2c90ac8da3826571ce2871ad865934f4195085068f3d059dc2ecb00b6e9d3",
+        "src/components/LabViewport.tsx": "50b6c168e71b69252bf588a8795b7bc3be1573f9cb4b471ed0a020380c3053ab",
+        "src/components/ViewportCanvases.tsx": "490df519b6f4cbf7ea128c7e27e3f6f266bb10a766a074e5a7103a5cb1670d3c",
+        "src/components/LabSidebar.tsx": "6a829f22375bf4277c69c1b9396e80cc5e0d5f61b841a8cdcb112c62f63c1b56",
+        "src/common/gpuContext.ts": "a616856950092c2b224358e830c9502162369c1d8191ebd1371fc07fe18fea6c",
+        "shared/gpu/timing.ts": "7374ac1ce0de3e0fa253f97b33b5e69a420a54cda44dda44f6a98c0f22c63758",
+        "04-gpu-lod/implementation/gpuLodShader.ts": "376b43e28dec3585b69cd4ab43fcdf6a3ae7b7f9a81447d6ec04475b36788629",
+        "04-gpu-lod/implementation/nativeLodRenderer.ts": "ec0bddfaaa3265eb71b7e15f30f9a1fca57cdc597fde6e062431fe9314682343",
+        "04-gpu-lod/implementation/nativeLodShaders.ts": "f0a717681e887aa5d8c30fe9f343b41077e80fcc2531d429d15f1dbad13f36c4",
+        "04-gpu-lod/runner/nativeComparison.ts": "70a35246229c6d3ddb1fedd6f8b1b5562be60a1df0d837dcf546cba356f23d53",
+        "04-gpu-lod/runner/nativePage.ts": "ad626ade2df311d5e4a034695c2e7d34eec1afc187aef1789c5402e905d33fc6",
+        "04-gpu-lod/implementation/cpuLodSelector.ts": "165a97a3af8482513c7dfc0d558d6efee50ce490e0c0732dbfeddd5c498ec718",
+        "shared/math/screenSpaceError.ts": "91f44140836225b19f47b7d6b2263d5ff4a92237aa5d9ad453a421360f32c723",
+        "shared/scene/random.ts": "62540dee3a422aa83829062d5ac41f34688db325d7a1457c053f8d09af149741",
+        "04-gpu-lod/runner/variants.ts": "9d8bf0f900c596c7f200f94dfb0b3791a5557e7977c284ac6e6db326d36f4d1a",
+        "04-gpu-lod/runner/sceneComparison.ts": "81d41341e15b9198af4d3540ae83d143a4fccb2585a7eb4f2453054e72a3d854",
+        "04-gpu-lod/runner/comparisonTypes.ts": "8c22fd344e3a0a4f4f369f384be917b7945213b4c4c11fffcceeb60fec8e4a38",
+        "04-gpu-lod/runner/comparisonReporter.ts": "e08142257cdd15fa7d3112dc562a25da37217cd02d120fb639d30919b9168e6c",
+        "04-gpu-lod/runner/comparisonPage.ts": "e2efc04093c8073815ac3e65bfd2f8bcab6b8f5dd3ac70f5701bde3ae8af1794",
+        "04-gpu-lod/runner/ComparisonApp.tsx": "0142bdf6a849c1083f1fc2360ad80e985a3d6f789bf54c3c272bfe12eece7fe5",
+        "04-gpu-lod/runner/comparisonMain.tsx": "4046566de4169f21b6b1d5ff2fe51be850647a9cb126ce94fe372b6ea4282890",
+        "04-gpu-lod/comparison.html": "a0e716226f77ad52fbf244146ff3af33e2e4617fa7d180771325e7f69a5eaf2f",
+        "benchmarks/lodComparisonPlugin.ts": "00b0018784e677b4858dbb5c1559bbe750339dc8b4490015a6757d5c1fa16e1b",
+        "package.json": "46b5f5e8a4f4908e82768088fedaebaaaf8b4e0f6f76404c5517b04a0aa604b4",
+        "pnpm-lock.yaml": "7098700da0c950dd09b4de6aeed406fa7c953d0be85576d7f93fd15b4bc27c6d"
+      }
+    },
+    "after": {
+      "timestamp": "2026-09-12T14:50:48.126Z",
+      "node": "v26.8.2",
+      "os": {
+        "platform": "darwin",
+        "release": "25.6.0",
+        "arch": "arm64"
+      },
+      "cpu": {
+        "model": "Apple M2 Max",
+        "logicalCount": 12
+      },
+      "memoryBytes": 103079215104,
+      "commit": "3fdd4351698dc1230cc4ec4b5621e439257140bc",
+      "sourceHashes": {
+        "index.html": "ec90d46be0cdf38fdea8f224bd8439626c628f672854e34577857d21967b7054",
+        "src/main.tsx": "6e2af61c791ce3d6e969d92c67751e4d46059159ad66d9392d1da9312cdeb128",
+        "src/App.tsx": "9126423ea0e13e84900d96f86718c449f6c25f954d8961f7a81a4857eb7a235d",
+        "src/style.css": "6516a0836a5f18b38ba22172283a6b3c8760f03d11d35149b26e8ad70a92f337",
+        "src/components/UnifiedLab.tsx": "691edbf17bbb75a50963ad911f7f47f482d57296a4fe9e893059bc3473515e4d",
+        "src/components/LabShell.tsx": "95a2c90ac8da3826571ce2871ad865934f4195085068f3d059dc2ecb00b6e9d3",
+        "src/components/LabViewport.tsx": "50b6c168e71b69252bf588a8795b7bc3be1573f9cb4b471ed0a020380c3053ab",
+        "src/components/ViewportCanvases.tsx": "490df519b6f4cbf7ea128c7e27e3f6f266bb10a766a074e5a7103a5cb1670d3c",
+        "src/components/LabSidebar.tsx": "6a829f22375bf4277c69c1b9396e80cc5e0d5f61b841a8cdcb112c62f63c1b56",
+        "src/common/gpuContext.ts": "a616856950092c2b224358e830c9502162369c1d8191ebd1371fc07fe18fea6c",
+        "shared/gpu/timing.ts": "7374ac1ce0de3e0fa253f97b33b5e69a420a54cda44dda44f6a98c0f22c63758",
+        "04-gpu-lod/implementation/gpuLodShader.ts": "376b43e28dec3585b69cd4ab43fcdf6a3ae7b7f9a81447d6ec04475b36788629",
+        "04-gpu-lod/implementation/nativeLodRenderer.ts": "ec0bddfaaa3265eb71b7e15f30f9a1fca57cdc597fde6e062431fe9314682343",
+        "04-gpu-lod/implementation/nativeLodShaders.ts": "f0a717681e887aa5d8c30fe9f343b41077e80fcc2531d429d15f1dbad13f36c4",
+        "04-gpu-lod/runner/nativeComparison.ts": "70a35246229c6d3ddb1fedd6f8b1b5562be60a1df0d837dcf546cba356f23d53",
+        "04-gpu-lod/runner/nativePage.ts": "ad626ade2df311d5e4a034695c2e7d34eec1afc187aef1789c5402e905d33fc6",
+        "04-gpu-lod/implementation/cpuLodSelector.ts": "165a97a3af8482513c7dfc0d558d6efee50ce490e0c0732dbfeddd5c498ec718",
+        "shared/math/screenSpaceError.ts": "91f44140836225b19f47b7d6b2263d5ff4a92237aa5d9ad453a421360f32c723",
+        "shared/scene/random.ts": "62540dee3a422aa83829062d5ac41f34688db325d7a1457c053f8d09af149741",
+        "04-gpu-lod/runner/variants.ts": "9d8bf0f900c596c7f200f94dfb0b3791a5557e7977c284ac6e6db326d36f4d1a",
+        "04-gpu-lod/runner/sceneComparison.ts": "81d41341e15b9198af4d3540ae83d143a4fccb2585a7eb4f2453054e72a3d854",
+        "04-gpu-lod/runner/comparisonTypes.ts": "8c22fd344e3a0a4f4f369f384be917b7945213b4c4c11fffcceeb60fec8e4a38",
+        "04-gpu-lod/runner/comparisonReporter.ts": "e08142257cdd15fa7d3112dc562a25da37217cd02d120fb639d30919b9168e6c",
+        "04-gpu-lod/runner/comparisonPage.ts": "e2efc04093c8073815ac3e65bfd2f8bcab6b8f5dd3ac70f5701bde3ae8af1794",
+        "04-gpu-lod/runner/ComparisonApp.tsx": "0142bdf6a849c1083f1fc2360ad80e985a3d6f789bf54c3c272bfe12eece7fe5",
+        "04-gpu-lod/runner/comparisonMain.tsx": "4046566de4169f21b6b1d5ff2fe51be850647a9cb126ce94fe372b6ea4282890",
+        "04-gpu-lod/comparison.html": "a0e716226f77ad52fbf244146ff3af33e2e4617fa7d180771325e7f69a5eaf2f",
+        "benchmarks/lodComparisonPlugin.ts": "00b0018784e677b4858dbb5c1559bbe750339dc8b4490015a6757d5c1fa16e1b",
+        "package.json": "46b5f5e8a4f4908e82768088fedaebaaaf8b4e0f6f76404c5517b04a0aa604b4",
+        "pnpm-lock.yaml": "7098700da0c950dd09b4de6aeed406fa7c953d0be85576d7f93fd15b4bc27c6d"
+      }
+    },
+    "sourcesStable": true
+  }
+}

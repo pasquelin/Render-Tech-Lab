@@ -44,25 +44,27 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
     state.moduleId = '00-baseline'; state.execution.status = 'idle'; state.running = false;
     const baseline = render();
     const sidebar = render(LabSidebar);
-    assert.match(sidebar, /six configurations de charge internes/);
-    assert.match(sidebar, /bancs spécialisés 01 à 15/);
-    assert.match(sidebar, /configuration est équivalente/);
-    assert.doesNotMatch(sidebar, /témoin S0/);
-    assert.match(baseline, /Référence de consultation/);
+    assert.match(sidebar, /Choisissez un banc/);
+    assert.match(sidebar, /Bancs d’essai/);
+    assert.match(sidebar, /id="dashboard-intro-card"/);
+    assert.match(sidebar, /id="dashboard-benches-card"/);
+    assert.match(sidebar, /grid grid-cols-2 gap-2/);
+    assert.doesNotMatch(sidebar, /id="lab-metrics-card"|CPU submit|CPU frame|Draw calls/);
+    assert.match(baseline, /Laboratoire de rendu temps réel/);
     assert.match(baseline, />Dashboard</);
-    assert.match(baseline, /Configurations de charge de la référence/);
-    assert.match(baseline, /Configuration interne 1 · données disponibles uniquement dans une campagne vérifiée/);
-    assert.doesNotMatch(baseline, /3\.35 ms|54 FPS|Coude|Chute|Gain/);
+    assert.match(baseline, /Choisir un banc/);
+    assert.match(baseline, /Lancer le protocole/);
+    assert.match(baseline, /Lire le résultat/);
+    assert.match(baseline, /id="dashboard-reports"/);
+    assert.match(baseline, /Derniers rapports vérifiés/);
+    assert.match(baseline, /grid grid-cols-1 sm:grid-cols-2 gap-2/);
+    assert.equal((baseline.match(/data-dashboard-report=/g) ?? []).length, 15);
+    assert.doesNotMatch(baseline, /data-bench-access/);
+    assert.doesNotMatch(sidebar, /dashboard-reports|Derniers rapports vérifiés/);
+    assert.doesNotMatch(baseline, /3\.35 ms|54 FPS|Coude|Chute/);
     assert.doesNotMatch(baseline, /S[0-5] ·/);
-    assert.match(baseline, /Ces six configurations sont internes au banc de référence/);
-    assert.match(baseline, /bancs spécialisés 01 à 15 sont accessibles depuis le sélecteur global/);
-    assert.match(baseline, /configuration est équivalente/);
-    assert.match(baseline, /Mesures de référence/);
-    assert.match(baseline, /Environnement \/ résolution/);
-    assert.match(baseline, /Comparer aux autres bancs/);
-    assert.doesNotMatch(baseline, /max-w-3xl|max-w-4xl/);
-    assert.doesNotMatch(baseline, /Aucun test en cours|Étapes de la campagne|Relancer|Lancer|Mesurer A\/B/);
-    assert.match(baseline, /Consulter le rapport de référence/);
+    assert.doesNotMatch(baseline, /Aucune campagne|Configurations de charge|Mesures de référence|Comparer aux autres bancs/);
+    assert.doesNotMatch(baseline, /Aucun test en cours|Étapes de la campagne|Relancer|Mesurer A\/B|Consulter le rapport/);
     const { MODULE_NAV } = await server.ssrLoadModule('/src/lab/catalog.ts');
     for (const module of MODULE_NAV) {
       state.moduleId = module.id;
@@ -78,10 +80,12 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
         state.running = true;
         state.execution.status = 'running';
         const locked = render(LabSidebar);
-        for (const id of ['btn-classic','btn-gpu-driven','select-count','btn-benchmark','btn-view-report','btn-open-reports']) {
+        const modeControls = ['01-indirect-draw', '03-gpu-scene', '04-gpu-lod', '14-open-world'].includes(module.id) ? ['btn-classic','btn-gpu-driven'] : [];
+        for (const id of [...modeControls,module.id === '15-virtualized-integration' ? 'select-diagnostic-view' : 'select-count','btn-benchmark','btn-view-report','btn-open-reports']) {
           const tag = locked.match(new RegExp(`<[^>]+id="${id}"[^>]*>`))?.[0];
           assert.ok(tag?.includes('disabled=""'), `${module.id}: ${id} must be disabled`);
         }
+        if (modeControls.length === 0) assert.doesNotMatch(locked, /id="btn-(?:classic|gpu-driven)"/, `${module.id}: no decorative A/B controls`);
         assert.match(render(LabNavbar), /id="select-module" disabled=""/);
         state.running = false; state.execution.status = 'completed';
         assert.doesNotMatch(render(LabSidebar), /id="btn-benchmark"[^>]*disabled=""/);

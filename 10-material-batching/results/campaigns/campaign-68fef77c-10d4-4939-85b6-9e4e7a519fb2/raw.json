@@ -1,0 +1,71 @@
+{
+  "archivedAt": "2026-09-12T19:46:42.380Z",
+  "result": {
+    "test": "10-material-batching",
+    "status": "measured",
+    "reason": null,
+    "records": [
+      {
+        "test": "10-material-batching",
+        "variant": "state-switch",
+        "cpuMs": 0.1333333452542623,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-submission-plan",
+          "objects": 2000,
+          "materials": 100,
+          "pipelineTransitions": 2000,
+          "bindGroupTransitions": 2000,
+          "shadingReadbackVerified": false
+        }
+      },
+      {
+        "test": "10-material-batching",
+        "variant": "storage-buffer",
+        "cpuMs": 0,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-submission-plan",
+          "objects": 2000,
+          "materials": 100,
+          "pipelineTransitions": 1,
+          "bindGroupTransitions": 1,
+          "shadingReadbackVerified": false
+        }
+      },
+      {
+        "test": "10-material-batching",
+        "variant": "texture-array",
+        "cpuMs": 0,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-submission-plan",
+          "objects": 2000,
+          "materials": 100,
+          "pipelineTransitions": 1,
+          "bindGroupTransitions": 1,
+          "shadingReadbackVerified": false
+        }
+      },
+      {
+        "test": "10-material-batching",
+        "variant": "pseudo-bindless",
+        "cpuMs": 0,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-submission-plan",
+          "objects": 2000,
+          "materials": 100,
+          "pipelineTransitions": 1,
+          "bindGroupTransitions": 1,
+          "shadingReadbackVerified": false
+        }
+      }
+    ],
+    "gates": {
+      "correctness": true,
+      "detail": "Tous les invariants du runner ont été vérifiés."
+    },
+    "timestamp": "2026-09-12T19:46:42.380Z"
+  }
+}

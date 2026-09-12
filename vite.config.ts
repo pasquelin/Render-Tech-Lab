@@ -1,8 +1,13 @@
+import { createEmeraldAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
+import { createIntegrationArchivePlugin } from './shared/archive/integration.ts';
 import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { directoryRetention } from './shared/archive/index.ts';
 
 function saveReportPlugin(): Plugin {
   return {
@@ -15,7 +20,7 @@ function saveReportPlugin(): Plugin {
           req.on('data', (chunk) => {
             body += chunk;
           });
-          req.on('end', () => {
+          req.on('end', async () => {
             try {
               const data = JSON.parse(body);
               const testId = data.testId || '01-indirect-draw';
@@ -31,6 +36,19 @@ function saveReportPlugin(): Plugin {
                 const globalReportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
                 fs.mkdirSync(path.dirname(globalReportPath), { recursive: true });
                 fs.writeFileSync(globalReportPath, markdown, 'utf-8');
+
+                if (data.latest && typeof data.latest === 'object') {
+                  const campaignsDir = path.resolve(server.config.root, testId, 'results', 'campaigns');
+                  const campaignDir = path.join(campaignsDir, `campaign-${randomUUID()}`);
+                  fs.mkdirSync(campaignDir, { recursive: true });
+                  fs.writeFileSync(path.join(campaignDir, 'raw.json'), `${JSON.stringify({ archivedAt: data.latest.timestamp ?? new Date().toISOString(), result: data.latest }, null, 2)}\n`, 'utf-8');
+                  fs.writeFileSync(path.join(campaignDir, 'report.md'), markdown, 'utf-8');
+                  const latestPath = path.resolve(server.config.root, testId, 'results', 'latest.json');
+                  const temporaryLatest = `${latestPath}.${randomUUID()}.tmp`;
+                  fs.writeFileSync(temporaryLatest, `${JSON.stringify(data.latest, null, 2)}\n`, 'utf-8');
+                  fs.renameSync(temporaryLatest, latestPath);
+                  await directoryRetention(campaignsDir, 'campaign-', true);
+                }
 
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
@@ -109,13 +127,6 @@ function saveReportPlugin(): Plugin {
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: err.message }));
         }
-      });
-
-      // A Node math test is not a physical GPU benchmark.
-      server.middlewares.use('/api/run-bench', (_req, res) => {
-        res.statusCode = 409;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ status: 'not-run', error: 'Utilisez le banc navigateur /bench/ ou npm run bench. Aucun résultat simulé.' }));
       });
 
       // 3. Révélation du dossier ou fichier dans le Finder / Explorer de l'OS
@@ -197,7 +208,8 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createEmeraldAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  resolve: { dedupe: ['three', 'react', 'react-dom'] },
   cacheDir: '.vite',
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
@@ -211,7 +223,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    rollupOptions: { input: { app: path.resolve('index.html'), bench: path.resolve('bench/index.html'), lodComparison: path.resolve('04-gpu-lod/comparison.html'), worldComparison: path.resolve('14-open-world/index.html') } },
+    rollupOptions: { input: { integrationSmoke: path.resolve('15-virtualized-integration/smoke.html'), app: path.resolve('index.html'), bench: path.resolve('bench/index.html'), lodComparison: path.resolve('04-gpu-lod/comparison.html'), worldComparison: path.resolve('14-open-world/index.html') } },
   },
   assetsInclude: ['**/*.wgsl'],
 });

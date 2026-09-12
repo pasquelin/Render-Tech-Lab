@@ -1,10 +1,11 @@
 import { comparisonReport, comparisonChart } from '../shared/benchmark/report.ts';
-import { createCompactionStrategies } from './compaction.ts';
+import { createCompactionStrategies } from '../shared/benchmark/compaction.ts';
 import * as THREE from 'three';
 import { GpuDrivenRenderer } from '../01-indirect-draw/implementation/gpuDrivenRenderer.ts';
-import { generateTestInstances, createBaseGeometry } from '../01-indirect-draw/common/sceneGenerator.ts';
+import { generateTestInstances, createBaseGeometry } from '../01-indirect-draw/scenarios/sceneGenerator.ts';
 import { compareStrategies, type BenchmarkStrategy, type ComparisonConfig } from '../shared/benchmark/comparison.ts';
 import { getSharedDevice, getAdapterInfo, configureCanvas } from '../src/common/gpuContext.ts';
+import { createIntegratedRunner, isIntegratedRunnerId } from '../shared/benchmark/integratedRunners.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#view')!;
 const status = document.querySelector<HTMLElement>('#status')!;
@@ -93,7 +94,16 @@ async function run(options: Partial<ComparisonConfig> & { counts?: number[]; tes
     return result;
   } finally { running = false; }
 }
-Object.assign(window, { renderTechLabBench: { probe, run } });
+/**
+ * Le harness autonome reste disponible, mais les mêmes runners peuvent être
+ * importés par la coque : aucun popup ni second document n'est nécessaire.
+ */
+async function runIntegrated(test: string, options: Parameters<ReturnType<typeof createIntegratedRunner>['run']>[0] = {}) {
+  if (!isIntegratedRunnerId(test)) throw new Error(`No integrated runner for ${test}`);
+  return createIntegratedRunner(test).run({ canvas, device, ...options });
+}
+
+Object.assign(window, { renderTechLabBench: { probe, run, runIntegrated, createRunner: createIntegratedRunner } });
 status.textContent = device ? 'Prêt pour les mesures physiques.' : 'WebGPU indisponible — aucun résultat simulé.';
 
 const query = new URLSearchParams(location.search);

@@ -6,7 +6,7 @@
 ---
 
 ## 2. Statut & Décision R&D
-- **Statut :** Prévu (Spécifié dans `MASTER_TEST_PLAN.md`)
+- **Statut :** Oracle CPU et shader WGSL disponibles; invariants conservateurs validés. Exécution/timing GPU à brancher dans la coque commune.
 - **Arbitrage cible :** `INTEGRATE` / `REJECT` / `WATCHLIST`
 
 ---
@@ -17,7 +17,14 @@ Métriques de rejet : global, frustum, backface cône, sub-pixel.
 ---
 
 ## 4. Structure du Banc
-- `baseline/` : Référence ou étalon comparatif.
 - `implementation/` : Code source expérimental WebGPU / WGSL.
-- `benchmark/` : Profilage et banc d'essai automatisé.
+- `runner/` : Profilage et banc d'essai automatisé.
 - `results/` : Métriques contractuelles `latest.json` et rapport `REPORT.md`.
+
+Le test local `node --experimental-strip-types 06-meshlet-culling/tests/test_meshlet_culling.ts`
+vérifie séparément frustum, cône et sous-pixel, puis leur terminaison en chaîne. Aucun taux obtenu
+par ce test CPU n'est publié comme mesure GPU.
+
+## Source layout
+
+Public API: [index.ts](index.ts); metadata: [manifest.ts](manifest.ts); contracts: [contracts.ts](contracts.ts). See [migration](docs/migration.md), [hypothesis](docs/hypothesis.md), [protocol](docs/protocol.md) and [limits](docs/limits.md). Canonical runner sources are under `runner/`, scenario metadata under `scenarios/`, and boundary tests under `tests/`. Compatibility forwarding modules have been removed.

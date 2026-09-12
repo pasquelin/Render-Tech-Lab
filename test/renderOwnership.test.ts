@@ -40,7 +40,7 @@ test('React canvas visibility and runner ownership survive transitions', async (
           await new Promise<void>((resolve) => { finish = resolve; });
         } };
         const campaign = integrated[action]();
-        await Promise.resolve();
+        await new Promise<void>(resolve => setTimeout(resolve, 80));
         assert.equal(calls, 1);
         assert.equal(integrated.state.running, true);
         assert.match(integrated.state.benchStatus, /dans le laboratoire/);
@@ -68,8 +68,7 @@ test('React canvas visibility and runner ownership survive transitions', async (
       { value: { state: nativeShell.state, actions: nativeShell.actions } },
       createElement(LabViewport, { webglRef: { current: null }, webgpuRef: { current: null } })));
     assert.match(nativeHtml, /id="scene-container" class="[^"]*hidden/);
-    assert.match(nativeHtml, /id="canvas-webgpu" class="[^"]*object-cover/);
-    assert.doesNotMatch(nativeHtml, /id="canvas-webgpu" class="[^"]*\bhidden\b/);
+    assert.doesNotMatch(nativeHtml, /<canvas/, '04 must not create a canvas before launch');
     assert.match(nativeHtml, /Aucun test en cours/);
     assert.match(nativeHtml, /data-execution-view="idle"/);
     for (const phase of ['Préparer', 'Contrôler', 'Échauffer 12/30', 'Mesurer A/B · 42/120', 'Drain GPU']) {
@@ -123,7 +122,11 @@ test('React canvas visibility and runner ownership survive transitions', async (
       const presented = renderToStaticMarkup(createElement(LabContext.Provider,
         { value: { state: nativeShell.state, actions: nativeShell.actions } },
         createElement(LabViewport, { webglRef: { current: null }, webgpuRef: { current: null } })));
-      assert.doesNotMatch(presented, /data-render-loading="true"/, `${moduleId}: phase changes cannot restore the loader after a frame`);
+      if (moduleId === '02-gpu-frustum-culling') {
+        assert.match(presented, /data-render-loading="true"/, '02 waits for the animated scene first-frame callback rather than a compute metric');
+      } else {
+        assert.doesNotMatch(presented, /data-render-loading="true"/, `${moduleId}: phase changes cannot restore the loader after a frame`);
+      }
     }
     const session = new LabSession({});
     session.runner01 = {};

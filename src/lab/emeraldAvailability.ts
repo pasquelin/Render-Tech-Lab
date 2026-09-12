@@ -1,4 +1,4 @@
-export const emeraldManifestUrl = '/benchmark-assets/emerald-derived/full/manifest.json';
+export const emeraldManifestUrl = '/benchmark-assets/emerald-derived/native/full/manifest.json';
 export async function checkEmeraldAvailability(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<number> {
   const read = async (url: string) => {
     const response = await fetcher(url, { signal, cache: 'no-store' });
@@ -10,8 +10,9 @@ export async function checkEmeraldAvailability(fetcher: typeof fetch = fetch, si
   if (pointer.status !== 'ready' || pointer.scope !== 'full' || typeof pointer.url !== 'string') throw new Error('Manifeste Emerald incomplet. Préparez Emerald puis réessayez.');
   const base = new URL(emeraldManifestUrl, 'http://localhost');
   const target = new URL(pointer.url, base);
-  if (target.origin !== base.origin || !target.pathname.startsWith('/benchmark-assets/emerald-derived/')) throw new Error('Adresse du cache Emerald invalide.');
+  if (target.origin !== base.origin || !target.pathname.startsWith('/benchmark-assets/emerald-derived/native/')) throw new Error('Adresse du cache Emerald invalide.');
   const metadata = await read(target.pathname);
   if (metadata.status !== 'ready' || metadata.scope !== 'full' || metadata.schema !== 1 || !Array.isArray(metadata.primitives) || !Array.isArray(metadata.selectedNodes) || !Number.isFinite(metadata.selectedTriangles) || metadata.selectedTriangles <= 0) throw new Error('Cache Emerald invalide. Préparez Emerald puis réessayez.');
+  if (metadata.simplification !== true) throw new Error('Cache sans pages QEM. Relancez npm run prepare:emerald.');
   return metadata.selectedTriangles;
 }

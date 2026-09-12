@@ -1,4 +1,6 @@
-# Programme d'optimisation mesurable
+# Programme d'optimisation mesurable — laboratoire
+
+Partie laboratoire : protocoles, recettes ou suivi documentaire. La conception du produit est conservée dans [Web Geometry](../../webGeometry/docs/mathematiques/VARIANTES_ALGEBRIQUES.md). Les numéros historiques des sections sont conservés.
 
 Les expériences générales de ce plan restent **not-run**, sauf les mesures explicitement décrites dans la [campagne comparative du 11 septembre 2026](PREUVES_COMPARATIVES_OPTIMISATION.md). Cette campagne couvre une fonction CPU du prototype, deux noyaux JavaScript et une scène de contrôle WebGL2. Elle ne valide ni le futur moteur GPU, ni un import natif, ni les performances sur petite machine.
 
@@ -22,39 +24,6 @@ Un compilateur plus lent peut produire des assets bien plus rapides à rendre. U
 | 6 | Compression et streaming | réduire mémoire/réseau | frontières, erreur et résidence |
 | 7 | SIMD / précision / simplifications arithmétiques | accélérer un noyau identifié | tolérances et bornes |
 | 8 | Raster logiciel et stratégies avancées | traiter les microtriangles | cohérence depth/ID et progression |
-
-## 3. Identités algébriques sans validation de performance
-
-Les transformations suivantes sont des hypothèses de recherche conservées pour leur explication mathématique. **Aucune n'est une optimisation adoptée.** Leur équivalence dans les réels ne prouve ni l'identité des décisions en flottants, ni un gain après compilation. Elles ne doivent pas remplacer les oracles sans comparaison recevable et sans respecter les conditions de la section 7.
-
-### Projection centrale sans division
-
-Pour `error>=0`, `depth>0`, `focal>=0`, `threshold>=0` :
-
-```text
-focal*error/depth <= threshold
-équivaut à focal*error <= threshold*depth
-```
-
-L'équivalence algébrique ne rend pas le modèle central conservatif hors axe. Elle ne s'applique pas à une profondeur négative et nécessite une politique d'overflow/NaN en f32.
-
-### Borne perspective sans racine carrée
-
-Pour la borne jacobienne du document des calculs, sous les mêmes hypothèses et `Zmin>near` :
-
-```text
-error² * fmax² * (Zmin² + Rmax²) <= threshold² * Zmin⁴
-```
-
-Cette comparaison élimine la racine et les divisions de la formule développée. Elle peut cependant augmenter la plage dynamique et le nombre de multiplications. Tester une version normalisée pour éviter overflow/underflow; une formule mathématiquement équivalente peut être numériquement moins sûre.
-
-### Frustum sans normaliser les plans
-
-Le test AABB `dot(n,center)+offset+dot(abs(n),extent)<0` ne nécessite pas de plans unitaires. Si les plans sont extraits une seule fois par vue, économiser leur normalisation peut être négligeable. Comparer à une version avec plans prétraités, pas à six normalisations par cluster artificiellement coûteuses.
-
-### Produits et normes
-
-Comparer des distances carrées évite une racine lorsque les deux côtés sont non négatifs. Préserver les tolérances relatives et le comportement au zéro. Le matériel/compilateur peut déjà effectuer certaines transformations; inspecter le profil avant de multiplier les variantes source.
 
 ## 4. Campagne amont : même bibliothèque, contenants différents
 
@@ -147,7 +116,7 @@ Avant chaque campagne, vérifier le chemin réellement exécuté et les unités 
 
 ## 9. Comparer les représentations avancées
 
-Les [stratégies avancées](STRATEGIES_AVANCEES.md) et le [pipeline GPU](PIPELINE_GPU_ET_EXTENSIONS.md) fournissent des expériences séparées : imposteurs, hiérarchie d’instances, ombres paginées, lots à taille fixe, réservations groupées, couverture programmable, rayons, courbes et cellules. Garder pour chaque expérience les mêmes vues, matériaux, trajectoires et budgets de qualité.
+Les [stratégies avancées](../../webGeometry/docs/extensions/STRATEGIES_AVANCEES.md) et le [pipeline GPU](../../webGeometry/docs/runtime/PIPELINE_GPU_ET_EXTENSIONS.md) fournissent des expériences séparées : imposteurs, hiérarchie d’instances, ombres paginées, lots à taille fixe, réservations groupées, couverture programmable, rayons, courbes et cellules. Garder pour chaque expérience les mêmes vues, matériaux, trajectoires et budgets de qualité.
 
 Séparer géométrie importée, examinée, retenue, effectivement rasterisée et remplacée par des images ; les triangles source d’un imposteur ne sont pas des triangles rasterisés. Compter captures, listes transitoires, scratch et pages en vol dans la mémoire totale. Comparer scènes pleines et ajourées, proches et dispersées, avec et sans plan de fond : une grille clairsemée peut empêcher l’occlusion qu’autorise un mur dense.
 

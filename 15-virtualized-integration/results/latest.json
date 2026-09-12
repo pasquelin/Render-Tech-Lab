@@ -1,0 +1,7 @@
+{
+  "contractVersion": 1,
+  "test": "15-virtualized-integration",
+  "status": "not-run",
+  "records": [],
+  "reason": "No historical latest.json; existing comparison reports retain their original paths."
+}

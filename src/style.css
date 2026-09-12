@@ -42,10 +42,9 @@ html, body {
   width: 100%;
   overflow: hidden;
   user-select: none;
-  scrollbar-gutter: stable;
 }
 
-#root, .drawer, .drawer-content, #sidebar, #viewport-container {
+#root, [data-lab-main], #sidebar, #viewport-container {
   min-width: 0;
   min-height: 0;
 }

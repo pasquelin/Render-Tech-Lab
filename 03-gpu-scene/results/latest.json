@@ -1,37 +1,451 @@
 {
-  "timestamp": "2026-09-11T21:28:57.377056+00:00",
   "test": "03-gpu-scene",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
-  },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "03-gpu-scene/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T15:03:59.948Z",
+  "status": "completed",
+  "results": [
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim A : 1 topologie",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 1,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.2233333309491476,
+      "avgCpuFrameMs": 1.2366666634877523,
+      "drawCalls": 699,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim A : 1 topologie",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 1,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.10999999245007833,
+      "avgCpuFrameMs": 0.1599999984105428,
+      "drawCalls": 1,
+      "culledObjects": 1297,
+      "visibleObjects": 703,
+      "gpuMemoryBytes": 201824,
+      "gpuFrameMs": 0.7536640000000003
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim A : 10 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.4166666666666667,
+      "avgCpuFrameMs": 1.4333333333333333,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim A : 10 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.10333333810170492,
+      "avgCpuFrameMs": 0.14333333571751913,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.36700160000000004
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim A : 50 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 50,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.3866666694482168,
+      "avgCpuFrameMs": 1.4133333365122478,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim A : 50 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 50,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.1100000003973643,
+      "avgCpuFrameMs": 0.14333332975705465,
+      "drawCalls": 50,
+      "culledObjects": 1302,
+      "visibleObjects": 698,
+      "gpuMemoryBytes": 317504,
+      "gpuFrameMs": 0.5155498666666667
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim A : 100 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 100,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.5133333285649617,
+      "avgCpuFrameMs": 1.5433333277702332,
+      "drawCalls": 696,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim A : 100 topologies",
+        "dimension": "A-geometry",
+        "objectCount": 2000,
+        "geometryCount": 100,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.15666666626930237,
+      "avgCpuFrameMs": 0.199999996026357,
+      "drawCalls": 100,
+      "culledObjects": 1302,
+      "visibleObjects": 698,
+      "gpuMemoryBytes": 440080,
+      "gpuFrameMs": 0.4937045333333331
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim B : 1 matériau",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 1,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.473333336909612,
+      "avgCpuFrameMs": 1.4900000015894572,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim B : 1 matériau",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 1,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.09666667381922404,
+      "avgCpuFrameMs": 0.15333333412806194,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 221912,
+      "gpuFrameMs": 0.4849663999999999
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim B : 10 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.8333333293596903,
+      "avgCpuFrameMs": 1.8666666666666667,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim B : 10 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.1299999972184499,
+      "avgCpuFrameMs": 0.18333333532015483,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.5461333333333334
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim B : 50 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 50,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.723333336909612,
+      "avgCpuFrameMs": 1.746666665871938,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim B : 50 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 50,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.13666667143503824,
+      "avgCpuFrameMs": 0.18666667540868123,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 223256,
+      "gpuFrameMs": 0.35389439999999983
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim B : 100 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 100,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.8200000027815502,
+      "avgCpuFrameMs": 1.8566666622956594,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim B : 100 matériaux",
+        "dimension": "B-material",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 100,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.12666666507720947,
+      "avgCpuFrameMs": 0.18333332935969035,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 224856,
+      "gpuFrameMs": 0.4216149333333331
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim C : 0% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.423333336909612,
+      "avgCpuFrameMs": 1.4366666714350382,
+      "drawCalls": 697,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim C : 0% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.13999999761581422,
+      "avgCpuFrameMs": 0.1799999952316284,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.37573973333333327
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim C : 25% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0.25,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.25,
+      "avgCpuFrameMs": 1.3866666714350382,
+      "drawCalls": 694,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim C : 25% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0.25,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.08333333730697631,
+      "avgCpuFrameMs": 0.45333332816759747,
+      "drawCalls": 10,
+      "culledObjects": 1304,
+      "visibleObjects": 696,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.6029312000000001
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim C : 50% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0.5,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.3766666690508524,
+      "avgCpuFrameMs": 1.6366666714350382,
+      "drawCalls": 695,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim C : 50% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 0.5,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.09333333770434062,
+      "avgCpuFrameMs": 0.776666671037674,
+      "drawCalls": 10,
+      "culledObjects": 1303,
+      "visibleObjects": 697,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.3582634666666667
+    },
+    {
+      "mode": "classic",
+      "config": {
+        "name": "Dim C : 100% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 1,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 1.326666667064031,
+      "avgCpuFrameMs": 1.7900000035762786,
+      "drawCalls": 693,
+      "culledObjects": null,
+      "visibleObjects": null,
+      "gpuMemoryBytes": null
+    },
+    {
+      "mode": "gpu-scene",
+      "config": {
+        "name": "Dim C : 100% dynamique",
+        "dimension": "C-dynamic",
+        "objectCount": 2000,
+        "geometryCount": 10,
+        "materialCount": 10,
+        "dynamicRatio": 1,
+        "targetVisibility": 1
+      },
+      "avgCpuSubmitMs": 0.1066666583220164,
+      "avgCpuFrameMs": 1.5933333297570547,
+      "drawCalls": 10,
+      "culledObjects": 1307,
+      "visibleObjects": 693,
+      "gpuMemoryBytes": 221976,
+      "gpuFrameMs": 0.31894186666666663
+    }
+  ]
 }

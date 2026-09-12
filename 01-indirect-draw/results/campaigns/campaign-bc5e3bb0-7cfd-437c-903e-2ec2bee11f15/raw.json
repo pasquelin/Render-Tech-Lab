@@ -1,0 +1,114 @@
+{
+  "archivedAt": "2026-09-12T14:50:42.760Z",
+  "result": {
+    "timestamp": "2026-09-12T14:50:42.760Z",
+    "tiers": [
+      500,
+      1000,
+      2000,
+      5000
+    ],
+    "classicResults": [
+      {
+        "mode": "classic",
+        "objectCount": 500,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 0.9062500004656613,
+        "avgSubmitMs": 0.9054687502793968,
+        "p95SubmitMs": 1.199999988079071,
+        "p99SubmitMs": 1.399999976158142,
+        "avgFps": 120.0037796452513,
+        "gpuFrameMs": null,
+        "drawCalls": 240
+      },
+      {
+        "mode": "classic",
+        "objectCount": 1000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 1.5882812538184226,
+        "avgSubmitMs": 1.5867187534458935,
+        "p95SubmitMs": 2.100000023841858,
+        "p99SubmitMs": 2.200000047683716,
+        "avgFps": 119.9811053377421,
+        "gpuFrameMs": null,
+        "drawCalls": 501
+      },
+      {
+        "mode": "classic",
+        "objectCount": 2000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 1.8679687501862645,
+        "avgSubmitMs": 1.8648437494412065,
+        "p95SubmitMs": 3.699999988079071,
+        "p99SubmitMs": 3.800000011920929,
+        "avgFps": 119.9811053377421,
+        "gpuFrameMs": null,
+        "drawCalls": 1013
+      },
+      {
+        "mode": "classic",
+        "objectCount": 5000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 3.2765624979510903,
+        "avgSubmitMs": 3.275781247764826,
+        "p95SubmitMs": 3.800000011920929,
+        "p99SubmitMs": 4,
+        "avgFps": 120.1059201775153,
+        "gpuFrameMs": null,
+        "drawCalls": 2437
+      }
+    ],
+    "gpuDrivenResults": [
+      {
+        "mode": "gpu-driven",
+        "objectCount": 500,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 0.1687500048428774,
+        "avgSubmitMs": 0.1390625019557774,
+        "p95SubmitMs": 0.2999999523162842,
+        "p99SubmitMs": 0.30000001192092896,
+        "avgFps": 120.0037796452513,
+        "gpuFrameMs": 0.45875200000000044,
+        "drawCalls": 1
+      },
+      {
+        "mode": "gpu-driven",
+        "objectCount": 1000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 0.16718750493600965,
+        "avgSubmitMs": 0.12812500447034836,
+        "p95SubmitMs": 0.20000004768371582,
+        "p99SubmitMs": 0.2999999523162842,
+        "avgFps": 119.89049372092022,
+        "gpuFrameMs": 0.7705599999999996,
+        "drawCalls": 1
+      },
+      {
+        "mode": "gpu-driven",
+        "objectCount": 2000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 0.15703125251457095,
+        "avgSubmitMs": 0.1273437519557774,
+        "p95SubmitMs": 0.20000004768371582,
+        "p99SubmitMs": 0.30000001192092896,
+        "avgFps": 119.99244142371583,
+        "gpuFrameMs": 0.5729280000000001,
+        "drawCalls": 1
+      },
+      {
+        "mode": "gpu-driven",
+        "objectCount": 5000,
+        "samplesCount": 128,
+        "avgCpuFrameMs": 0.17109375167638063,
+        "avgSubmitMs": 0.1390625024214387,
+        "p95SubmitMs": 0.20000004768371582,
+        "p99SubmitMs": 0.30000001192092896,
+        "avgFps": 120.01512000971199,
+        "gpuFrameMs": 0.8325120000000001,
+        "drawCalls": 1
+      }
+    ],
+    "crossoverObjectCount": null,
+    "analysis": "Comparaison système WebGL/Three.js contre WebGPU natif. Aucun crossover algorithmique ni verdict automatique ; GPU mesuré uniquement si timestamp-query disponible."
+  }
+}

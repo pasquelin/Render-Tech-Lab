@@ -6,7 +6,7 @@
 ---
 
 ## 2. Statut & Décision R&D
-- **Statut :** Prévu (Spécifié dans `MASTER_TEST_PLAN.md`)
+- **Statut :** Oracle CPU exécutable et shader de réduction WGSL disponibles. Dispatch récursif et timestamps GPU à brancher dans la coque commune.
 - **Arbitrage cible :** `INTEGRATE` / `REJECT` / `WATCHLIST`
 
 ---
@@ -17,7 +17,14 @@ Résolutions testées : 512², 1024², 2048².
 ---
 
 ## 4. Structure du Banc
-- `baseline/` : Référence ou étalon comparatif.
 - `implementation/` : Code source expérimental WebGPU / WGSL.
-- `benchmark/` : Profilage et banc d'essai automatisé.
+- `runner/` : Profilage et banc d'essai automatisé.
 - `results/` : Métriques contractuelles `latest.json` et rapport `REPORT.md`.
+
+Le test local `node --experimental-strip-types 07-hiz/tests/test_hiz.ts` couvre les tailles
+impaires, la terminaison 1×1, standard-Z, reversed-Z et les requêtes invalides. Ses temps CPU ne
+répondent pas à la question du coût GPU et ne sont donc pas publiés.
+
+## Source layout
+
+Public API: [index.ts](index.ts); metadata: [manifest.ts](manifest.ts); contracts: [contracts.ts](contracts.ts). See [migration](docs/migration.md), [hypothesis](docs/hypothesis.md), [protocol](docs/protocol.md) and [limits](docs/limits.md). Canonical runner sources are under `runner/`, scenario metadata under `scenarios/`, and boundary tests under `tests/`. Compatibility forwarding modules have been removed.

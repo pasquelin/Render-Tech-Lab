@@ -18,6 +18,7 @@ import { parseMarkdownToHtml } from './markdown.ts';
 import { BASELINE_00_SCENARIOS, GPU_SCENE_PRESETS, MODULE_DESCRIPTORS } from './modules.ts';
 import { MODULE_SCHEMAS } from './schemas.ts';
 import { LIVE_MODULES } from './catalog.ts';
+import { moduleUi } from './moduleUi.ts';
 import {
   emptyModal,
   initialSnapshot,
@@ -58,9 +59,9 @@ const nextVisualFrame = async () => {
 export const MIN_RESULT_PRESENTATION_MS = 2000;
 
 type Canvases = {
-  webgpu: HTMLCanvasElement;
-  webgl: HTMLCanvasElement;
-  chart: HTMLCanvasElement;
+  webgpu: HTMLCanvasElement | null;
+  webgl: HTMLCanvasElement | null;
+  chart: HTMLCanvasElement | null;
 };
 
 export class LabSession {
@@ -149,9 +150,8 @@ export class LabSession {
   }
 
   async start(): Promise<void> {
-    this.genericChart = new GenericLabChart(this.canvases.chart);
     window.addEventListener('resize', this.onResize);
-    this.onResize();
+    if (typeof document !== 'undefined') this.onResize();
 
     const requested = new URLSearchParams(window.location.search).get('test') ?? '00-baseline';
     await this.switchModule(Object.hasOwn(MODULE_DESCRIPTORS, requested) ? requested : '00-baseline');
@@ -159,7 +159,9 @@ export class LabSession {
 
   private async ensureRunner01(): Promise<BenchmarkRunner> {
     if (this.runner01) return this.runner01;
-    const runner = new BenchmarkRunner(this.canvases.webgpu, this.canvases.webgl, this.canvases.chart);
+    const webgpu = this.canvases.webgpu, webgl = this.canvases.webgl, chart = this.canvases.chart;
+    if (!webgpu || !webgl || !chart) throw new Error('Surfaces de rendu absentes après le lancement.');
+    const runner = new BenchmarkRunner(webgpu, webgl, chart);
     runner.canRender = () => !this.disposed && !this.campaignAborted && this.state.moduleId === '01-indirect-draw' && this.state.running;
     runner.onModeChange = mode => this.publishRunnerMode('01-indirect-draw', mode);
     await runner.init();
@@ -178,14 +180,18 @@ export class LabSession {
 
   private async ensureRunner03(): Promise<GPUSceneBenchmarkRunner> {
     if (this.runner02) return this.runner02;
-    const runner = new GPUSceneBenchmarkRunner(this.canvases.webgpu, this.canvases.webgl);
+    const webgpu = this.canvases.webgpu, webgl = this.canvases.webgl;
+    if (!webgpu || !webgl) throw new Error('Surfaces de rendu absentes après le lancement.');
+    const runner = new GPUSceneBenchmarkRunner(webgpu, webgl);
     runner.canRender = () => !this.disposed && !this.campaignAborted && this.state.moduleId === '03-gpu-scene' && this.state.running;
     runner.onModeChange = mode => this.publishRunnerMode('03-gpu-scene', mode === 'classic' ? 'classic' : 'gpu-driven');
     if (!await runner.init()) throw new Error("03-gpu-scene indisponible : WebGPU ou 'indirect-first-instance' manque.");
     runner.onProgress = (stage, progress) => this.setBenchStatus(`⏳ [${Math.round(progress * 100)}%] ${stage}...`, 'text-primary');
     runner.onMetricsUpdate = (measurement, _mode, count) => this.handleMetrics(measurement.submitMs, measurement.cpuFrameMs, measurement.fps, measurement.drawCalls, count);
     runner.onFramePresented = () => { if (this.state.moduleId === '03-gpu-scene' && this.state.running) this.markFramePresented(); };
-    this.runner02 = runner; this.chart02 = new GPUSceneChart(this.canvases.chart);
+    const chart = this.canvases.chart;
+    if (!chart) throw new Error('Surface du graphe absente après le lancement.');
+    this.runner02 = runner; this.chart02 = new GPUSceneChart(chart);
     return runner;
   }
 
@@ -198,8 +204,11 @@ export class LabSession {
     window.removeEventListener('resize', this.onResize);
     // ResizeObservers from an old React session must not repaint the shared canvas.
     this.runner01?.chart.setActive(false);
+    this.runner01?.chart.dispose();
     this.chart02?.setActive(false);
+    this.chart02?.dispose();
     this.chart04?.setActive(false);
+    this.chart04?.dispose();
     if (this.canvases.webgl) releaseSharedGLRenderer(this.canvases.webgl);
     this.genericChart?.setActive(false);
     this.genericChart?.dispose();
@@ -231,10 +240,8 @@ export class LabSession {
     if (!container) return;
     const width = container.clientWidth;
     const height = container.clientHeight;
-    this.canvases.webgpu.width = width;
-    this.canvases.webgpu.height = height;
-    this.canvases.webgl.width = width;
-    this.canvases.webgl.height = height;
+    if (this.canvases.webgpu) { this.canvases.webgpu.width = width; this.canvases.webgpu.height = height; }
+    if (this.canvases.webgl) { this.canvases.webgl.width = width; this.canvases.webgl.height = height; }
     this.runner01?.resize(width, height);
     this.runner02?.resize(width, height);
   };
@@ -359,8 +366,9 @@ export class LabSession {
     return 'Test B (GPU-Driven)';
   }
 
-  private populateSelector(moduleId: string): { scenarioOptions: LabSnapshot['scenarioOptions']; benchLabel: string; painLabel: string; showPain: boolean; scenarioVal: string } {
+  private populateSelector(moduleId: string): { scenarioOptions: LabSnapshot['scenarioOptions']; benchLabel: string; painLabel: string; showPain: boolean; scenarioVal: string; countLabel: string; modeHint: string } {
     const desc = MODULE_DESCRIPTORS[moduleId];
+    const ui = moduleUi(moduleId);
     const selected = desc.options.find((option) => option.selected)?.val ?? desc.options[0]?.val ?? '';
     return {
       scenarioOptions: desc.options.map((option) => ({
@@ -373,6 +381,8 @@ export class LabSession {
       painLabel: desc.painLabel ?? '',
       showPain: Boolean(desc.painLabel),
       scenarioVal: selected,
+      countLabel: ui.countLabel,
+      modeHint: ui.modeHint,
     };
   }
 
@@ -540,7 +550,7 @@ export class LabSession {
         moduleId,
         showBaseline: false,
         mode: this.runner01?.currentMode ?? 'gpu-driven',
-        showChart: true,
+        showChart: false,
         showLodComparison: false,
         workbench: { ...this.state.workbench, visible: false },
         reportHint: `${moduleId}/results/REPORT.md & reports/`,
@@ -552,9 +562,8 @@ export class LabSession {
     }
 
     if (moduleId === '03-gpu-scene') {
-      if (!this.chart02) this.chart02 = new GPUSceneChart(this.canvases.chart);
-      this.chart02.reset();
-      this.chart02.setActive(true);
+      this.chart02?.reset();
+      this.chart02?.setActive(true);
       this.patch({
         moduleId,
         showBaseline: false,
@@ -575,8 +584,7 @@ export class LabSession {
     this.runner01?.chart.setActive(false);
     this.chart02?.setActive(false);
     if (moduleId === '04-gpu-lod') {
-      if (!this.chart04) this.chart04 = new LodChart(this.canvases.chart);
-      this.chart04.setActive(true);
+      this.chart04?.setActive(true);
       this.genericChart?.setActive(false);
     } else {
       this.chart04?.setActive(false);
@@ -588,10 +596,9 @@ export class LabSession {
       showBaseline: false,
       showWebgl: false,
       showWebgpu: false,
-      showLodComparison: moduleId === '04-gpu-lod',
+      showLodComparison: Boolean(moduleUi(moduleId).comparisonHref),
       reportHint: `${moduleId}/results/REPORT.md & reports/`,
       ...selector,
-      countLabel: moduleId === '15-virtualized-integration' ? 'Scène :' : this.state.countLabel,
       workbench: {
         ...this.state.workbench,
         terminal: `[${desc.number} · ${desc.name}] Prêt pour l'évaluation.\nSélectionnez une charge ou cliquez sur « Benchmark » dans le panneau de droite pour exécuter le banc en direct.`,
@@ -824,12 +831,27 @@ export class LabSession {
     this.canvases.chart.dataset.chartOwner = token === undefined ? moduleId : `${moduleId}:${token}`;
   }
 
+  private prepareMountedSurfaces(moduleId: string): void {
+    const chart = this.canvases.chart;
+    if (chart && moduleId === '02-gpu-frustum-culling') {
+      this.genericChart?.dispose();
+      this.genericChart = new GenericLabChart(chart);
+      this.genericChart.reset('Préparation de la campagne courante…');
+    } else if (chart && !this.genericChart) {
+      this.genericChart = new GenericLabChart(chart);
+    }
+    if (moduleId === '02-gpu-frustum-culling') this.genericChart?.setActive(true);
+    if (chart && moduleId === '04-gpu-lod' && !this.chart04) this.chart04 = new LodChart(chart);
+    this.markChartOwner(moduleId, this.activeCampaign?.token);
+    if (typeof document !== 'undefined') this.onResize();
+  }
+
   private publishIntegratedMetric(metric: IntegratedMetric, records: readonly IntegratedMetric[], token: number): void {
     if (!this.isCurrentCampaign(metric.test, token)) return;
     const cpu = metric.cpuMs;
     const gpu = metric.gpuMs;
     const physicalSubmission = metric.custom.scope === 'webgpu-physical' || metric.custom.scope === 'virtualized-dyadic-patches';
-    const detailLabels: Record<string, string> = { meshlets: 'Groupes meshlets', triangles: 'Triangles couverts', vertexDuplication: 'Duplication sommets', visible: 'Meshlets visibles', rejected: 'Meshlets rejetés', frustumRejected: 'Rejets frustum', coneRejected: 'Rejets cône', mips: 'Niveaux Hi-Z', logicalBytes: 'Octets logiques', objects: 'Objets', pipelineTransitions: 'Transitions pipeline', bindGroupTransitions: 'Transitions bind groups', occluded: 'Éléments occlus' };
+    const detailLabels: Record<string, string> = { meshlets: 'Groupes meshlets', triangles: 'Triangles couverts', vertexDuplication: 'Duplication sommets', visible: 'Meshlets visibles', rejected: 'Meshlets rejetés', frustumRejected: 'Rejets frustum', coneRejected: 'Rejets cône', mips: 'Niveaux Hi-Z', logicalBytes: 'Octets logiques', objects: 'Objets', instances: 'Instances', pipelineTransitions: 'Transitions pipeline', bindGroupTransitions: 'Transitions bind groups', occluded: 'Éléments occlus' };
     const details = Object.entries(metric.custom).filter(([label, value]) => label !== 'scope' && (typeof value === 'number' || typeof value === 'string')).slice(0, 4).map(([label, value]) => ({ label: detailLabels[label] ?? label, value: typeof value === 'number' ? value.toLocaleString('fr-FR') : String(value) }));
     this.markFramePresented();
     this.patch({ progress: { phase: 'measure', ...progressOperation[metric.test], itemName: metric.variant, completed: records.length, total: createIntegratedRunner(metric.test).variants.length, message: `Résultat réel · ${metric.variant}`, details },
@@ -872,7 +894,9 @@ export class LabSession {
     }) : undefined;
     this.patch({ execution: { status: 'running', phase: result.gates.detail, lastCampaign: {
       timestamp, status: 'Terminée',
-      configuration: result.test === '15-virtualized-integration' ? '3 scénarios procéduraux · contrôles A/B' : result.records.map(record => record.variant).join(' / '), series, scenarioChecks,
+      configuration: result.test === '15-virtualized-integration' ? '3 scénarios procéduraux · contrôles A/B' : result.test === '02-gpu-frustum-culling'
+        ? `${Number(result.records[0]?.custom.instances).toLocaleString('fr-FR')} instances · ${result.records.map(record => record.variant).join(' / ')}`
+        : result.records.map(record => record.variant).join(' / '), series, scenarioChecks,
     } } });
     this.setBenchStatus(`🏁 ${result.records.length} variante${result.records.length > 1 ? 's' : ''} mesurée${result.records.length > 1 ? 's' : ''} · ${result.gates.detail}`);
   }
@@ -896,7 +920,9 @@ export class LabSession {
     try {
       const device = moduleId === '07-hiz' ? undefined : await getSharedDevice();
       if (controller.signal.aborted) throw new DOMException('Campagne interrompue', 'AbortError');
-      const measurementCanvas = moduleId === '15-virtualized-integration' ? this.canvases.webgpu.ownerDocument.createElement('canvas') : this.canvases.webgpu;
+      const mainCanvas = this.canvases.webgpu;
+      if (moduleId === '15-virtualized-integration' && !mainCanvas) throw new Error('Surface WebGPU absente après le lancement.');
+      const measurementCanvas = moduleId === '15-virtualized-integration' ? mainCanvas!.ownerDocument.createElement('canvas') : mainCanvas ?? undefined;
       const result = await createIntegratedRunner(moduleId).run({
         // The 15 control poses render on a dedicated surface; the main viewport
         // remains a stable visualization and never exposes internal A/A/B frames.
@@ -932,6 +958,9 @@ export class LabSession {
       }
       if (!controller.signal.aborted) {
         const timestamp = new Date().toISOString();
+        if (moduleId === '02-gpu-frustum-culling' && result.status === 'not-run') {
+          await this.holdReadinessPresentation(moduleId, token);
+        }
         this.finishIntegratedCampaign(result, token, timestamp);
         if (archiveError && this.isCurrentCampaign(moduleId, token)) this.setBenchStatus(this.state.benchStatus + archiveError, 'text-warning');
         if (result.status === 'measured' && moduleId !== '15-virtualized-integration') await this.archiveIntegratedCampaign(result, timestamp);
@@ -958,12 +987,15 @@ export class LabSession {
     this.presentationAbortController?.abort();
     this.patch({
       running: true,
+      showChart: moduleUi(moduleId).showChart,
       framePresented: false,
       stats: { ...this.state.stats, objects: 'non mesuré', submit: 'non mesuré', cpuFrame: 'non mesuré', fps: 'non mesuré', drawCalls: 'non mesuré' },
       progress: initialProgress(moduleId),
       execution: { status: 'running', phase: 'Préparer', lastCampaign: null },
     });
     try {
+      await nextVisualFrame();
+      this.prepareMountedSurfaces(moduleId);
       if (isIntegratedRunnerId(moduleId)) {
         await this.runIntegrated(moduleId, false, campaignToken);
       } else if (moduleId === '01-indirect-draw') {
@@ -1021,6 +1053,9 @@ export class LabSession {
       }
     } catch (error) {
       if (!this.disposed) {
+        if (moduleId === '02-gpu-frustum-culling' && !this.campaignAborted) {
+          await this.holdReadinessPresentation(moduleId, campaignToken);
+        }
         this.patch({ execution: { ...this.state.execution, status: this.campaignAborted ? 'stopped' : 'error' } });
         this.setBenchStatus(this.campaignAborted ? 'Arrêt manuel · dernières mesures complètes conservées.' : error instanceof Error ? error.message : String(error), 'text-warning');
       }
@@ -1043,12 +1078,15 @@ export class LabSession {
     this.presentationAbortController?.abort();
     this.patch({
       running: true,
+      showChart: moduleUi(moduleId).showChart,
       framePresented: false,
       stats: { ...this.state.stats, objects: 'non mesuré', submit: 'non mesuré', cpuFrame: 'non mesuré', fps: 'non mesuré', drawCalls: 'non mesuré' },
       progress: initialProgress(moduleId),
       execution: { status: 'running', phase: 'Préparer', lastCampaign: null },
     });
     try {
+      await nextVisualFrame();
+      this.prepareMountedSurfaces(moduleId);
       if (isIntegratedRunnerId(moduleId)) {
         await this.runIntegrated(moduleId, true, campaignToken);
       } else if (moduleId === '01-indirect-draw') {

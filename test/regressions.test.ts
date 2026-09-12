@@ -10,7 +10,7 @@ import { extractSeries } from '../shared/benchmark/chart.ts';
 import * as hiz from '../shared/math/hiz.ts';
 import * as compaction from '../shared/math/compaction.ts';
 import { buildHiZPyramid, queryHiZ } from '../07-hiz/implementation/hizPyramid.ts';
-import { LodBenchmarkRunner } from '../04-gpu-lod/benchmark/runner.ts';
+import { LodBenchmarkRunner } from '../04-gpu-lod/runner/index.ts';
 
 test('empty observations cannot become a measured benchmark', async () => {
   const runner = createBenchRunner({ test: 'test' });
@@ -111,6 +111,13 @@ test('timestamp batches enforce query lifecycle and reject invalid chronology', 
   assert.equal(timer.quality[0], 2);
   assert.equal(unmaps, 2);
   timer.destroy(); assert.throws(() => timer.begin(1));
+});
+
+test('GPU-driven raster omits timestamp writes when timestamp-query is unavailable', async () => {
+  const source = await import('node:fs/promises').then(fs => fs.readFile(
+    new URL('../01-indirect-draw/implementation/gpuDrivenRenderer.ts', import.meta.url), 'utf8'));
+  assert.match(source, /timer \? timer\.writes\(sample, timer\.passCount - 1\) : undefined/);
+  assert.doesNotMatch(source, /timer\?\.writes\(sample, timer\.passCount - 1\)/);
 });
 
 test('fallback reports latency without inventing GPU chart points', async () => {

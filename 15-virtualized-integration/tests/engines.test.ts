@@ -1,0 +1,28 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {webgpuPagesBackend} from '@web-geometry/sdk/browser';
+import {BENCH_ENGINES,PATH_CAMPAIGN_ENGINES,benchEngine,competitorMatrix,factoriesFor,needsResidentPages,pathCampaignFactories,selectableBackend} from '../implementation/engines.ts';
+test('bench engines expose a stable comparison contract without simulating missing libraries',()=>{
+ assert.deepEqual(BENCH_ENGINES.map(engine=>engine.id),['three-webgl-reference','exact-cluster-pages','three-lod','webgpu-page-raster']);
+ assert.equal(benchEngine('three-lod').comparable,true);
+ assert.equal(benchEngine('webgpu-page-raster').comparable,false);
+ assert.equal(benchEngine('webgpu-page-raster').factory,webgpuPagesBackend);
+ const factories=factoriesFor('three-webgl-reference','exact-cluster-pages','beauty');
+ assert.equal(factories.length,2);
+ const webgpu=factoriesFor('webgpu-page-raster','exact-cluster-pages','beauty');
+ assert.equal(webgpu.length,3);
+ assert.ok(webgpu.includes(webgpuPagesBackend));
+ assert.equal(needsResidentPages('webgpu-page-raster','exact-cluster-pages'),false);
+ assert.equal(needsResidentPages('three-lod','exact-cluster-pages'),true);
+ assert.equal(needsResidentPages('three-webgl-reference','exact-cluster-pages'),false);
+ const matrix=competitorMatrix();
+ assert.ok(matrix.every(row=>row.status!=='integrated'||['three-webgl-reference','exact-cluster-pages','three-lod'].includes(row.id)));
+ assert.ok(matrix.some(row=>row.status==='incompatible'));
+ assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference','webgpu-page-raster']),'webgpu-page-raster');
+ assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference']),'three-webgl-reference');
+ assert.equal(selectableBackend('webgpu-page-raster','pages',['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']),'webgpu-page-raster');
+ assert.deepEqual([...PATH_CAMPAIGN_ENGINES],['three-webgl-reference','exact-cluster-pages','three-lod']);
+ assert.equal(pathCampaignFactories().length,3);
+ assert.equal(needsResidentPages('three-lod','three-lod'),true);
+ assert.equal(needsResidentPages('three-webgl-reference','three-webgl-reference'),false);
+ assert.equal(needsResidentPages('exact-cluster-pages','exact-cluster-pages'),false);
+});

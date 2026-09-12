@@ -35,21 +35,4 @@ export function extractSeries(
   }));
 }
 
-/**
- * Produit le tracé ASCII d'une série (outil de défilement / vérification sans
- * navigateur). Chaque barre vaut `max / 30` unités ; les nulls rendus comme « · ».
- */
-export function asciiSeries(points: ChartPoint[]): string {
-  const values = points.map((p) => p.value);
-  const max = Math.max(0, ...values.filter((v): v is number => typeof v === 'number'));
-  if (max === 0) return points.map((p) => `${p.label}: ·`).join('\n');
 
-  const lines = points.map((p) => {
-    const label = (p.label + ' ').padEnd(8);
-    if (p.value === null) return `${label}: ·        (not-run)`;
-    const barLen = Math.round((p.value / max) * 30);
-    const bar = '#'.repeat(barLen) || '·';
-    return `${label}: ${bar.padEnd(30, ' ')} ${p.value}`;
-  });
-  return lines.join('\n');
-}

@@ -13,8 +13,19 @@ import type {
   MeshletPartitioningResult,
   BoundingSphere,
   NormalCone,
-} from '../types.ts';
+} from '../contracts.ts';
 import { dot } from '../../shared/math/geometry.ts';
+
+function validateMesh(mesh: TriangleMesh): void {
+  if (mesh.positions.length % 3 !== 0 || mesh.indices.length % 3 !== 0) {
+    throw new Error('Le maillage doit contenir des positions xyz et des triangles indexés complets');
+  }
+  if (mesh.triangleCount !== mesh.indices.length / 3 || mesh.vertexCount !== mesh.positions.length / 3) {
+    throw new Error('Les compteurs du maillage ne correspondent pas aux buffers');
+  }
+  for (const value of mesh.positions) if (!Number.isFinite(value)) throw new Error('Position non finie');
+  for (const index of mesh.indices) if (index >= mesh.vertexCount) throw new Error(`Index de sommet hors limites: ${index}`);
+}
 
 /**
  * Calcule la sphère englobante minimale d'un ensemble de sommets indexés.
@@ -100,16 +111,6 @@ function computeMeshletNormalCone(
       ny /= len;
       nz /= len;
 
-      // S'assurer que la normale pointe vers l'extérieur de la sphère englobante
-      const vx = positions[i0] - boundingCenter[0];
-      const vy = positions[i0 + 1] - boundingCenter[1];
-      const vz = positions[i0 + 2] - boundingCenter[2];
-      if (nx * vx + ny * vy + nz * vz < 0) {
-        nx = -nx;
-        ny = -ny;
-        nz = -nz;
-      }
-
       faceNormals.push([nx, ny, nz]);
       avgNx += nx;
       avgNy += ny;
@@ -136,6 +137,7 @@ function computeMeshletNormalCone(
     apex: boundingCenter,
     axis,
     cosHalfAngle: Math.max(-1.0, Math.min(1.0, minCos)),
+    cullable: faceNormals.length > 0 && avgLen > 1e-6 && minCos > 0,
   };
 }
 
@@ -146,6 +148,7 @@ export function buildMeshlets(
   mesh: TriangleMesh,
   trianglesPerMeshlet: 64 | 128 | 256 | 512
 ): MeshletPartitioningResult {
+  validateMesh(mesh);
   const startTime = performance.now();
   const totalTriangles = mesh.triangleCount;
   const meshlets: Meshlet[] = [];
@@ -187,11 +190,13 @@ export function buildMeshlets(
     meshlets.push({
       boundingSphere,
       normalCone,
-      vertexOffset: Math.min(...localVertices),
+      vertexOffset: localVertices[0] ?? 0,
       vertexCount: localVertices.length,
       indexOffset,
       indexCount,
       triangleCount: currentTriCount,
+      vertexIndices: Uint32Array.from(localVertices),
+      sourceTriangleOffset: triOffset,
     });
   }
 

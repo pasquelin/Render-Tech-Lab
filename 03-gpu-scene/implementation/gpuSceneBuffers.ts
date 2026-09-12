@@ -1,4 +1,4 @@
-import type { GPUObjectData, GPUGeometryData, GPUMaterialData } from '../types.ts';
+import type { GPUObjectData, GPUGeometryData, GPUMaterialData } from '../contracts.ts';
 
 /**
  * Layout WGSL d'un GPUObject : 16 floats transform + 4 floats bounding sphere

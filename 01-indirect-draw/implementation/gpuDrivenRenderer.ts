@@ -1,6 +1,6 @@
 import type { TimestampBatch } from '../../shared/gpu/timing.ts';
 import * as THREE from 'three';
-import type { MeshInstanceDef, FrameMeasurement } from '../types.ts';
+import type { MeshInstanceDef, FrameMeasurement } from '../contracts.ts';
 import { GpuSceneBuffer } from './gpuSceneBuffer.ts';
 import { RESET_COMPUTE_WGSL, createCullingShader, RENDER_RASTER_WGSL, type CullingVariant } from './cullShader.ts';
 
@@ -291,7 +291,8 @@ export class GpuDrivenRenderer {
     });
 
     // A. Étape Compute : Reset atomique du compteur de visibilité
-    this.computeDescriptor.timestampWrites = timer?.writes(sample, 0);
+    // A one-pass timer measures only raster on the direct path: empty compute timestamps are unreliable.
+    this.computeDescriptor.timestampWrites = this.drawMode === 'indirect' || timer?.passCount === 2 ? timer?.writes(sample, 0) : undefined;
     const computePass = commandEncoder.beginComputePass(this.computeDescriptor);
     if (this.drawMode === 'indirect') {
     computePass.setPipeline(this.resetPipeline);
@@ -308,7 +309,7 @@ export class GpuDrivenRenderer {
 
     // C. Étape Raster : DrawIndexedIndirect
     this.colorAttachment.view = this.context.getCurrentTexture().createView();
-    this.renderDescriptor.timestampWrites = timer?.writes(sample, 1);
+    this.renderDescriptor.timestampWrites = timer ? timer.writes(sample, timer.passCount - 1) : undefined;
     const renderPass = commandEncoder.beginRenderPass(this.renderDescriptor);
 
     renderPass.setPipeline(this.renderPipeline);
@@ -342,9 +343,12 @@ export class GpuDrivenRenderer {
     return m;
   }
 
-  public async readVisibleIds(): Promise<Uint32Array> {
+  public async readVisibleIds(signal?: AbortSignal): Promise<Uint32Array> {
+    signal?.throwIfAborted();
     const bytes = 4 + this.instances.length * 4;
     const read = this.device.createBuffer({ size: Math.max(8, bytes), usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    const abort = () => read.destroy();
+    signal?.addEventListener('abort', abort, { once: true });
     try {
       const encoder = this.device.createCommandEncoder();
       encoder.copyBufferToBuffer(this.indirectBuffer, 4, read, 0, 4);
@@ -355,7 +359,7 @@ export class GpuDrivenRenderer {
       const count = words[0];
       if (count > this.instances.length) throw new Error('Visible count overflow');
       return words.slice(1, count + 1);
-    } finally { if (read.mapState === 'mapped') read.unmap(); read.destroy(); }
+    } finally { signal?.removeEventListener('abort', abort); if (read.mapState === 'mapped') read.unmap(); read.destroy(); }
   }
 
   public dispose() {

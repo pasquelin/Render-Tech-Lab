@@ -164,14 +164,3 @@ export function createBenchRunner(config: BenchRunnerConfig): BenchRunner {
     getTestId: () => config.test,
   };
 }
-
-/** Paliers de charge canoniques (N) référencés par le Master Test Plan. */
-export const LOAD_TIERS: BenchTier[] = [
-  { label: '1', value: 1 },
-  { label: '10', value: 10 },
-  { label: '100', value: 100 },
-  { label: '1k', value: 1_000 },
-  { label: '10k', value: 10_000 },
-  { label: '100k', value: 100_000 },
-  { label: '1M', value: 1_000_000 },
-];

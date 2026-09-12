@@ -1,37 +1,44 @@
 {
-  "timestamp": "2026-09-11T21:28:57.377962+00:00",
   "test": "07-hiz",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "07-hiz",
+      "variant": "1024-standard-z",
+      "cpuMs": 2.4333333373069763,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-hiz-oracle",
+        "resolution": 1024,
+        "convention": "standard-z",
+        "mips": 11,
+        "rootDepth": 0.8999999761581421,
+        "mipValuesVerified": true,
+        "logicalBytes": 5592404,
+        "gpuReadbackVerified": false
+      }
+    },
+    {
+      "test": "07-hiz",
+      "variant": "1024-reversed-z",
+      "cpuMs": 2.4333333373069763,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-hiz-oracle",
+        "resolution": 1024,
+        "convention": "reversed-z",
+        "mips": 11,
+        "rootDepth": 0.10000000149011612,
+        "mipValuesVerified": true,
+        "logicalBytes": 5592404,
+        "gpuReadbackVerified": false
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Tous les invariants du runner ont été vérifiés."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "07-hiz/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T19:46:37.347Z"
 }

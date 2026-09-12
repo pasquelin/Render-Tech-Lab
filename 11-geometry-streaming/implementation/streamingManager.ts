@@ -10,7 +10,7 @@ import type {
   StreamingConfig,
   StreamingFrameMetrics,
   StreamingLifecycle,
-} from '../types.ts';
+} from '../contracts.ts';
 
 export interface GeometryPage {
   id: number;

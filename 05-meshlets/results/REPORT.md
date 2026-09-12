@@ -1,27 +1,15 @@
-> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+# 05-meshlets — campagne intégrée
 
-# Rapport du Banc : 05-meshlets (Partitionnement en Clusters)
+Date : 2026-09-12T15:04:52.645Z.
+Statut : measured.
+Contrôle : Tous les invariants du runner ont été vérifiés.
+Exécution : oracle CPU. Aucun dispatch, timestamp ni readback GPU n’a été exécuté.
 
-**Date :** 2026-09-11T20:23:45.851Z  
-**Statut :** `INTEGRATE`  
-**Maillage témoin :** Sphère haute résolution (1024 triangles, 561 sommets)
+| Stratégie | CPU (ms) | GPU (ms) | Éléments traités |
+|---|---:|---:|---:|
+| 64 | 0.600 | non mesuré | non renseigné |
+| 128 | 0.233 | non mesuré | non renseigné |
+| 256 | 0.200 | non mesuré | non renseigné |
+| 512 | 0.233 | non mesuré | non renseigné |
 
----
-
-## 1. Résultats Comparatifs des Paliers de Partitionnement
-
-| Triangles / Meshlet | Meshlets Générés | Moyenne Triangles | Facteur Duplication | Mémoire Métadonnées | Temps Partitionnement |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| **64** | 16 | 64 | 1.88x | 1024 octets | 1.04 ms |
-| **128** | 8 | 128 | 1.41x | 512 octets | 0.43 ms |
-| **256** | 4 | 256 | 1.18x | 256 octets | 0.25 ms |
-| **512** | 2 | 512 | 1.06x | 128 octets | 0.22 ms |
-
-
----
-
-## 2. Invariants Géométriques & Validation
-1. **Couverture totale :** 100% des triangles assignés à un cluster sans perte.
-2. **Englobement exact :** Toutes les positions de sommets sont strictement contenues dans la sphère englobante ($d \le r$).
-3. **Cône de normales :** Axe normalisé et cosHalfAngle $\in [-1, 1]$ pour le backface culling de cluster.
-4. **Arbitrage de granularité :** Le palier **128 triangles** maximise la granularité de rejet tout en maintenant l'overhead des métadonnées sous 15%.
+La durée de présentation de l’interface est exclue.

@@ -25,12 +25,3 @@ export function createSeededRandom(seed: number): () => number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-
-/**
- * Renvoie un flottant déterministe dans [min, max[ à partir d'une graine et d'un index.
- * Permet de générer la iᵉme valeur d'une séquence sans re-jouer la séquence entière.
- */
-export function seededValue(min: number, max: number, seed: number, index: number): number {
-  const rng = createSeededRandom(seed + index * 0x9e3779b9);
-  return min + (max - min) * rng();
-}

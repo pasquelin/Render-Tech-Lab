@@ -68,15 +68,10 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   const reportLocation = el('lab-report-card').children[1];
   const reportFile = reportLocation.querySelector('code')!; reportFile.textContent = 'comparisons/ · COMPARISON.md';
   reportLocation.replaceChildren('Campagnes archivées : ', reportFile);
-  referenceButton.textContent = 'A · Référence';
-  candidateButton.textContent = 'B · Variante';
-  runButton.textContent = 'Mesurer et comparer';
-  stopButton.textContent = 'Arrêter';
   onUpdate({ benchLabel: 'Mesurer et comparer', painLabel: 'Arrêter', showChart: false,
     modeHint: 'Choisir la référence A ou la variante B avant la campagne :', runCardTitle: '3. Campagnes de comparaison' });
   stopButton.style.display = 'none';
   el('btn-lod-comparison').classList.add('hidden');
-  el('canvas-chart').parentElement!.classList.add('hidden');
   el('lab-run-card').firstElementChild!.textContent = '3. Campagnes de comparaison';
   el('lab-mode-card').children[1].textContent = 'Aperçu de la référence ou de la variante, sur le même décor :';
   const countLabel = el('lab-mode-card').querySelector<HTMLLabelElement>('label[for="select-count"]');
@@ -213,6 +208,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   function freshCanvas() {
     // React owns this node and its ref. Replacing it makes later state patches
     // reconcile the detached canvas and leaves the running viewport blank.
+    canvas = el<HTMLCanvasElement>('canvas-webgl');
     canvas.style.display = 'block'; canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.objectFit = 'cover';
   }
   let displayedBounds = 0;
@@ -426,6 +422,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   async function run() {
     if (active || pending) return;
     const controller = new AbortController(); active = controller; busy(true); reportLinks = null;
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     try {
       const planned = campaigns(); let completed = 0;
       for (const config of planned) {

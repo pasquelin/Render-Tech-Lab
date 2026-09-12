@@ -9,8 +9,8 @@
  * Réutilise les primitives partagées de shared/math (dot, norm, SSE).
  */
 
-import type { Meshlet } from '../../05-meshlets/types.ts';
-import type { CullingInput, CullingOutput, RejectFlag } from '../types.ts';
+import type { Meshlet } from '../../05-meshlets/index.ts';
+import type { CullingInput, CullingOutput, RejectFlag } from '../contracts.ts';
 import { dot, norm } from '../../shared/math/geometry.ts';
 import { calculateScreenSpacePixels } from '../../shared/math/screenSpaceError.ts';
 
@@ -24,7 +24,9 @@ export function testMeshletFrustum(
 ): boolean {
   const { center, radius } = meshlet.boundingSphere;
   for (const plane of planes) {
-    const dist = dot(plane.n, center) + plane.d;
+    const length = norm(plane.n);
+    if (!Number.isFinite(length) || length < 1e-8) throw new Error('Plan de frustum invalide');
+    const dist = (dot(plane.n, center) + plane.d) / length;
     if (dist < -radius) {
       return false; // Rejeté
     }
@@ -42,6 +44,7 @@ export function testMeshletBackface(
   viewPosition: [number, number, number]
 ): boolean {
   const { apex, axis, cosHalfAngle } = meshlet.normalCone;
+  if (!meshlet.normalCone.cullable) return true;
 
   // Vecteur de l'apex vers la caméra
   const viewDir: [number, number, number] = [
@@ -177,7 +180,7 @@ export const WGSL_MESHLET_CULLING = /* wgsl */ `
 struct MeshletBounding {
   sphereCenterRadius : vec4<f32>, // xyz = center, w = radius
   coneApexCutoff     : vec4<f32>, // xyz = apex, w = cosHalfAngle
-  coneAxis           : vec4<f32>, // xyz = axis (normalized)
+  coneAxisCullable   : vec4<f32>, // xyz = axis, w = 1 si le cône autorise un rejet
 };
 
 struct CullUniforms {
@@ -208,7 +211,11 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   // 1. Frustum Test
   for (var i = 0u; i < 6u; i = i + 1u) {
     let plane = uniforms.frustumPlanes[i];
-    let dist = dot(plane.xyz, center) + plane.w;
+    let planeLength = length(plane.xyz);
+    if (planeLength < 1e-8) {
+      continue;
+    }
+    let dist = (dot(plane.xyz, center) + plane.w) / planeLength;
     if (dist < -radius) {
       return; // Rejeté Frustum
     }
@@ -217,10 +224,10 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   // 2. Backface Cone Test
   let apex = m.coneApexCutoff.xyz;
   let cosHalfAngle = m.coneApexCutoff.w;
-  let axis = m.coneAxis.xyz;
+  let axis = m.coneAxisCullable.xyz;
   let viewDir = uniforms.viewPos.xyz - apex;
   let viewDist = length(viewDir);
-  if (viewDist > 1e-4) {
+  if (m.coneAxisCullable.w > 0.5 && viewDist > 1e-4) {
     let normView = viewDir / viewDist;
     let sinHalfAngle = sqrt(max(0.0, 1.0 - cosHalfAngle * cosHalfAngle));
     if (dot(axis, normView) < -sinHalfAngle) {
@@ -229,7 +236,13 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   }
 
   // 3. Sub-pixel Test
-  let d = max(viewDist, 0.001);
+  let centerViewDist = distance(uniforms.viewPos.xyz, center);
+  if (centerViewDist <= radius) {
+    let slot = atomicAdd(&visibleCount, 1u);
+    visibleMeshletIndices[slot] = index;
+    return;
+  }
+  let d = centerViewDist;
   let diameter = radius * 2.0;
   let projectedPx = (diameter * uniforms.screenHeight) / (2.0 * d * uniforms.tanHalfFov);
   if (projectedPx < uniforms.subPixelThreshold) {

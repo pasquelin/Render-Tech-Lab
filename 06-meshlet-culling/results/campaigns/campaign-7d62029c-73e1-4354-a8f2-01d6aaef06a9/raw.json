@@ -1,0 +1,33 @@
+{
+  "archivedAt": "2026-09-12T19:45:42.451Z",
+  "result": {
+    "test": "06-meshlet-culling",
+    "status": "measured",
+    "reason": null,
+    "records": [
+      {
+        "test": "06-meshlet-culling",
+        "variant": "cone-50",
+        "cpuMs": 0,
+        "gpuMs": null,
+        "custom": {
+          "scope": "cpu-conservative-oracle",
+          "meshlets": 24,
+          "visible": 12,
+          "rejected": 12,
+          "frustumRejected": 0,
+          "coneRejected": 12,
+          "subpixelRejected": 0,
+          "expectedRejected": 12,
+          "warmup": 2,
+          "samples": 3
+        }
+      }
+    ],
+    "gates": {
+      "correctness": true,
+      "detail": "Tous les invariants du runner ont été vérifiés."
+    },
+    "timestamp": "2026-09-12T19:45:42.451Z"
+  }
+}

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { MeshInstanceDef } from '../types.ts';
+import type { MeshInstanceDef } from '../contracts.ts';
 
 export const FLOATS_PER_INSTANCE = 24; // 16 (mat4) + 4 (sphere) + 4 (color)
 export const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4; // 96 octets

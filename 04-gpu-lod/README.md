@@ -2,7 +2,7 @@
 
 **Périmètre :** Niveaux de Détail (LOD) & Sélection Dynamique par Screen-Space Error (SSE)  
 **Spécification d'ingénierie :** Spécification 16 & Master Test Plan  
-**Statut contractuel :** `INTEGRATE` (04A & 04B Validés, 04C Validé pour les scènes denses)
+**Statut contractuel :** `not-yet-decided` — 04A/04B ont des chemins CPU/WASM exécutables ; 04C exige une campagne GPU instrumentée.
 
 > **Règle gouvernante du laboratoire :**  
 > *« Aucune infrastructure majeure n'est adoptée sans qu'un banc démontre que l'architecture actuelle est le facteur limitant. »*
@@ -49,10 +49,15 @@ $$\text{pixels} = \frac{D \times H}{2d \tan(\text{FOV} / 2)}$$
 
 ---
 
-## 3. Synthèse des Résultats d'Arbitrage
+## 3. État réellement démontré
 
-- **04A Décimation (`meshoptimizer`) :** Réduction géométrique de **−75% de triangles** sur LOD 2, réalisée en **~5 ms** en arrière-plan sans bloquer le rendu.
-- **04B vs 04C :** La sélection CPU (04B) est optimale et suffisante jusqu'à 10 000 objets ($< 0.5\,\text{ms}$). À 50 000 objets, le Compute WGSL (04C) s'impose avec une latence stable de **$0.2\,\text{ms}$** ($13\times$ plus rapide).
-- **Décision d'arbitrage :** `INTEGRATE` — Adopté pour la chaîne GPU-driven et l'import de modèles denses.
+- **04A :** génération meshoptimizer réelle ; ses temps dépendent d'une exécution CPU/WASM et ne prouvent pas le coût d'une frame.
+- **04B :** sélection SSE CPU réelle et couverte par un oracle différentiel déterministe.
+- **04C :** shader et renderer natif présents, mais aucun gain GPU ne doit être annoncé sans timestamps et campagne comparative valide.
+- **Décision :** suspendue jusqu'à une mesure physique traçable et une correctness gate visuelle.
 
 Consultez le rapport complet : [**`results/REPORT.md`**](results/REPORT.md) ou [**`reports/04-gpu-lod.md`**](../reports/04-gpu-lod.md).
+
+## Source layout
+
+Public API: [index.ts](index.ts); metadata: [manifest.ts](manifest.ts); contracts: [contracts.ts](contracts.ts). See [migration](docs/migration.md), [hypothesis](docs/hypothesis.md), [protocol](docs/protocol.md) and [limits](docs/limits.md). Canonical runner sources are under `runner/`, scenario metadata under `scenarios/`, and boundary tests under `tests/`. Compatibility forwarding modules have been removed.

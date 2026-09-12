@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Copy, FileText, Folder, RefreshCw, X } from 'lucide-react';
 import { useLab } from './LabContext.tsx';
 import { Button } from './ui/Button.tsx';
+import { MarkdownReport } from './ui/MarkdownReport.tsx';
+
+const plain = (value: string) => value.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
 export function ReportModal() {
   const { state, actions } = useLab();
@@ -42,7 +45,9 @@ export function ReportModal() {
           </div>
         </div>
 
-        <div id="modal-report-body" className="p-6 overflow-y-auto flex-1 space-y-4 text-xs sm:text-sm font-sans text-base-content/90 leading-relaxed bg-base-100" dangerouslySetInnerHTML={{ __html: reportModal.html }} />
+        <div id="modal-report-body" className="p-6 overflow-y-auto flex-1 space-y-4 text-xs sm:text-sm font-sans text-base-content/90 leading-relaxed bg-base-100">
+          {reportModal.raw ? <MarkdownReport source={reportModal.raw} /> : <p>{plain(reportModal.html) || 'Chargement du rapport…'}</p>}
+        </div>
 
         <div className="flex items-center justify-between px-5 py-3 bg-base-300 border-t border-base-content/10">
           <div id="modal-feedback" className="text-xs font-mono text-primary font-medium">{reportModal.feedback}</div>

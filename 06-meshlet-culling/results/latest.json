@@ -1,37 +1,30 @@
 {
-  "timestamp": "2026-09-11T21:28:57.377498+00:00",
   "test": "06-meshlet-culling",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "06-meshlet-culling",
+      "variant": "cone-50",
+      "cpuMs": 0.0333333412806193,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-conservative-oracle",
+        "meshlets": 24,
+        "visible": 12,
+        "rejected": 12,
+        "frustumRejected": 0,
+        "coneRejected": 12,
+        "subpixelRejected": 0,
+        "expectedRejected": 12,
+        "warmup": 2,
+        "samples": 3
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Tous les invariants du runner ont été vérifiés."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "06-meshlet-culling/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T19:46:34.760Z"
 }

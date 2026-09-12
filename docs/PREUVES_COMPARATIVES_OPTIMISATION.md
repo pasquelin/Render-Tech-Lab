@@ -1,13 +1,13 @@
 # Preuves comparatives d'optimisation — 11 septembre 2026
 
+> Archive narrative historique : les annexes de sources et de mesures ont été supprimées volontairement par l’utilisateur le 12 septembre 2026. Elles ne font plus partie de la documentation active. Les procédures de reproduction et les vérifications décrites ci-dessous témoignent de l’état antérieur ; elles ne sont plus reproductibles depuis ce seul checkout et ne constituent pas une validation actuelle.
+
 **Décision : aucun remplacement des calculs de référence n'est adopté.** La préparation de la tangente accélère la fonction CPU du prototype sur la machine testée et conserve les sorties contrôlées. Les mesures de scène ne démontrent pas une amélioration de fluidité. Le cache de projection présente une régression lorsque ses données changent à chaque évaluation. Ces résultats ne satisfont donc pas les conditions cumulatives demandées : plus performant, plus fluide, sans perte fonctionnelle ou visuelle.
 
-Ce document conserve des résultats exécutés, y compris négatifs. Il ne présente aucune variante comme « meilleur calcul » universel. Les équations de [M05](CALCULS_ESSENTIELS.md) et les [oracles Python](ORACLES_ET_TESTS.md) restent les références.
+Ce document conserve des résultats exécutés, y compris négatifs. Il ne présente aucune variante comme « meilleur calcul » universel. Les équations de [M05](../../webGeometry/docs/mathematiques/CALCULS_ESSENTIELS.md) et les [oracles Python](../../webGeometry/docs/mathematiques/ORACLES_ET_TESTS.md) restent les références.
 
 ## 1. Dossier de preuve et domaine
 
-- [Sources exactes et empreintes SHA-256](preuves/2026-09-11-sources.md) : deux bancs Node, scène de comparaison, référence du prototype et fonctions partagées figées.
-- [Échantillons bruts et métadonnées](preuves/2026-09-11-mesures.md) : deux campagnes par banc Node et deux campagnes de cadence navigateur. Les nombres sont conservés sans arrondi dans les archives ; les tableaux ci-dessous sont arrondis.
 
 Matériel réellement mesuré : **Apple M2 Max, 12 cœurs logiques, 96 Gio de RAM**, macOS avec noyau Darwin **25.6.0**. CPU : Node **26.8.2**, V8 **14.6.202.34-node.28**, arm64. Navigateur : Chrome **152**, Three.js **r174**, **WebGL2**, ANGLE Metal sur Apple M2 Max, ratio de pixels 1. L'identité du GPU vient du contexte WebGL ; la chaîne de navigateur mentionnant « Intel Mac » ne décrit pas le processeur réel.
 
@@ -31,7 +31,7 @@ Cette couverture est insuffisante pour valider une optimisation globale de scèn
 
 ## 2. Tangente préparée : gain de la fonction CPU, portée limitée
 
-La référence mesurée est la véritable fonction `selectLodsOnCpu` de `04-gpu-lod/cpuLodSelector.ts`, importée par le banc. Elle emploie ce diamètre radial approximatif :
+La référence mesurée est la véritable fonction `selectLodsOnCpu` de `04-gpu-lod/implementation/cpuLodSelector.ts`, importée par le banc. Elle emploie ce diamètre radial approximatif :
 
 ```text
 diameter_pixels = (diameter * height) / (2 * distance * tan(fov * 0.5))

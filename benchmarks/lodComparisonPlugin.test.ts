@@ -39,7 +39,7 @@ test('preserves two campaigns and updates dedicated latest files without touchin
 test('archives readable allowlisted source snapshots with exact hashes, retaining old bytes after edits', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'comparison-sources-'));
   try {
-    const source = '14-open-world/worldScene.ts', manifest = 'public/benchmark-assets/bistro/manifest.json';
+    const source = '14-open-world/implementation/worldScene.ts', manifest = 'public/benchmark-assets/bistro/manifest.json';
     for (const file of [source, manifest]) await mkdir(path.dirname(path.join(root, file)), { recursive: true });
     const original = '// décor\nexport const answer = 42;\n';
     await writeFile(path.join(root, source), original);
@@ -72,8 +72,8 @@ test('archives readable allowlisted source snapshots with exact hashes, retainin
 test('refuses client provenance drift or incomplete hashes before publishing any archive', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'comparison-source-drift-'));
   try {
-    await mkdir(path.join(root, '04-gpu-lod'), { recursive: true });
-    const file = path.join(root, '04-gpu-lod/cpuLodSelector.ts');
+    await mkdir(path.join(root, '04-gpu-lod/implementation'), { recursive: true });
+    const file = path.join(root, '04-gpu-lod/implementation/cpuLodSelector.ts');
     await writeFile(file, 'before');
     const before = await readLodComparisonMetadata(root);
     await writeFile(file, 'after');
@@ -82,13 +82,42 @@ test('refuses client provenance drift or incomplete hashes before publishing any
     for (const provenance of [
       { before, after: before, sourcesStable: true },
       { before, after, sourcesStable: true },
-      { before: after, after, sourcesStable: false },
       { before: { sourceHashes: {} }, after, sourcesStable: true },
       {},
     ]) await assert.rejects(store.save({ ...payload('drift'), report: { ...payload('drift').report, provenance } }),
       (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 409);
     assert.deepEqual(await store.history(), []);
     assert.deepEqual(await readdir(root), ['04-gpu-lod']);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('archives an unstable 14 campaign without publishing it as latest', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'comparison-unstable-archive-'));
+  try {
+    const source = '14-open-world/implementation/worldScene.ts';
+    await mkdir(path.dirname(path.join(root, source)), { recursive: true });
+    await writeFile(path.join(root, source), 'before');
+    const before = await readLodComparisonMetadata(root, '14-open-world');
+    await writeFile(path.join(root, source), 'after');
+    const after = await readLodComparisonMetadata(root, '14-open-world');
+    const store = createLodComparisonStore(root, '14-open-world');
+    const input = {
+      ...payload('unstable'),
+      report: {
+        ...payload('unstable').report,
+        test: '14-open-world',
+        provenance: { before, after, sourcesStable: false },
+        limitations: ['INVALID: sources changed during this campaign; timings are not accepted as comparative evidence.'],
+      },
+    };
+    const run = await store.save(input);
+    assert.equal(run.published, false);
+    assert.equal((await store.history()).length, 1);
+    const archive = JSON.parse(await store.read(run.id, 'sources'));
+    assert.equal(archive.provenanceVerification, 'unstable-archived');
+    assert.equal(JSON.parse(await store.read(run.id)).provenance.sourcesStable, false);
+    await assert.rejects(readFile(path.join(root, '14-open-world/results/comparison-latest.json')));
+    await assert.rejects(readFile(path.join(root, 'reports/14-open-world.md')));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -142,10 +171,10 @@ test('rejects invalid payloads, oversized input and path traversal before writin
 test('metadata hashes actual fixed source bytes and leaves absent provenance unavailable', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'lod-comparison-meta-'));
   try {
-    await mkdir(path.join(root, '04-gpu-lod'), { recursive: true });
-    await writeFile(path.join(root, '04-gpu-lod/cpuLodSelector.ts'), 'abc');
+    await mkdir(path.join(root, '04-gpu-lod/implementation'), { recursive: true });
+    await writeFile(path.join(root, '04-gpu-lod/implementation/cpuLodSelector.ts'), 'abc');
     const metadata = await readLodComparisonMetadata(root);
-    assert.equal(metadata.sourceHashes['04-gpu-lod/cpuLodSelector.ts'], 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    assert.equal(metadata.sourceHashes['04-gpu-lod/implementation/cpuLodSelector.ts'], 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     assert.equal(metadata.sourceHashes['shared/math/screenSpaceError.ts'], null);
     assert.equal(metadata.commit, null);
     assert.equal(metadata.node, process.version);
@@ -191,20 +220,21 @@ test('only the fixed 04 and 14 module configurations can be selected', () => {
 test('14 provenance hashes its own scene and asset manifest plus common dependency lock', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'world-comparison-meta-'));
   try {
-    for (const file of ['14-open-world/worldScene.ts', 'public/benchmark-assets/bistro/manifest.json', 'pnpm-lock.yaml', 'package.json']) {
+    for (const file of ['14-open-world/implementation/worldScene.ts', 'public/benchmark-assets/bistro/manifest.json', 'pnpm-lock.yaml', 'package.json']) {
       await mkdir(path.dirname(path.join(root, file)), { recursive: true });
       await writeFile(path.join(root, file), 'abc');
     }
     const world = await readLodComparisonMetadata(root, '14-open-world');
     const expected = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
-    assert.equal(world.sourceHashes['14-open-world/worldScene.ts'], expected);
+    assert.equal(world.sourceHashes['14-open-world/implementation/worldScene.ts'], expected);
     assert.equal(world.sourceHashes['public/benchmark-assets/bistro/manifest.json'], expected);
     assert.equal(world.sourceHashes['pnpm-lock.yaml'], expected);
     assert.equal(world.sourceHashes['package.json'], expected);
-    assert.equal(world.sourceHashes['14-open-world/worldTypes.ts'], null);
-    assert.equal(world.sourceHashes['14-open-world/worldPage.ts'], null);
-    assert.equal(world.sourceHashes['14-open-world/worldReporter.ts'], null);
+    assert.equal(world.sourceHashes['14-open-world/contracts.ts'], null);
+    assert.equal(world.sourceHashes['14-open-world/implementation/worldPage.ts'], null);
+    assert.equal(world.sourceHashes['14-open-world/runner/reporter.ts'], null);
+    assert.equal(world.sourceHashes['14-open-world/implementation/adaptiveCulling.ts'], null);
     assert.equal(world.sourceHashes['benchmarks/lodComparisonPlugin.ts'], null);
-    assert.equal('04-gpu-lod/cpuLodSelector.ts' in world.sourceHashes, false);
+    assert.equal('04-gpu-lod/implementation/cpuLodSelector.ts' in world.sourceHashes, false);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

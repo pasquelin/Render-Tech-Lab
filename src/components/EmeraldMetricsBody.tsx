@@ -1,0 +1,38 @@
+import { LabStats } from './LabStats.tsx';
+import { emeraldNumber as number } from './emeraldFormat.ts';
+import { useEmeraldPanel } from './useEmeraldPanel.ts';
+import { MetricGrid } from './ui/MetricGrid.tsx';
+
+export function EmeraldMetricsBody() {
+  const { view, config } = useEmeraldPanel();
+  if (!view) return null;
+  const metrics = view.metrics;
+  const exact = config.diagnostic === 'clusters' || config.diagnostic === 'pages' || config.engine !== 'three-webgl-reference';
+  const stats = {
+    submit: 'Non mesuré',
+    cpuFrame: metrics ? `${number(metrics.cpuFrameMs, 2)} ms` : 'Non mesuré',
+    fps: view.frameIntervalMs ? `${number(1000 / view.frameIntervalMs, 1)} FPS` : 'Non mesuré',
+    drawCalls: number(metrics?.drawCalls),
+  };
+  return (
+    <>
+      <p className="text-xs font-mono text-primary" data-emerald-active-engine={config.engine}>Moteur affiché : {config.engine}</p>
+      <LabStats stats={stats} provenance="1000 ÷ intervalle requestAnimationFrame (rAF)" />
+      <MetricGrid items={[
+        { label: 'Triangles disponibles', value: number(view.availableTriangles), provenance: 'Manifeste source × nombre de villes' },
+        { label: 'Triangles sélectionnés', value: number(metrics?.selectedTriangles), provenance: 'Feuilles exactes visibles, hors transparences partagées' },
+        { label: 'Triangles soumis', value: number(metrics?.triangles), provenance: 'Compteur de rasterisation Three.js, passes incluses' },
+        { label: 'Clusters visibles', value: number(metrics?.clusters), provenance: 'Hiérarchie CPU exacte' },
+        { label: 'Pages demandées', value: number(metrics?.pagesRequested), provenance: 'Requêtes du streamer de pages' },
+        { label: 'Pages lues', value: number(metrics?.pageLoads), provenance: 'Lectures vérifiées du cache CPU' },
+        { label: 'Pages en cours', value: number(metrics?.pagesLoading) },
+        { label: 'Pages attachées', value: exact ? number(metrics?.residentPages) : 'Non mesuré', provenance: 'Pages d’indices dans la scène ; pas VRAM physique' },
+        { label: 'Pages évincées', value: exact ? number(metrics?.pageEvictions) : 'Non mesuré' },
+        { label: 'Cache hits / misses', value: metrics?.cacheHits==null&&metrics?.cacheMisses==null?'Non mesuré':`${number(metrics?.cacheHits)} / ${number(metrics?.cacheMisses)}` },
+        { label: 'Frustum rejeté', value: number(metrics?.frustumRejected) },
+        { label: 'Octets de géométrie comptabilisés', value: number(metrics?.geometryAllocationBytes), provenance: 'Tableaux uniques ; pas mémoire GPU physique' },
+      ]} />
+      <p className="text-xs">Caméra : <span data-emerald-camera data-camera-pose={view.position}>{view.position || 'Au repos'}</span></p>
+    </>
+  );
+}

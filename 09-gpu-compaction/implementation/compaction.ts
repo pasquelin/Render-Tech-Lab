@@ -13,7 +13,7 @@ import { exclusiveScan } from '../../shared/math/compaction.ts';
 import type {
   CompactionInput,
   CompactionOutput,
-} from '../types.ts';
+} from '../contracts.ts';
 
 /**
  * Exécute la variante A : 1 thread par commande (sans compaction).
@@ -39,10 +39,11 @@ export function compactOneThreadPerCommand(
 
   const duration = performance.now() - start;
   return {
+    execution: 'cpu-reference',
     compactedIndices: indices,
     compactedCount: visibleCount,
     timeMs: duration,
-    atomicContention: 0,
+    atomicOperations: 0,
     bandwidth: inputCount * 4,
   };
 }
@@ -67,14 +68,12 @@ export function compactAtomicAdd(
   }
 
   const duration = performance.now() - start;
-  // Modèle de contention : proportionnel aux conflits atomiques des threads concurrents
-  const contentionEstimate = Math.round(atomicCounter * Math.log2(Math.min(64, inputCount)));
-
   return {
+    execution: 'cpu-reference',
     compactedIndices: compacted,
     compactedCount: atomicCounter,
     timeMs: duration,
-    atomicContention: contentionEstimate,
+    atomicOperations: atomicCounter,
     bandwidth: (inputCount + atomicCounter) * 4,
   };
 }
@@ -104,10 +103,11 @@ export function compactParallelPrefixScan(
   const duration = performance.now() - start;
 
   return {
+    execution: 'cpu-reference',
     compactedIndices: compacted,
     compactedCount: total,
     timeMs: duration,
-    atomicContention: 0, // Zéro contention globale
+    atomicOperations: 0,
     bandwidth: (inputCount * 2 + total) * 4,
   };
 }

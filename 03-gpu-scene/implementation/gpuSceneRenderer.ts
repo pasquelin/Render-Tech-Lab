@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GPUSceneBuffers, BYTES_PER_OBJECT, packObject } from './gpuSceneBuffers.ts';
 import { configureCanvas } from '../../src/common/gpuContext.ts';
 import { CULLING_WGSL } from './gpuSceneCullingShader.ts';
-import type { GeneratedGPUScene } from '../benchmark/stressScenarios.ts';
+import type { GeneratedGPUScene } from '../scenarios/stressScenarios.ts';
 
 const RENDER_WGSL = /* wgsl */ `
 struct CameraUniforms {

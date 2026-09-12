@@ -7,13 +7,15 @@ try {
  await page.goto(`${origin}/?test=00-baseline`);
  await page.getByRole('heading',{name:'Dashboard'}).waitFor();
  assert.equal(await page.locator('#btn-benchmark').isVisible(),false);
- assert.equal(await page.locator('#lab-metrics-card').isVisible(),true);
+ assert.equal(await page.locator('#lab-metrics-card').count(),0);
+ assert.equal(await page.locator('#dashboard-benches-card [data-bench-access]').count(),15);
+ assert.doesNotMatch(await page.locator('main').innerText(),/Aucune campagne|Configuration interne|Mesures de référence/);
  assert.equal(await page.locator('#canvas-chart').isVisible(),false);
  assert.equal(await page.locator('canvas').count(),0);
  await page.locator('#select-module').selectOption('01-indirect-draw');
  await page.getByRole('heading',{name:'01 · GPU-Driven Indirect Draw'}).waitFor();
- assert.equal(await page.locator('#canvas-chart').count(),1);
- assert.equal(await page.locator('#canvas-chart').isVisible(),true);
+ assert.equal(await page.locator('#canvas-chart').count(),0);
+ assert.equal(await page.locator('canvas').count(),0);
  await page.goto(`${origin}/?test=00-baseline`);
  await page.screenshot({path:'/tmp/baseline-consultation.png'});
  for(const width of [1400,700,390]) {
@@ -51,7 +53,7 @@ try {
     assert.equal(await page.locator('#btn-lod-comparison').getAttribute('href'),null);
     assert.equal(await page.locator('#btn-lod-comparison').getAttribute('aria-disabled'),'true');
    }
-   if (width < 1024) await page.evaluate(()=>{ document.getElementById('sidebar-drawer').checked=true; });
+
    const grid = await page.locator('.lab-live-grid').evaluate(g => ({ columns: getComputedStyle(g).gridTemplateColumns.split(' ').length, width: g.clientWidth, scroll: g.scrollWidth }));
    assert.equal(grid.columns,width===1400?4:2);
    assert.ok(grid.scroll<=grid.width+1);

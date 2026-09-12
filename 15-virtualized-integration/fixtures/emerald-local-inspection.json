@@ -1,0 +1,2862 @@
+{
+  "sourceDirectory": "/Users/pasquelin/Applications/render-tech-lab/files_local/emerald-square/EmeraldSquare_v4_1",
+  "fbx": [
+    {
+      "file": "EmeraldSquare_Day.fbx",
+      "header": "Kaydara FBX Binary  \u0000\u001a\u0000",
+      "version": 7300,
+      "bytes": 147767216
+    },
+    {
+      "file": "EmeraldSquare_Dusk.fbx",
+      "header": "Kaydara FBX Binary  \u0000\u001a\u0000",
+      "version": 7300,
+      "bytes": 147803856
+    }
+  ],
+  "dds": [
+    {
+      "file": "511_Awning_BlueBlack_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_BlueBlack_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_BlueBlack_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Brown_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Brown_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Brown_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Green_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Green_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Awning_Green_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_BlueBlack_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_BlueBlack_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_BlueBlack_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Brown_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Brown_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Brown_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Green_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Green_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Frames_Green_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Struts_GrayBlue_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "511_Struts_GrayBlue_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "511_Struts_GrayBlue_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Arch_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Arch_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Arch_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_1_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_2_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_2_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Azalea_Leaves_2_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Banners1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Banners1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Banners1_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bark_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bark_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Bark_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Bench_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bench_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Bench_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "BikeRacks_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "BikeRacks_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "BikeRacks_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Blue_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Blue_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Blue_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bollard_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bollard_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Bollard_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Fiddlehead_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Fiddlehead_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Fiddlehead_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Leaflets_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Leaflets_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Leaflets_1_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Stem_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Stem_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Boston_Fern_Stem_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Body_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Body_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Body_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Etc_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Etc_Emissive.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Etc_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Bus_Etc_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_01_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_01_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_01_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_02_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_02_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_02_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_03_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_03_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Cap_03_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Cards_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Cards_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Cards_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Chalboard_Material_3_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalboard_Material_3_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalboard_Material_3_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_1_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Material_6_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Material_6_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Material_6_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_2_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_2_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_2_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_4_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_4_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_4_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_5_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_5_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_5_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_7_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_7_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Chalkboard_Sign_7_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "DumpsterBrown_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "DumpsterBrown_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "DumpsterBrown_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Inst_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Inst_Emissive.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Inst_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Inst_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_2_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_Inst_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_Inst_Emissive.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_Inst_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Light_Inst_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_2_Inst_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_2_Inst_Emissive.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_2_Inst_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_2_Inst_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_Inst_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_Inst_Emissive.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_Inst_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Emissive_Window_Inst_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenBark_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenBark_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenBark_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_2_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_2_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_2_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "EuropeanLindenLeaf_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Falcor_Awning_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Falcor_Awning_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Falcor_Awning_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Floor_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Floor_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Floor_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "FlowerStem_05_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "FlowerStem_05_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "FlowerStem_05_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Frames_Trim_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Frames_Trim_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Frames_Trim_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Glass_Roof_Awning_Red_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Glass_Roof_Awning_Red_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Glass_Roof_Awning_Red_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Blue_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Blue_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Blue_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Green_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Green_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Green_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Red_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Red_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Generic_2_Struts_Red_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Glass_Signs_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Glass_Signs_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Glass_Signs_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_Patterned_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_Patterned_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_Patterned_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_blades_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_blades_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Grass_blades_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Green_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Green_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Green_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Base_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Base_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Base_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_1_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_3_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_3_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Hedge_Leaves_3_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Hydrant_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Hydrant_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Hydrant_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleBark_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleBark_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleBark_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_1_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_2_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_2_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "JapaneseMapleLeaf_2_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "KWOW_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "KWOW_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "KWOW_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Leasing_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Leasing_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Leasing_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_2_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_2_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_2_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Leaves_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Metal_Dividers_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Metal_Dividers_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Metal_Dividers_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "OpenHouse_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "OpenHouse_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "OpenHouse_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Open_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Open_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Open_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Painted_Metal_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Painted_Metal_Normal.dds",
+      "width": 1,
+      "height": 1,
+      "mips": 0,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Painted_Metal_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "ParkingMeter_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "ParkingMeter_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "ParkingMeter_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Picnic_Table1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Picnic_Table1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Picnic_Table1_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "PineForestFloor_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "PineForestFloor_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "PineForestFloor_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Pink_Flower_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Pink_Flower_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Pink_Flower_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "Planter_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Planter_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Planter_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "PoleBanner_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "PoleBanner_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "PoleBanner_1_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Railing_Black_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Railing_Black_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Railing_Black_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Recycling_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Recycling_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Recycling_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Red_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Red_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Red_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Road_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Road_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Road_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Roof_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Roof_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Roof_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_1F_Concrete_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_1F_Concrete_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_1F_Concrete_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_2F_Concrete_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_2F_Concrete_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_2F_Concrete_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Glass_Sign_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Glass_Sign_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Glass_Sign_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Trim_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Trim_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Trim_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Wood_Metal_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Wood_Metal_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sheleg_Wood_Metal_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sign_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Sign_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Sign_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Signal_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Signal_Emissive.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Signal_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Signal_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "SteelBench_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "SteelBench_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "SteelBench_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "StreetSigns_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "StreetSigns_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "StreetSigns_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Big_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Big_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Big_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Observation_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Observation_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Observation_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Roof_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Roof_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Moulding_Roof_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Observation_Arch_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Observation_Arch_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Observation_Arch_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Railing_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Railing_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Railing_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Roof_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Roof_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Roof_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Top_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Top_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Top_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Windows_Ball_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Windows_Ball_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Tower_Windows_Ball_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_Black_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_Black_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_Black_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "Trash_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "WhiteOakBark_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "WhiteOakBark_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "WhiteOakBark_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_1_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_1_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_1_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_3_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_3_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "White_Oak_Leaves_Hero_3_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "WorldGridMaterial_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "WorldGridMaterial_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "WorldGridMaterial_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "arch_1f_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "arch_1f_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "arch_1f_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "arch_midlevel_door_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "arch_midlevel_door_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "arch_midlevel_door_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "foliage_ground_cover_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "foliage_ground_cover_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "foliage_ground_cover_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "frames_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "frames_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "frames_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "glass_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "glass_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "glass_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_arch_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_arch_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_arch_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_deco_awnings_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_deco_awnings_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_deco_awnings_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_frames_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_frames_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_frames_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_moulding_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_moulding_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_moulding_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_roof_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_roof_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_roof_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_windows_BaseColor.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_windows_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "hotel_windows_Specular.dds",
+      "width": 16,
+      "height": 16,
+      "mips": 5,
+      "fourCC": "DXT5",
+      "dxgi": null
+    },
+    {
+      "file": "moulding_signs_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "moulding_signs_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "moulding_signs_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "trampled_sand_BaseColor.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    },
+    {
+      "file": "trampled_sand_Normal.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "ATI2",
+      "dxgi": null
+    },
+    {
+      "file": "trampled_sand_Specular.dds",
+      "width": 2048,
+      "height": 2048,
+      "mips": 12,
+      "fourCC": "DXT1",
+      "dxgi": null
+    }
+  ],
+  "formats": [
+    {
+      "fourCC": "DXT1",
+      "dxgi": null,
+      "count": 175
+    },
+    {
+      "fourCC": "ATI2",
+      "dxgi": null,
+      "count": 115
+    },
+    {
+      "fourCC": "DXT5",
+      "dxgi": null,
+      "count": 61
+    }
+  ],
+  "dimensions": [
+    {
+      "width": 2048,
+      "height": 2048,
+      "count": 302
+    },
+    {
+      "width": 16,
+      "height": 16,
+      "count": 43
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "count": 6
+    }
+  ],
+  "scope": "headers and file sizes only; no texture decoding, FBX graph import or conversion"
+}

@@ -1,0 +1,2549 @@
+{
+  "texts": {
+    "EmeraldSquare_v4_1/CHANGELOG.txt": "Emerald Square scene by Nicholas Hull (NVIDIA)\r\n\r\nv4.1:\r\n- Replaced .py scene files with .pyscene scene files\r\n- Changed emissive factor for materials in EmeraldSquare_Dusk to 5 to brighten the scene\r\n\r\nv4:\r\n- Optimized for Falcor 4.0.0\r\n- Embedded camera path and lights into FBX file\r\n- Replaced fscene files with py scene files\r\n \r\nv3c:\r\n- Converted some windows on all buildings to have emissive geometry\r\n- Created emissive materials Emissive_Light and Emissive_Window\r\n- Modified street lamp bulbs to be emissive geometry\r\n- Added new emissive park lamp model Light_Lamppost.fbx\r\n- Added new emissive light models Light_Building_Ground_Spot.fbx, Light_Building_Spot.fbx, Light_Building_Spot_Up.fbx, and Light_Tube.fbx\r\n- Created four separate \"Emissive_Only\" .fscenes \r\n\r\nv3b:\r\n- Added .DoubleSided flag to foliage materials for Falcor 3.0\r\n- Removed all user variables from .fscenes and defined skyboxes as env_map for Falcor 3.1 \r\n- Fixed clipping camera path \r\n\r\nv3a:\r\n- Restored case sensitivity in paths to \"Roof_BaseColor\" \"Roof_Normal\" and \"Roof_Specular\" textures\r\n\r\nv3:\r\n- Removed absolute paths to textures in FBX files\r\n\r\nv2:\r\n- Converted materials to Metal/Rough for Falcor 3.0\r\n- Added new Day and Dusk .fscenes with accompanying skybox HDRIs\r\n- Updated scene with UE4-exported version\r\n- Added more signs\r\n- Added buses\r\n- Added banners to street lights\r\n- Added some potted plants around Coffee building\r\n- Modified some ground materials\r\n- Merged high poly grass mesh with Block_Park.fbx\r\n\r\nv1: Initial release\r\n\r\n",
+    "EmeraldSquare_v4_1/EmeraldSquare_Day.pyscene": "# Load scene\r\nsceneBuilder.importScene(\"EmeraldSquare_Day.fbx\")\r\n\r\n# Set environment map\r\nsceneBuilder.envMap = EnvMap(\"symmetrical_garden_4k.hdr\")\r\n",
+    "EmeraldSquare_v4_1/EmeraldSquare_Dusk.pyscene": "# Load scene\r\nsceneBuilder.importScene(\"EmeraldSquare_Dusk.fbx\")\r\n\r\n# Set environment map\r\nsceneBuilder.envMap = EnvMap(\"night_sky.hdr\")\\\r\n\r\n# Manually adjust emissives to get well exposed image\r\nfor m in sceneBuilder.materials:\r\n    m.emissiveFactor *= 5\r\n",
+    "EmeraldSquare_v4_1/LICENSE.txt": "Copyright (c) 2017, NVIDIA CORPORATION. All rights reserved.\r\n\r\nThis work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. \r\nTo view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.\r\n",
+    "EmeraldSquare_v4_1/README.txt": "Emerald Square by Nicholas Hull (NVIDIA), Modified by Kate Anderson (NVIDIA)\r\n\r\nEmeraldSquare_Day is the original Emerald Square scene.\r\n\r\nEmeraldSquare_Dusk is an night version of the scene. It does not include analytic lights and uses emissive surfaces to light the scene instead.\r\n\r\nTriangle Counts (each): 2,695,054 unique, 10,046,405 total\r\n\r\nTextures (compressed .DDS) designed for GGX-based metal-rough PBR material system with the following convention: \r\n- BaseColor\r\n    RGB channels: BaseColor value\r\n    Alpha channel: Opacity\r\n\r\n- Specular\r\n    Red channel: Occlusion\r\n    Green channel: Roughness\r\n    Blue channel: Metalness\r\n\r\n- Normal (DirectX)\r\n\r\n- Emissive\r\n    RGB channels: Emissive color\r\n\r\nAlso included:\r\n- Day and dusk HDR environment maps from https://hdrihaven.com/\r\n- Pyscene scene files for Falcor containing additional parameters. Refer to Falcor documentation on Scene Formats for more details.\r\n\r\nScene foliage was contributed by SpeedTree - http://www.speedtree.com/\r\n\r\nHow to cite use of this asset:\r\n  @misc{ORCANVIDIAEmeraldSquare,\r\n   title = {NVIDIA Emerald Square, Open Research Content Archive (ORCA)},\r\n   author = {Nicholas Hull and Kate Anderson and Nir Benty},\r\n   year = {2017},\r\n   month = {July},\r\n   note = {\\small \\texttt{http://developer.nvidia.com/orca/nvidia-emerald-square}},\r\n   url = {http://developer.nvidia.com/orca/nvidia-emerald-square }\r\n}"
+  },
+  "source": "https://developer.nvidia.com/emerald-square",
+  "archiveBytes": 617345248,
+  "metadataBytesFetched": 116761,
+  "uncompressedBytes": 1544054516,
+  "files": [
+    {
+      "name": "EmeraldSquare_v4_1/",
+      "compressedBytes": 0,
+      "bytes": 0,
+      "localOffset": 0,
+      "method": 0
+    },
+    {
+      "name": "EmeraldSquare_v4_1/CHANGELOG.txt",
+      "compressedBytes": 726,
+      "bytes": 1536,
+      "localOffset": 49,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/EmeraldSquare_Day.fbx",
+      "compressedBytes": 82685674,
+      "bytes": 147767216,
+      "localOffset": 837,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/EmeraldSquare_Day.pyscene",
+      "compressedBytes": 123,
+      "bytes": 149,
+      "localOffset": 82686581,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/EmeraldSquare_Dusk.fbx",
+      "compressedBytes": 82654140,
+      "bytes": 147803856,
+      "localOffset": 82686778,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/EmeraldSquare_Dusk.pyscene",
+      "compressedBytes": 188,
+      "bytes": 257,
+      "localOffset": 165340989,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/LICENSE.txt",
+      "compressedBytes": 248,
+      "bytes": 344,
+      "localOffset": 165341252,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/night_sky.hdr",
+      "compressedBytes": 12489928,
+      "bytes": 22296664,
+      "localOffset": 165341560,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/README.txt",
+      "compressedBytes": 746,
+      "bytes": 1398,
+      "localOffset": 177831550,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/symmetrical_garden_4k.hdr",
+      "compressedBytes": 20986860,
+      "bytes": 26545584,
+      "localOffset": 177832355,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/",
+      "compressedBytes": 0,
+      "bytes": 0,
+      "localOffset": 198819289,
+      "method": 0
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_BlueBlack_BaseColor.dds",
+      "compressedBytes": 584231,
+      "bytes": 2796344,
+      "localOffset": 198819347,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_BlueBlack_Normal.dds",
+      "compressedBytes": 2915624,
+      "bytes": 5592560,
+      "localOffset": 199403670,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_BlueBlack_Specular.dds",
+      "compressedBytes": 553496,
+      "bytes": 2796344,
+      "localOffset": 202319383,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Brown_BaseColor.dds",
+      "compressedBytes": 721274,
+      "bytes": 2796344,
+      "localOffset": 202872970,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Brown_Normal.dds",
+      "compressedBytes": 2915624,
+      "bytes": 5592560,
+      "localOffset": 203594332,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Brown_Specular.dds",
+      "compressedBytes": 553496,
+      "bytes": 2796344,
+      "localOffset": 206510041,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Green_BaseColor.dds",
+      "compressedBytes": 590048,
+      "bytes": 2796344,
+      "localOffset": 207063624,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Green_Normal.dds",
+      "compressedBytes": 2915624,
+      "bytes": 5592560,
+      "localOffset": 207653760,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Awning_Green_Specular.dds",
+      "compressedBytes": 553496,
+      "bytes": 2796344,
+      "localOffset": 210569469,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_BlueBlack_BaseColor.dds",
+      "compressedBytes": 270656,
+      "bytes": 2796344,
+      "localOffset": 211123052,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_BlueBlack_Normal.dds",
+      "compressedBytes": 139765,
+      "bytes": 5592560,
+      "localOffset": 211393800,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_BlueBlack_Specular.dds",
+      "compressedBytes": 342952,
+      "bytes": 2796344,
+      "localOffset": 211533654,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Brown_BaseColor.dds",
+      "compressedBytes": 135130,
+      "bytes": 2796344,
+      "localOffset": 211876697,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Brown_Normal.dds",
+      "compressedBytes": 139765,
+      "bytes": 5592560,
+      "localOffset": 212011915,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Brown_Specular.dds",
+      "compressedBytes": 342952,
+      "bytes": 2796344,
+      "localOffset": 212151765,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Green_BaseColor.dds",
+      "compressedBytes": 266455,
+      "bytes": 2796344,
+      "localOffset": 212494804,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Green_Normal.dds",
+      "compressedBytes": 139765,
+      "bytes": 5592560,
+      "localOffset": 212761347,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Frames_Green_Specular.dds",
+      "compressedBytes": 342952,
+      "bytes": 2796344,
+      "localOffset": 212901197,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Struts_GrayBlue_BaseColor.dds",
+      "compressedBytes": 486105,
+      "bytes": 2796344,
+      "localOffset": 213244236,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Struts_GrayBlue_Normal.dds",
+      "compressedBytes": 1104937,
+      "bytes": 5592560,
+      "localOffset": 213730432,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/511_Struts_GrayBlue_Specular.dds",
+      "compressedBytes": 713624,
+      "bytes": 2796344,
+      "localOffset": 214835457,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_1f_BaseColor.dds",
+      "compressedBytes": 850557,
+      "bytes": 2796344,
+      "localOffset": 215549171,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_1f_Normal.dds",
+      "compressedBytes": 1457909,
+      "bytes": 5592560,
+      "localOffset": 216399807,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_1f_Specular.dds",
+      "compressedBytes": 323821,
+      "bytes": 2796344,
+      "localOffset": 217857792,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Arch_BaseColor.dds",
+      "compressedBytes": 1584123,
+      "bytes": 2796344,
+      "localOffset": 218181691,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_midlevel_door_BaseColor.dds",
+      "compressedBytes": 939238,
+      "bytes": 2796344,
+      "localOffset": 219765890,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_midlevel_door_Normal.dds",
+      "compressedBytes": 1492519,
+      "bytes": 5592560,
+      "localOffset": 220705218,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/arch_midlevel_door_Specular.dds",
+      "compressedBytes": 313670,
+      "bytes": 2796344,
+      "localOffset": 222197824,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Arch_Normal.dds",
+      "compressedBytes": 5019412,
+      "bytes": 5592560,
+      "localOffset": 222511583,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Arch_Specular.dds",
+      "compressedBytes": 1652824,
+      "bytes": 2796344,
+      "localOffset": 227531068,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_1_BaseColor.dds",
+      "compressedBytes": 717556,
+      "bytes": 5592560,
+      "localOffset": 229183967,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_1_Normal.dds",
+      "compressedBytes": 1151868,
+      "bytes": 5592560,
+      "localOffset": 229901610,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_1_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 231053562,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_2_BaseColor.dds",
+      "compressedBytes": 674930,
+      "bytes": 5592560,
+      "localOffset": 231053749,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_2_Normal.dds",
+      "compressedBytes": 892088,
+      "bytes": 5592560,
+      "localOffset": 231728766,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Azalea_Leaves_2_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 232620938,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Banners1_BaseColor.dds",
+      "compressedBytes": 573860,
+      "bytes": 2796344,
+      "localOffset": 232621125,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Banners1_Normal.dds",
+      "compressedBytes": 1058232,
+      "bytes": 5592560,
+      "localOffset": 233195065,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Banners1_Specular.dds",
+      "compressedBytes": 13509,
+      "bytes": 2796344,
+      "localOffset": 234253374,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bark_BaseColor.dds",
+      "compressedBytes": 1851027,
+      "bytes": 2796344,
+      "localOffset": 234266962,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bark_Normal.dds",
+      "compressedBytes": 5010256,
+      "bytes": 5592560,
+      "localOffset": 236118065,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bark_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 241128394,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bench_BaseColor.dds",
+      "compressedBytes": 1560936,
+      "bytes": 2796344,
+      "localOffset": 241128570,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bench_Normal.dds",
+      "compressedBytes": 4251019,
+      "bytes": 5592560,
+      "localOffset": 242689583,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bench_Specular.dds",
+      "compressedBytes": 510626,
+      "bytes": 2796344,
+      "localOffset": 246940676,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/BikeRacks_BaseColor.dds",
+      "compressedBytes": 1111721,
+      "bytes": 2796344,
+      "localOffset": 247451378,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/BikeRacks_Normal.dds",
+      "compressedBytes": 4650682,
+      "bytes": 5592560,
+      "localOffset": 248563180,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/BikeRacks_Specular.dds",
+      "compressedBytes": 1263792,
+      "bytes": 2796344,
+      "localOffset": 253213940,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Blue_BaseColor.dds",
+      "compressedBytes": 1430289,
+      "bytes": 2796344,
+      "localOffset": 254477812,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Blue_Normal.dds",
+      "compressedBytes": 336476,
+      "bytes": 5592560,
+      "localOffset": 255908177,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Blue_Specular.dds",
+      "compressedBytes": 1422375,
+      "bytes": 2796344,
+      "localOffset": 256244726,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bollard_BaseColor.dds",
+      "compressedBytes": 460004,
+      "bytes": 2796344,
+      "localOffset": 257667176,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bollard_Normal.dds",
+      "compressedBytes": 1519197,
+      "bytes": 5592560,
+      "localOffset": 258127259,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bollard_Specular.dds",
+      "compressedBytes": 995448,
+      "bytes": 2796344,
+      "localOffset": 259646532,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Fiddlehead_BaseColor.dds",
+      "compressedBytes": 790619,
+      "bytes": 5592560,
+      "localOffset": 260642058,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Fiddlehead_Normal.dds",
+      "compressedBytes": 1683227,
+      "bytes": 5592560,
+      "localOffset": 261432771,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Fiddlehead_Specular.dds",
+      "compressedBytes": 111438,
+      "bytes": 2796344,
+      "localOffset": 263116089,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Leaflets_1_BaseColor.dds",
+      "compressedBytes": 1710204,
+      "bytes": 5592560,
+      "localOffset": 263227620,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Leaflets_1_Normal.dds",
+      "compressedBytes": 4268071,
+      "bytes": 5592560,
+      "localOffset": 264937918,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Leaflets_1_Specular.dds",
+      "compressedBytes": 397726,
+      "bytes": 2796344,
+      "localOffset": 269206080,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Stem_BaseColor.dds",
+      "compressedBytes": 1380988,
+      "bytes": 2796344,
+      "localOffset": 269603899,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Stem_Normal.dds",
+      "compressedBytes": 4152091,
+      "bytes": 5592560,
+      "localOffset": 270984975,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Boston_Fern_Stem_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 275137151,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Body_BaseColor.dds",
+      "compressedBytes": 498789,
+      "bytes": 2796344,
+      "localOffset": 275137339,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Body_Normal.dds",
+      "compressedBytes": 36818,
+      "bytes": 5592560,
+      "localOffset": 275636208,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Body_Specular.dds",
+      "compressedBytes": 100,
+      "bytes": 496,
+      "localOffset": 275673103,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Etc_BaseColor.dds",
+      "compressedBytes": 810018,
+      "bytes": 2796344,
+      "localOffset": 275673282,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Etc_Emissive.dds",
+      "compressedBytes": 18286,
+      "bytes": 2796344,
+      "localOffset": 276483379,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Etc_Normal.dds",
+      "compressedBytes": 52417,
+      "bytes": 5592560,
+      "localOffset": 276501743,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Bus_Etc_Specular.dds",
+      "compressedBytes": 996475,
+      "bytes": 2796344,
+      "localOffset": 276554236,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_01_BaseColor.dds",
+      "compressedBytes": 2064016,
+      "bytes": 2796344,
+      "localOffset": 277550789,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_01_Normal.dds",
+      "compressedBytes": 5068802,
+      "bytes": 5592560,
+      "localOffset": 279614883,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_01_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 284683760,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_02_BaseColor.dds",
+      "compressedBytes": 1936576,
+      "bytes": 2796344,
+      "localOffset": 284683938,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_02_Normal.dds",
+      "compressedBytes": 4927487,
+      "bytes": 5592560,
+      "localOffset": 286620592,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_02_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 291548154,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_03_BaseColor.dds",
+      "compressedBytes": 1860039,
+      "bytes": 2796344,
+      "localOffset": 291548332,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_03_Normal.dds",
+      "compressedBytes": 5027526,
+      "bytes": 5592560,
+      "localOffset": 293408449,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cap_03_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 298436050,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cards_BaseColor.dds",
+      "compressedBytes": 1210660,
+      "bytes": 5592560,
+      "localOffset": 298436228,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cards_Normal.dds",
+      "compressedBytes": 2214729,
+      "bytes": 5592560,
+      "localOffset": 299646965,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Cards_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 301861768,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalboard_Material_3_BaseColor.dds",
+      "compressedBytes": 1032356,
+      "bytes": 2796344,
+      "localOffset": 301861945,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalboard_Material_3_Normal.dds",
+      "compressedBytes": 1707368,
+      "bytes": 5592560,
+      "localOffset": 302894393,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalboard_Material_3_Specular.dds",
+      "compressedBytes": 314740,
+      "bytes": 2796344,
+      "localOffset": 304601850,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_1_BaseColor.dds",
+      "compressedBytes": 871654,
+      "bytes": 2796344,
+      "localOffset": 304916681,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_1_Normal.dds",
+      "compressedBytes": 791696,
+      "bytes": 5592560,
+      "localOffset": 305788419,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_1_Specular.dds",
+      "compressedBytes": 697814,
+      "bytes": 2796344,
+      "localOffset": 306580196,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Material_6_BaseColor.dds",
+      "compressedBytes": 772092,
+      "bytes": 2796344,
+      "localOffset": 307278093,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Material_6_Normal.dds",
+      "compressedBytes": 1143284,
+      "bytes": 5592560,
+      "localOffset": 308050278,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Material_6_Specular.dds",
+      "compressedBytes": 568766,
+      "bytes": 2796344,
+      "localOffset": 309193652,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_2_BaseColor.dds",
+      "compressedBytes": 915894,
+      "bytes": 2796344,
+      "localOffset": 309762510,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_2_Normal.dds",
+      "compressedBytes": 1682535,
+      "bytes": 5592560,
+      "localOffset": 310678493,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_2_Specular.dds",
+      "compressedBytes": 325323,
+      "bytes": 2796344,
+      "localOffset": 312361114,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_4_BaseColor.dds",
+      "compressedBytes": 689512,
+      "bytes": 2796344,
+      "localOffset": 312686525,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_4_Normal.dds",
+      "compressedBytes": 1143234,
+      "bytes": 5592560,
+      "localOffset": 313376126,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_4_Specular.dds",
+      "compressedBytes": 560399,
+      "bytes": 2796344,
+      "localOffset": 314519446,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_5_BaseColor.dds",
+      "compressedBytes": 697872,
+      "bytes": 2796344,
+      "localOffset": 315079933,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_5_Normal.dds",
+      "compressedBytes": 1143234,
+      "bytes": 5592560,
+      "localOffset": 315777894,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_5_Specular.dds",
+      "compressedBytes": 568568,
+      "bytes": 2796344,
+      "localOffset": 316921214,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_7_BaseColor.dds",
+      "compressedBytes": 690495,
+      "bytes": 2796344,
+      "localOffset": 317489870,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_7_Normal.dds",
+      "compressedBytes": 1143284,
+      "bytes": 5592560,
+      "localOffset": 318180454,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Chalkboard_Sign_7_Specular.dds",
+      "compressedBytes": 568871,
+      "bytes": 2796344,
+      "localOffset": 319323824,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/DumpsterBrown_BaseColor.dds",
+      "compressedBytes": 907552,
+      "bytes": 2796344,
+      "localOffset": 319892783,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/DumpsterBrown_Normal.dds",
+      "compressedBytes": 2036315,
+      "bytes": 5592560,
+      "localOffset": 320800420,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/DumpsterBrown_Specular.dds",
+      "compressedBytes": 1341063,
+      "bytes": 2796344,
+      "localOffset": 322836817,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_BaseColor.dds",
+      "compressedBytes": 103,
+      "bytes": 496,
+      "localOffset": 324177964,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Inst_BaseColor.dds",
+      "compressedBytes": 103,
+      "bytes": 496,
+      "localOffset": 324178155,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Inst_Emissive.dds",
+      "compressedBytes": 99,
+      "bytes": 496,
+      "localOffset": 324178351,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Inst_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 324178542,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Inst_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324178698,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 324178891,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_2_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324179042,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_Inst_BaseColor.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324179230,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_Inst_Emissive.dds",
+      "compressedBytes": 100,
+      "bytes": 496,
+      "localOffset": 324179422,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_Inst_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 324179612,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Light_Inst_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324179766,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_2_Inst_BaseColor.dds",
+      "compressedBytes": 84,
+      "bytes": 496,
+      "localOffset": 324179957,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_2_Inst_Emissive.dds",
+      "compressedBytes": 264178,
+      "bytes": 2796344,
+      "localOffset": 324180135,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_2_Inst_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 324444406,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_2_Inst_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324444563,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_Inst_BaseColor.dds",
+      "compressedBytes": 84,
+      "bytes": 496,
+      "localOffset": 324444757,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_Inst_Emissive.dds",
+      "compressedBytes": 364888,
+      "bytes": 2796344,
+      "localOffset": 324444933,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_Inst_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 324809912,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Emissive_Window_Inst_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 324810067,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenBark_BaseColor.dds",
+      "compressedBytes": 1896051,
+      "bytes": 2796344,
+      "localOffset": 324810259,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenBark_Normal.dds",
+      "compressedBytes": 5003045,
+      "bytes": 5592560,
+      "localOffset": 326706400,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenBark_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 331709532,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_2_BaseColor.dds",
+      "compressedBytes": 765694,
+      "bytes": 5592560,
+      "localOffset": 331709722,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_2_Normal.dds",
+      "compressedBytes": 1411735,
+      "bytes": 5592560,
+      "localOffset": 332475508,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_2_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 333887332,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_BaseColor.dds",
+      "compressedBytes": 751140,
+      "bytes": 5592560,
+      "localOffset": 333887524,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_Normal.dds",
+      "compressedBytes": 1388663,
+      "bytes": 5592560,
+      "localOffset": 334638754,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/EuropeanLindenLeaf_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 336027504,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Falcor_Awning_BaseColor.dds",
+      "compressedBytes": 324186,
+      "bytes": 2796344,
+      "localOffset": 336027694,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Falcor_Awning_Normal.dds",
+      "compressedBytes": 4377765,
+      "bytes": 5592560,
+      "localOffset": 336351965,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Falcor_Awning_Specular.dds",
+      "compressedBytes": 45352,
+      "bytes": 2796344,
+      "localOffset": 340729812,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Floor_BaseColor.dds",
+      "compressedBytes": 1735429,
+      "bytes": 2796344,
+      "localOffset": 340775248,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Floor_Normal.dds",
+      "compressedBytes": 5408436,
+      "bytes": 5592560,
+      "localOffset": 342510754,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Floor_Specular.dds",
+      "compressedBytes": 60127,
+      "bytes": 2796344,
+      "localOffset": 347919264,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/FlowerStem_05_BaseColor.dds",
+      "compressedBytes": 1426793,
+      "bytes": 2796344,
+      "localOffset": 347979467,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/FlowerStem_05_Normal.dds",
+      "compressedBytes": 4154673,
+      "bytes": 5592560,
+      "localOffset": 349406345,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/FlowerStem_05_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 353561100,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/foliage_ground_cover_BaseColor.dds",
+      "compressedBytes": 2455484,
+      "bytes": 2796344,
+      "localOffset": 353561285,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/foliage_ground_cover_Normal.dds",
+      "compressedBytes": 5500000,
+      "bytes": 5592560,
+      "localOffset": 356016861,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/foliage_ground_cover_Specular.dds",
+      "compressedBytes": 1449281,
+      "bytes": 2796344,
+      "localOffset": 361516950,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/frames_BaseColor.dds",
+      "compressedBytes": 749701,
+      "bytes": 2796344,
+      "localOffset": 362966322,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/frames_Normal.dds",
+      "compressedBytes": 1870447,
+      "bytes": 5592560,
+      "localOffset": 363716101,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/frames_Specular.dds",
+      "compressedBytes": 158325,
+      "bytes": 2796344,
+      "localOffset": 365586623,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Frames_Trim_BaseColor.dds",
+      "compressedBytes": 232329,
+      "bytes": 2796344,
+      "localOffset": 365745025,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Frames_Trim_Normal.dds",
+      "compressedBytes": 260467,
+      "bytes": 5592560,
+      "localOffset": 365977447,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Frames_Trim_Specular.dds",
+      "compressedBytes": 813169,
+      "bytes": 2796344,
+      "localOffset": 366238004,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Glass_Roof_Awning_Red_BaseColor.dds",
+      "compressedBytes": 633167,
+      "bytes": 2796344,
+      "localOffset": 367051265,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Glass_Roof_Awning_Red_Normal.dds",
+      "compressedBytes": 1857781,
+      "bytes": 5592560,
+      "localOffset": 367684535,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Glass_Roof_Awning_Red_Specular.dds",
+      "compressedBytes": 649998,
+      "bytes": 2796344,
+      "localOffset": 369542416,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Blue_BaseColor.dds",
+      "compressedBytes": 1157222,
+      "bytes": 2796344,
+      "localOffset": 370192516,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Blue_Normal.dds",
+      "compressedBytes": 3708953,
+      "bytes": 5592560,
+      "localOffset": 371349831,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Blue_Specular.dds",
+      "compressedBytes": 1065291,
+      "bytes": 2796344,
+      "localOffset": 375058874,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Green_BaseColor.dds",
+      "compressedBytes": 1146572,
+      "bytes": 2796344,
+      "localOffset": 376124257,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Green_Normal.dds",
+      "compressedBytes": 3708953,
+      "bytes": 5592560,
+      "localOffset": 377270923,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Green_Specular.dds",
+      "compressedBytes": 1065291,
+      "bytes": 2796344,
+      "localOffset": 380979967,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Red_BaseColor.dds",
+      "compressedBytes": 1177979,
+      "bytes": 2796344,
+      "localOffset": 382045351,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Red_Normal.dds",
+      "compressedBytes": 3708953,
+      "bytes": 5592560,
+      "localOffset": 383223422,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Generic_2_Struts_Red_Specular.dds",
+      "compressedBytes": 1065291,
+      "bytes": 2796344,
+      "localOffset": 386932464,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/glass_BaseColor.dds",
+      "compressedBytes": 100,
+      "bytes": 496,
+      "localOffset": 387997846,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/glass_Normal.dds",
+      "compressedBytes": 9441,
+      "bytes": 5592560,
+      "localOffset": 387998023,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Glass_Signs_BaseColor.dds",
+      "compressedBytes": 34164,
+      "bytes": 2796344,
+      "localOffset": 388007538,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Glass_Signs_Normal.dds",
+      "compressedBytes": 170597,
+      "bytes": 5592560,
+      "localOffset": 388041785,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Glass_Signs_Specular.dds",
+      "compressedBytes": 39406,
+      "bytes": 2796344,
+      "localOffset": 388212462,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/glass_Specular.dds",
+      "compressedBytes": 84,
+      "bytes": 496,
+      "localOffset": 388251950,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_blades_BaseColor.dds",
+      "compressedBytes": 1375138,
+      "bytes": 5592560,
+      "localOffset": 388252110,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_blades_Normal.dds",
+      "compressedBytes": 9441,
+      "bytes": 5592560,
+      "localOffset": 389627332,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_blades_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 389636854,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_Patterned_BaseColor.dds",
+      "compressedBytes": 2034269,
+      "bytes": 2796344,
+      "localOffset": 389637038,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_Patterned_Normal.dds",
+      "compressedBytes": 5587975,
+      "bytes": 5592560,
+      "localOffset": 391671394,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Grass_Patterned_Specular.dds",
+      "compressedBytes": 1584888,
+      "bytes": 2796344,
+      "localOffset": 397259453,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Green_BaseColor.dds",
+      "compressedBytes": 1528765,
+      "bytes": 2796344,
+      "localOffset": 398844427,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Green_Normal.dds",
+      "compressedBytes": 336476,
+      "bytes": 5592560,
+      "localOffset": 400373269,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Green_Specular.dds",
+      "compressedBytes": 1422375,
+      "bytes": 2796344,
+      "localOffset": 400709819,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Base_BaseColor.dds",
+      "compressedBytes": 2458984,
+      "bytes": 5592560,
+      "localOffset": 402132270,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Base_Normal.dds",
+      "compressedBytes": 5068467,
+      "bytes": 5592560,
+      "localOffset": 404591336,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Base_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 409659882,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_1_BaseColor.dds",
+      "compressedBytes": 718536,
+      "bytes": 5592560,
+      "localOffset": 409660064,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_1_Normal.dds",
+      "compressedBytes": 3105105,
+      "bytes": 5592560,
+      "localOffset": 410378686,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_1_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 413483874,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_3_BaseColor.dds",
+      "compressedBytes": 718536,
+      "bytes": 5592560,
+      "localOffset": 413484060,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_3_Normal.dds",
+      "compressedBytes": 3234742,
+      "bytes": 5592560,
+      "localOffset": 414202682,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hedge_Leaves_3_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 417437507,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_arch_BaseColor.dds",
+      "compressedBytes": 1644121,
+      "bytes": 2796344,
+      "localOffset": 417437693,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_arch_Normal.dds",
+      "compressedBytes": 5385859,
+      "bytes": 5592560,
+      "localOffset": 419081896,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_arch_Specular.dds",
+      "compressedBytes": 1225838,
+      "bytes": 2796344,
+      "localOffset": 424467834,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_deco_awnings_BaseColor.dds",
+      "compressedBytes": 699474,
+      "bytes": 2796344,
+      "localOffset": 425693753,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_deco_awnings_Normal.dds",
+      "compressedBytes": 2845450,
+      "bytes": 5592560,
+      "localOffset": 426393317,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_deco_awnings_Specular.dds",
+      "compressedBytes": 429942,
+      "bytes": 2796344,
+      "localOffset": 429238854,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_frames_BaseColor.dds",
+      "compressedBytes": 470123,
+      "bytes": 2796344,
+      "localOffset": 429668885,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_frames_Normal.dds",
+      "compressedBytes": 1100259,
+      "bytes": 5592560,
+      "localOffset": 430139092,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_frames_Specular.dds",
+      "compressedBytes": 301542,
+      "bytes": 2796344,
+      "localOffset": 431239432,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_moulding_BaseColor.dds",
+      "compressedBytes": 141900,
+      "bytes": 2796344,
+      "localOffset": 431541057,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_moulding_Normal.dds",
+      "compressedBytes": 802365,
+      "bytes": 5592560,
+      "localOffset": 431683043,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_moulding_Specular.dds",
+      "compressedBytes": 191930,
+      "bytes": 2796344,
+      "localOffset": 432485491,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_roof_BaseColor.dds",
+      "compressedBytes": 1908708,
+      "bytes": 2796344,
+      "localOffset": 432677506,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_roof_Normal.dds",
+      "compressedBytes": 2961558,
+      "bytes": 5592560,
+      "localOffset": 434586296,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_roof_Specular.dds",
+      "compressedBytes": 396582,
+      "bytes": 2796344,
+      "localOffset": 437547933,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_windows_BaseColor.dds",
+      "compressedBytes": 100,
+      "bytes": 496,
+      "localOffset": 437944596,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_windows_Normal.dds",
+      "compressedBytes": 9441,
+      "bytes": 5592560,
+      "localOffset": 437944781,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/hotel_windows_Specular.dds",
+      "compressedBytes": 84,
+      "bytes": 496,
+      "localOffset": 437954304,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hydrant_BaseColor.dds",
+      "compressedBytes": 1917738,
+      "bytes": 2796344,
+      "localOffset": 437954472,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hydrant_Normal.dds",
+      "compressedBytes": 5011503,
+      "bytes": 5592560,
+      "localOffset": 439872289,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Hydrant_Specular.dds",
+      "compressedBytes": 1289691,
+      "bytes": 2796344,
+      "localOffset": 444883868,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleBark_BaseColor.dds",
+      "compressedBytes": 2060721,
+      "bytes": 2796344,
+      "localOffset": 446173637,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleBark_Normal.dds",
+      "compressedBytes": 4992206,
+      "bytes": 5592560,
+      "localOffset": 448234447,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleBark_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 453226739,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_1_BaseColor.dds",
+      "compressedBytes": 870672,
+      "bytes": 5592560,
+      "localOffset": 453226928,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_1_Normal.dds",
+      "compressedBytes": 1497412,
+      "bytes": 5592560,
+      "localOffset": 454097691,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_1_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 455595191,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_2_BaseColor.dds",
+      "compressedBytes": 1012721,
+      "bytes": 5592560,
+      "localOffset": 455595382,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_2_Normal.dds",
+      "compressedBytes": 1718146,
+      "bytes": 5592560,
+      "localOffset": 456608194,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/JapaneseMapleLeaf_2_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 458326428,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/KWOW_BaseColor.dds",
+      "compressedBytes": 1249264,
+      "bytes": 2796344,
+      "localOffset": 458326619,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/KWOW_Normal.dds",
+      "compressedBytes": 3191115,
+      "bytes": 5592560,
+      "localOffset": 459575959,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/KWOW_Specular.dds",
+      "compressedBytes": 632890,
+      "bytes": 2796344,
+      "localOffset": 462767147,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leasing_BaseColor.dds",
+      "compressedBytes": 44292,
+      "bytes": 2796344,
+      "localOffset": 463400112,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leasing_Normal.dds",
+      "compressedBytes": 393644,
+      "bytes": 5592560,
+      "localOffset": 463444483,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leasing_Specular.dds",
+      "compressedBytes": 663763,
+      "bytes": 2796344,
+      "localOffset": 463838203,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_2_BaseColor.dds",
+      "compressedBytes": 1040487,
+      "bytes": 5592560,
+      "localOffset": 464502044,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_2_Normal.dds",
+      "compressedBytes": 2076098,
+      "bytes": 5592560,
+      "localOffset": 465542611,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_2_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 467618786,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_BaseColor.dds",
+      "compressedBytes": 891813,
+      "bytes": 5592560,
+      "localOffset": 467618966,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_Normal.dds",
+      "compressedBytes": 1729009,
+      "bytes": 5592560,
+      "localOffset": 468510857,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Leaves_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 470239941,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Metal_Dividers_BaseColor.dds",
+      "compressedBytes": 583168,
+      "bytes": 2796344,
+      "localOffset": 470240119,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Metal_Dividers_Normal.dds",
+      "compressedBytes": 2101181,
+      "bytes": 5592560,
+      "localOffset": 470823373,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Metal_Dividers_Specular.dds",
+      "compressedBytes": 624292,
+      "bytes": 2796344,
+      "localOffset": 472924637,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/moulding_signs_BaseColor.dds",
+      "compressedBytes": 353717,
+      "bytes": 2796344,
+      "localOffset": 473549014,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/moulding_signs_Normal.dds",
+      "compressedBytes": 3254617,
+      "bytes": 5592560,
+      "localOffset": 473902817,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/moulding_signs_Specular.dds",
+      "compressedBytes": 297433,
+      "bytes": 2796344,
+      "localOffset": 477157517,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/OpenHouse_BaseColor.dds",
+      "compressedBytes": 390015,
+      "bytes": 2796344,
+      "localOffset": 477455035,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/OpenHouse_Normal.dds",
+      "compressedBytes": 372968,
+      "bytes": 5592560,
+      "localOffset": 477845131,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/OpenHouse_Specular.dds",
+      "compressedBytes": 33793,
+      "bytes": 2796344,
+      "localOffset": 478218177,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Open_BaseColor.dds",
+      "compressedBytes": 26130,
+      "bytes": 2796344,
+      "localOffset": 478252050,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Open_Normal.dds",
+      "compressedBytes": 336881,
+      "bytes": 5592560,
+      "localOffset": 478278256,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Open_Specular.dds",
+      "compressedBytes": 21671,
+      "bytes": 2796344,
+      "localOffset": 478615210,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Painted_Metal_BaseColor.dds",
+      "compressedBytes": 84,
+      "bytes": 496,
+      "localOffset": 478636956,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Painted_Metal_Normal.dds",
+      "compressedBytes": 66,
+      "bytes": 144,
+      "localOffset": 478637125,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Painted_Metal_Specular.dds",
+      "compressedBytes": 1200392,
+      "bytes": 2796344,
+      "localOffset": 478637273,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/ParkingMeter_BaseColor.dds",
+      "compressedBytes": 294112,
+      "bytes": 2796344,
+      "localOffset": 479837749,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/ParkingMeter_Normal.dds",
+      "compressedBytes": 282792,
+      "bytes": 5592560,
+      "localOffset": 480131945,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/ParkingMeter_Specular.dds",
+      "compressedBytes": 367287,
+      "bytes": 2796344,
+      "localOffset": 480414818,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Picnic_Table1_BaseColor.dds",
+      "compressedBytes": 1325754,
+      "bytes": 2796344,
+      "localOffset": 480782188,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Picnic_Table1_Normal.dds",
+      "compressedBytes": 3134917,
+      "bytes": 5592560,
+      "localOffset": 482108027,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Picnic_Table1_Specular.dds",
+      "compressedBytes": 1080282,
+      "bytes": 2796344,
+      "localOffset": 485243026,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PineForestFloor_BaseColor.dds",
+      "compressedBytes": 2262731,
+      "bytes": 2796344,
+      "localOffset": 486323392,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PineForestFloor_Normal.dds",
+      "compressedBytes": 5559524,
+      "bytes": 5592560,
+      "localOffset": 488586210,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PineForestFloor_Specular.dds",
+      "compressedBytes": 1706643,
+      "bytes": 2796344,
+      "localOffset": 494145818,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Pink_Flower_BaseColor.dds",
+      "compressedBytes": 1438260,
+      "bytes": 5592560,
+      "localOffset": 495852547,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Pink_Flower_Normal.dds",
+      "compressedBytes": 2890487,
+      "bytes": 5592560,
+      "localOffset": 497290890,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Pink_Flower_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 500181457,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Planter_BaseColor.dds",
+      "compressedBytes": 1346225,
+      "bytes": 2796344,
+      "localOffset": 500181640,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Planter_Normal.dds",
+      "compressedBytes": 1840855,
+      "bytes": 5592560,
+      "localOffset": 501527944,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Planter_Specular.dds",
+      "compressedBytes": 921776,
+      "bytes": 2796344,
+      "localOffset": 503368875,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PoleBanner_1_BaseColor.dds",
+      "compressedBytes": 1136879,
+      "bytes": 2796344,
+      "localOffset": 504290729,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PoleBanner_1_Normal.dds",
+      "compressedBytes": 625098,
+      "bytes": 5592560,
+      "localOffset": 505427692,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/PoleBanner_1_Specular.dds",
+      "compressedBytes": 54465,
+      "bytes": 2796344,
+      "localOffset": 506052871,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Railing_Black_BaseColor.dds",
+      "compressedBytes": 901902,
+      "bytes": 2796344,
+      "localOffset": 506107419,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Railing_Black_Normal.dds",
+      "compressedBytes": 3649536,
+      "bytes": 5592560,
+      "localOffset": 507009406,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Railing_Black_Specular.dds",
+      "compressedBytes": 969948,
+      "bytes": 2796344,
+      "localOffset": 510659024,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Recycling_BaseColor.dds",
+      "compressedBytes": 965864,
+      "bytes": 2796344,
+      "localOffset": 511629056,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Recycling_Normal.dds",
+      "compressedBytes": 1246908,
+      "bytes": 5592560,
+      "localOffset": 512595001,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Recycling_Specular.dds",
+      "compressedBytes": 1261747,
+      "bytes": 2796344,
+      "localOffset": 513841987,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Red_BaseColor.dds",
+      "compressedBytes": 1354747,
+      "bytes": 2796344,
+      "localOffset": 515103814,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Red_Normal.dds",
+      "compressedBytes": 336476,
+      "bytes": 5592560,
+      "localOffset": 516458636,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Red_Specular.dds",
+      "compressedBytes": 1422375,
+      "bytes": 2796344,
+      "localOffset": 516795184,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Road_BaseColor.dds",
+      "compressedBytes": 1059282,
+      "bytes": 2796344,
+      "localOffset": 518217633,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Road_Normal.dds",
+      "compressedBytes": 3488508,
+      "bytes": 5592560,
+      "localOffset": 519276991,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Road_Specular.dds",
+      "compressedBytes": 533867,
+      "bytes": 2796344,
+      "localOffset": 522765572,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Roof_BaseColor.dds",
+      "compressedBytes": 1954159,
+      "bytes": 2796344,
+      "localOffset": 523299514,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Roof_Normal.dds",
+      "compressedBytes": 3190547,
+      "bytes": 5592560,
+      "localOffset": 525253749,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Roof_Specular.dds",
+      "compressedBytes": 759649,
+      "bytes": 2796344,
+      "localOffset": 528444369,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_1F_Concrete_BaseColor.dds",
+      "compressedBytes": 1217117,
+      "bytes": 2796344,
+      "localOffset": 529204093,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_1F_Concrete_Normal.dds",
+      "compressedBytes": 2276082,
+      "bytes": 5592560,
+      "localOffset": 530421300,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_1F_Concrete_Specular.dds",
+      "compressedBytes": 422506,
+      "bytes": 2796344,
+      "localOffset": 532697469,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_2F_Concrete_BaseColor.dds",
+      "compressedBytes": 966043,
+      "bytes": 2796344,
+      "localOffset": 533120064,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_2F_Concrete_Normal.dds",
+      "compressedBytes": 2562514,
+      "bytes": 5592560,
+      "localOffset": 534086197,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_2F_Concrete_Specular.dds",
+      "compressedBytes": 374234,
+      "bytes": 2796344,
+      "localOffset": 536648798,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Glass_Sign_BaseColor.dds",
+      "compressedBytes": 394787,
+      "bytes": 2796344,
+      "localOffset": 537023121,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Glass_Sign_Normal.dds",
+      "compressedBytes": 855787,
+      "bytes": 5592560,
+      "localOffset": 537417997,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Glass_Sign_Specular.dds",
+      "compressedBytes": 180386,
+      "bytes": 2796344,
+      "localOffset": 538273870,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Trim_BaseColor.dds",
+      "compressedBytes": 1480053,
+      "bytes": 2796344,
+      "localOffset": 538454344,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Trim_Normal.dds",
+      "compressedBytes": 3353163,
+      "bytes": 5592560,
+      "localOffset": 539934480,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Trim_Specular.dds",
+      "compressedBytes": 491609,
+      "bytes": 2796344,
+      "localOffset": 543287723,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Wood_Metal_BaseColor.dds",
+      "compressedBytes": 453683,
+      "bytes": 2796344,
+      "localOffset": 543779414,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Wood_Metal_Normal.dds",
+      "compressedBytes": 242288,
+      "bytes": 5592560,
+      "localOffset": 544233186,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sheleg_Wood_Metal_Specular.dds",
+      "compressedBytes": 466929,
+      "bytes": 2796344,
+      "localOffset": 544475560,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Signal_BaseColor.dds",
+      "compressedBytes": 744334,
+      "bytes": 2796344,
+      "localOffset": 544942577,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Signal_Emissive.dds",
+      "compressedBytes": 14573,
+      "bytes": 2796344,
+      "localOffset": 545686989,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Signal_Normal.dds",
+      "compressedBytes": 2793861,
+      "bytes": 5592560,
+      "localOffset": 545701639,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Signal_Specular.dds",
+      "compressedBytes": 911362,
+      "bytes": 2796344,
+      "localOffset": 548495575,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sign_BaseColor.dds",
+      "compressedBytes": 199596,
+      "bytes": 2796344,
+      "localOffset": 549407014,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sign_Normal.dds",
+      "compressedBytes": 964113,
+      "bytes": 5592560,
+      "localOffset": 549606686,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Sign_Specular.dds",
+      "compressedBytes": 97077,
+      "bytes": 2796344,
+      "localOffset": 550570872,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/SteelBench_BaseColor.dds",
+      "compressedBytes": 145764,
+      "bytes": 2796344,
+      "localOffset": 550668024,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/SteelBench_Normal.dds",
+      "compressedBytes": 931904,
+      "bytes": 5592560,
+      "localOffset": 550813870,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/SteelBench_Specular.dds",
+      "compressedBytes": 950922,
+      "bytes": 2796344,
+      "localOffset": 551745853,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/StreetSigns_BaseColor.dds",
+      "compressedBytes": 464714,
+      "bytes": 2796344,
+      "localOffset": 552696856,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/StreetSigns_Normal.dds",
+      "compressedBytes": 907246,
+      "bytes": 5592560,
+      "localOffset": 553161653,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/StreetSigns_Specular.dds",
+      "compressedBytes": 648853,
+      "bytes": 2796344,
+      "localOffset": 554068979,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Big_BaseColor.dds",
+      "compressedBytes": 1619153,
+      "bytes": 2796344,
+      "localOffset": 554717914,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Big_Normal.dds",
+      "compressedBytes": 2706090,
+      "bytes": 5592560,
+      "localOffset": 556337157,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Big_Specular.dds",
+      "compressedBytes": 577957,
+      "bytes": 2796344,
+      "localOffset": 559043334,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Observation_BaseColor.dds",
+      "compressedBytes": 642028,
+      "bytes": 2796344,
+      "localOffset": 559621380,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Observation_Normal.dds",
+      "compressedBytes": 1249612,
+      "bytes": 5592560,
+      "localOffset": 560263506,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Observation_Specular.dds",
+      "compressedBytes": 201391,
+      "bytes": 2796344,
+      "localOffset": 561513213,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Roof_BaseColor.dds",
+      "compressedBytes": 1192065,
+      "bytes": 2796344,
+      "localOffset": 561714701,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Roof_Normal.dds",
+      "compressedBytes": 2471329,
+      "bytes": 5592560,
+      "localOffset": 562906857,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Moulding_Roof_Specular.dds",
+      "compressedBytes": 403685,
+      "bytes": 2796344,
+      "localOffset": 565378274,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Observation_Arch_BaseColor.dds",
+      "compressedBytes": 689065,
+      "bytes": 2796344,
+      "localOffset": 565782049,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Observation_Arch_Normal.dds",
+      "compressedBytes": 1472648,
+      "bytes": 5592560,
+      "localOffset": 566471208,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Observation_Arch_Specular.dds",
+      "compressedBytes": 268152,
+      "bytes": 2796344,
+      "localOffset": 567943947,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Railing_BaseColor.dds",
+      "compressedBytes": 492612,
+      "bytes": 2796344,
+      "localOffset": 568212192,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Railing_Normal.dds",
+      "compressedBytes": 2586146,
+      "bytes": 5592560,
+      "localOffset": 568704889,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Railing_Specular.dds",
+      "compressedBytes": 572198,
+      "bytes": 2796344,
+      "localOffset": 571291117,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Roof_BaseColor.dds",
+      "compressedBytes": 1969634,
+      "bytes": 2796344,
+      "localOffset": 571863399,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Roof_Normal.dds",
+      "compressedBytes": 5481447,
+      "bytes": 5592560,
+      "localOffset": 573833115,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Roof_Specular.dds",
+      "compressedBytes": 1231680,
+      "bytes": 2796344,
+      "localOffset": 579314641,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Top_BaseColor.dds",
+      "compressedBytes": 905249,
+      "bytes": 2796344,
+      "localOffset": 580546402,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Top_Normal.dds",
+      "compressedBytes": 3009995,
+      "bytes": 5592560,
+      "localOffset": 581451732,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Top_Specular.dds",
+      "compressedBytes": 1332600,
+      "bytes": 2796344,
+      "localOffset": 584461805,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Windows_Ball_BaseColor.dds",
+      "compressedBytes": 582819,
+      "bytes": 2796344,
+      "localOffset": 585794485,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Windows_Ball_Normal.dds",
+      "compressedBytes": 1933901,
+      "bytes": 5592560,
+      "localOffset": 586377394,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Tower_Windows_Ball_Specular.dds",
+      "compressedBytes": 718410,
+      "bytes": 2796344,
+      "localOffset": 588311382,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/trampled_sand_BaseColor.dds",
+      "compressedBytes": 1853680,
+      "bytes": 2796344,
+      "localOffset": 589029881,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/trampled_sand_Normal.dds",
+      "compressedBytes": 5269736,
+      "bytes": 5592560,
+      "localOffset": 590883646,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/trampled_sand_Specular.dds",
+      "compressedBytes": 1622519,
+      "bytes": 2796344,
+      "localOffset": 596153464,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_BaseColor.dds",
+      "compressedBytes": 988769,
+      "bytes": 2796344,
+      "localOffset": 597776067,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_Black_BaseColor.dds",
+      "compressedBytes": 732803,
+      "bytes": 2796344,
+      "localOffset": 598764913,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_Black_Normal.dds",
+      "compressedBytes": 1237152,
+      "bytes": 5592560,
+      "localOffset": 599497799,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_Black_Specular.dds",
+      "compressedBytes": 1135606,
+      "bytes": 2796344,
+      "localOffset": 600735031,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_Normal.dds",
+      "compressedBytes": 1237152,
+      "bytes": 5592560,
+      "localOffset": 601870719,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/Trash_Specular.dds",
+      "compressedBytes": 1237923,
+      "bytes": 2796344,
+      "localOffset": 603107945,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WhiteOakBark_BaseColor.dds",
+      "compressedBytes": 1874385,
+      "bytes": 2796344,
+      "localOffset": 604345944,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WhiteOakBark_Normal.dds",
+      "compressedBytes": 5043955,
+      "bytes": 5592560,
+      "localOffset": 606220413,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WhiteOakBark_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 611264449,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_1_BaseColor.dds",
+      "compressedBytes": 935784,
+      "bytes": 5592560,
+      "localOffset": 611264633,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_1_Normal.dds",
+      "compressedBytes": 1505773,
+      "bytes": 5592560,
+      "localOffset": 612200512,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_1_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 613706377,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_3_BaseColor.dds",
+      "compressedBytes": 935784,
+      "bytes": 5592560,
+      "localOffset": 613706572,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_3_Normal.dds",
+      "compressedBytes": 1682752,
+      "bytes": 5592560,
+      "localOffset": 614642451,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/White_Oak_Leaves_Hero_3_Specular.dds",
+      "compressedBytes": 101,
+      "bytes": 496,
+      "localOffset": 616325295,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WorldGridMaterial_BaseColor.dds",
+      "compressedBytes": 897718,
+      "bytes": 2796344,
+      "localOffset": 616325490,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WorldGridMaterial_Normal.dds",
+      "compressedBytes": 48538,
+      "bytes": 5592560,
+      "localOffset": 617223297,
+      "method": 8
+    },
+    {
+      "name": "EmeraldSquare_v4_1/Textures/WorldGridMaterial_Specular.dds",
+      "compressedBytes": 24173,
+      "bytes": 2796344,
+      "localOffset": 617271921,
+      "method": 8
+    }
+  ]
+}

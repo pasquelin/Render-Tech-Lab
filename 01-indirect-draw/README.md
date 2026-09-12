@@ -1,17 +1,17 @@
-# 01-gpu-driven — GPU-Driven Rendering Pipeline
+# 01 · Soumission indirecte WebGPU — commandes pré-générées, sans LOD ni Hi-Z
 
 ## Description
-A GPU-driven rendering architecture for Three.js / WebGPU. The core goal is to remove the CPU submission bottleneck (`submitMs` / the sequential draw-call loop) by moving visibility evaluation (culling), level-of-detail selection and render-command emission onto the GPU itself, through compute shaders and `drawIndexedIndirect`.
+Ce banc isole la soumission indirecte et le culling frustum atomique. Il ne constitue pas le pipeline GPU-driven complet : il n'implémente ni LOD, ni meshlets, ni Hi-Z, ni streaming.
 
 > **Invariant: zero visibility read-back to the CPU.**
 > No `mapAsync(READ)`, no blocking read of visibility counters, is tolerated inside the frame loop.
 
 ---
 
-## The five phases of the lab
+## Place dans la chaîne future
 
 ```
-Phase 1: Remove CPU submit (GPU frustum culling + indirect buffer)
+Phase 1: Remove CPU submit (GPU frustum culling + indirect buffer) ← ce banc
    │
    ▼
 Phase 2: Descend the abstraction (Level A TSL → Level B common backend → Level C fork)
@@ -66,8 +66,18 @@ CPU submit (ms)
 ---
 
 ## Module layout
-- [`hypothesis.md`](hypothesis.md) — R&D arbitration protocol, decision criteria and switch-over thresholds.
-- `baseline/` — Test A scene and renderer (standard Three.js).
+- [`docs/hypothesis.md`](docs/hypothesis.md) — R&D arbitration protocol, decision criteria and switch-over thresholds.
+- `implementation/classicScene.ts` — Test A scene and renderer (standard Three.js).
 - `implementation/` — Test B experimental mini-renderer (flat storage buffers, compute shader, indirect draw).
-- `benchmark/` — automated measurement harness, high-precision instrumentation and profiling.
+- `runner/` — automated measurement harness, high-precision instrumentation and profiling.
 - `results/` — collected data (JSON), crossover curves and WebGPU traces.
+
+## Exécution et terminaison
+
+`BenchmarkRunner.runAutomatedBenchmark(tiers?)` est l'API intégrable dans la coque. Elle alterne les modes, parcourt une liste finie de paliers, puis rend un `CrossoverReport`; `finally` restitue systématiquement l'état de campagne. `canRender` sert de garde de propriété et les callbacks `onBenchmarkProgress`, `onMetricsUpdate` et `onBenchmarkComplete` alimentent l'interface.
+
+Le test local vérifie uniquement la génération déterministe et le packing binaire. Une campagne matérielle doit disposer de WebGPU, exécuter les variantes successivement sur le même viewport et ne publier aucun crossover automatique, car la référence utilise WebGL/Three.js et le candidat WebGPU natif.
+
+## Source layout
+
+Public API: [index.ts](index.ts); metadata: [manifest.ts](manifest.ts); contracts: [contracts.ts](contracts.ts). See [migration](docs/migration.md), [hypothesis](docs/hypothesis.md), [protocol](docs/protocol.md) and [limits](docs/limits.md). Canonical runner sources are under `runner/`, scenario metadata under `scenarios/`, and boundary tests under `tests/`. Compatibility forwarding modules have been removed.

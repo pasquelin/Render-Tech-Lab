@@ -1,37 +1,64 @@
 {
-  "timestamp": "2026-09-11T21:28:57.376884+00:00",
   "test": "05-meshlets",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "05-meshlets",
+      "variant": "64",
+      "cpuMs": 0.600000003973643,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-partitioning",
+        "meshlets": 16,
+        "triangles": 1024,
+        "vertexDuplication": 1.88,
+        "metadataBytes": 1024
+      }
+    },
+    {
+      "test": "05-meshlets",
+      "variant": "128",
+      "cpuMs": 0.23333334922790527,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-partitioning",
+        "meshlets": 8,
+        "triangles": 1024,
+        "vertexDuplication": 1.41,
+        "metadataBytes": 512
+      }
+    },
+    {
+      "test": "05-meshlets",
+      "variant": "256",
+      "cpuMs": 0.20000000794728598,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-partitioning",
+        "meshlets": 4,
+        "triangles": 1024,
+        "vertexDuplication": 1.18,
+        "metadataBytes": 256
+      }
+    },
+    {
+      "test": "05-meshlets",
+      "variant": "512",
+      "cpuMs": 0.23333334922790527,
+      "gpuMs": null,
+      "custom": {
+        "scope": "cpu-partitioning",
+        "meshlets": 2,
+        "triangles": 1024,
+        "vertexDuplication": 1.06,
+        "metadataBytes": 128
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Tous les invariants du runner ont été vérifiés."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "05-meshlets/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T15:04:52.645Z"
 }

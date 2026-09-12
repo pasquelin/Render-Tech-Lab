@@ -11,15 +11,17 @@
 [![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1e6fbf)](LICENSE)
 
-**[Master Test Plan](MASTER_TEST_PLAN.md)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)** · **[Reports](reports/README.md)** · **[Watchlist](#conditional-watchlist)**
+**[Principes du Lab](docs/PRINCIPES_DU_LAB.md)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)** · **[Reports](reports/README.md)**
 
 </div>
+
+Documentation : [méthodologie et preuves du Lab](docs/README.md) · [conception de Web Geometry](../webGeometry/docs/README.md).
 
 ---
 
 ## Master Test Plan & Execution Contract
 
-The laboratory is governed by **[`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md)**, defining 14 isolated unit test blocks (from `00-baseline` through `13-full-gpu-driven`) before developing proprietary mathematical optimization models.
+The laboratory contains a Dashboard and 15 experimental benches (`01`–`15`), plus the consultative baseline `00`. [`docs/PRINCIPES_DU_LAB.md`](docs/PRINCIPES_DU_LAB.md) is the canonical policy.
 
 > **Philosophical Principle :**  
 > Nanite is an architectural inspiration, not a specification to duplicate blindly. The lab determines experimentally which properties make GPU-driven rendering viable in WebGPU / Three.js, using simple, reproducible unit tests.
@@ -27,6 +29,8 @@ The laboratory is governed by **[`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md)**, 
 ---
 
 ## The governing rule
+
+The canonical architecture and evidence rules are maintained in **[`docs/PRINCIPES_DU_LAB.md`](docs/PRINCIPES_DU_LAB.md)**. This README introduces them; module documentation must link to that source instead of creating competing versions.
 
 > **No major infrastructure is adopted because it is standard in modern engines. It is adopted when a reproducible benchmark proves that the current architecture is the limiting factor, and when the expected gain is quantified.**
 >
@@ -54,7 +58,7 @@ To guarantee mathematical and scientific rigor across reports, the laboratory st
 
 ## The R&D Progression
 
-Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively. The table below reflects the **actual** state of the repository and the governing statuses, kept in sync with [`MASTER_TEST_PLAN.md`](MASTER_TEST_PLAN.md).
+Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively. The table below reflects the **actual** state of the repository and the governing statuses.
 
 > **Status legend (honest by construction):**
 > - **[RE-MEASURE]** — historical verdict withdrawn pending a reproducible physical campaign.
@@ -63,24 +67,32 @@ Instead of jumping prematurely to a monolithic Nanite clone, the laboratory buil
 
 | Module | Research subject | Status | Protocol |
 |---|---|---|---|
-| [**00-baseline**](00-baseline/README.md) | Spec 13 Witness — S0–S5 load curve, reference floor | **[RE-MEASURE]** | [hypothesis.md](00-baseline/hypothesis.md) |
-| [**01-indirect-draw**](01-indirect-draw/README.md) | Indirect Draw (1 draw call) + baseline crossover | **[RE-MEASURE]** | [hypothesis.md](01-indirect-draw/hypothesis.md) |
-| [**02-gpu-frustum-culling**](02-gpu-frustum-culling/README.md) | Compute WGSL frustum culling (plan/sphere) | **[IMPLEMENTED / RE-MEASURE]** | [hypothesis.md](02-gpu-frustum-culling/hypothesis.md) |
-| [**03-gpu-scene**](03-gpu-scene/README.md) | Heterogeneous GPU scene (Object/Geometry/Material/Draw buffers, 4D stress) | **[RE-MEASURE]** | [hypothesis.md](03-gpu-scene/hypothesis.md) |
-| [**04-gpu-lod**](04-gpu-lod/README.md) | Screen-Space Error LOD, decimation (meshoptimizer) + CPU/GPU selection | **[RE-MEASURE]** 04A/04B · 04C not run | [hypothesis.md](04-gpu-lod/hypothesis.md) |
-| [**05-meshlets**](05-meshlets/README.md) | Cluster partitioning (64/128/256/512 tris) & overhead | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](05-meshlets/types.ts) |
-| [**06-meshlet-culling**](06-meshlet-culling/README.md) | Frustum / backface / sub-pixel cluster culling & reject rate | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](06-meshlet-culling/types.ts) |
-| [**07-hiz**](07-hiz/README.md) | Hi-Z depth pyramid (mip 0 → N) & generation cost | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](07-hiz/types.ts) |
-| [**08-occlusion-culling**](08-occlusion-culling/README.md) | Hi-Z occlusion under 10%–99% & net-gain equation | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](08-occlusion-culling/types.ts) |
-| [**09-gpu-compaction**](09-gpu-compaction/README.md) | Visible-list compaction (1-thread / atomic / scan) | **[IMPLEMENTED / RE-MEASURE]** | [types.ts](09-gpu-compaction/types.ts) |
-| [**10-material-batching**](10-material-batching/README.md) | Materialisation (switch / storage / texture-array) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](10-material-batching/types.ts) |
-| [**11-geometry-streaming**](11-geometry-streaming/README.md) | VRAM residency & memory-pressure lifecycle | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](11-geometry-streaming/types.ts) |
-| [**12-visibility-buffer**](12-visibility-buffer/README.md) | Visibility buffer & deferred shading | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](12-visibility-buffer/types.ts) |
-| [**13-full-gpu-driven**](13-full-gpu-driven/README.md) | Assembled pipeline & systemic cost/gain balance | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](13-full-gpu-driven/types.ts) |
+| [**00-baseline**](00-baseline/README.md) | Spec 13 Witness — S0–S5 load curve, reference floor | **[RE-MEASURE]** | [hypothesis.md](00-baseline/docs/hypothesis.md) |
+| [**01-indirect-draw**](01-indirect-draw/README.md) | Indirect Draw (1 draw call) + baseline crossover | **[RE-MEASURE]** | [hypothesis.md](01-indirect-draw/docs/hypothesis.md) |
+| [**02-gpu-frustum-culling**](02-gpu-frustum-culling/README.md) | Compute WGSL frustum culling (plan/sphere) | **[IMPLEMENTED / RE-MEASURE]** | [hypothesis.md](02-gpu-frustum-culling/docs/hypothesis.md) |
+| [**03-gpu-scene**](03-gpu-scene/README.md) | Heterogeneous GPU scene (Object/Geometry/Material/Draw buffers, 4D stress) | **[RE-MEASURE]** | [hypothesis.md](03-gpu-scene/docs/hypothesis.md) |
+| [**04-gpu-lod**](04-gpu-lod/README.md) | Screen-Space Error LOD, decimation (meshoptimizer) + CPU/GPU selection | **[RE-MEASURE]** 04A/04B · 04C not run | [hypothesis.md](04-gpu-lod/docs/hypothesis.md) |
+| [**05-meshlets**](05-meshlets/README.md) | Cluster partitioning (64/128/256/512 tris) & overhead | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](05-meshlets/contracts.ts) |
+| [**06-meshlet-culling**](06-meshlet-culling/README.md) | Frustum / backface / sub-pixel cluster culling & reject rate | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](06-meshlet-culling/contracts.ts) |
+| [**07-hiz**](07-hiz/README.md) | Hi-Z depth pyramid (mip 0 → N) & generation cost | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](07-hiz/contracts.ts) |
+| [**08-occlusion-culling**](08-occlusion-culling/README.md) | Hi-Z occlusion under 10%–99% & net-gain equation | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](08-occlusion-culling/contracts.ts) |
+| [**09-gpu-compaction**](09-gpu-compaction/README.md) | Visible-list compaction (1-thread / atomic / scan) | **[IMPLEMENTED / RE-MEASURE]** | [types.ts](09-gpu-compaction/contracts.ts) |
+| [**10-material-batching**](10-material-batching/README.md) | Materialisation (switch / storage / texture-array) | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](10-material-batching/contracts.ts) |
+| [**11-geometry-streaming**](11-geometry-streaming/README.md) | VRAM residency & memory-pressure lifecycle | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](11-geometry-streaming/contracts.ts) |
+| [**12-visibility-buffer**](12-visibility-buffer/README.md) | Visibility buffer & deferred shading | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](12-visibility-buffer/contracts.ts) |
+| [**13-full-gpu-driven**](13-full-gpu-driven/README.md) | Assembled pipeline & systemic cost/gain balance | **[NOT IMPLEMENTED / NOT RUN]** | [types.ts](13-full-gpu-driven/contracts.ts) |
+| [**14-open-world**](14-open-world/README.md) | Resident WebGL2 open-world pressure test | **[MEASURED, BOUNDED EVIDENCE]** | [README](14-open-world/README.md) |
+| [**15-virtualized-integration**](15-virtualized-integration/README.md) | Prepared virtualized geometry integration | **[PARTIAL PHYSICAL VALIDATION]** | [README](15-virtualized-integration/README.md) |
 
-Each module holds the same drawers: `hypothesis.md` (scoping sheet and final verdict), `baseline/` (reference engine, without the technique), `implementation/` (the experimental prototype), `benchmark/` (automated, reproducible load scenarios) and `results/` (captures, figures, comparisons, and `latest.json`).
+Bench 15 has separate public packages and a compiled, executed Rust library/CLI preparer with an internal native preparation cache. In Chrome, an Emerald Square slice of 149,998 triangles loaded successfully; two poses passed exact-pixel checks and four measurement blocks completed. Beauty, wireframe, clusters, LOD, error and page diagnostics work on that fixture. The complete city is visible, but its strict A/A control remains unstable, so full-city measurements are blocked and bench 15 is not complete. Injectable ports/stages, general simplification and eviction, native integration, and multiplatform performance CI remain open.
 
-**Cross-cutting:** [`shared/`](shared/) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses; [`reports/`](reports/README.md) holds the consolidated arbitration reports.
+All sixteen benches use the canonical layout and public boundaries described in [the laboratory principles](docs/PRINCIPES_DU_LAB.md#structure-des-bancs-0015). Run `npm run test:structure` to verify the layout, metadata and public imports. No legacy forwarding files remain; HTML routes and existing results are retained.
+
+**Cross-cutting:** [`shared/`](shared) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses; [`reports/`](reports/README.md) holds the consolidated arbitration reports.
+
+Product architecture, portable compilation, capabilities and fallback behavior have their canonical specification in [Web Geometry’s product principles](../webGeometry/docs/architecture/PRINCIPES_DU_PRODUIT.md). The Lab owns the evidence required to accept an implementation; its [proof policy](docs/PRINCIPES_DU_LAB.md) governs each campaign.
+
+Web Geometry now contains the native compiler, runtime sources and public SDK exports. The main Lab project consumes the local SDK and bench 15 opens Emerald Square for interactive exploration. Full-city comparison remains disabled while its strict A/A image gate is unstable; the procedural fixture remains a separate scene for targeted campaigns.
 
 ## The three independent gates
 
@@ -143,6 +155,12 @@ These subjects are neither rejected nor scheduled. They stay dormant and only op
 | **3D radiance cascades** | Industrial maturity for 3D on the web |
 | **Animation / simulation LOD, 100 km² worlds** | Outside the studio's current target |
 | **Gaussian splatting (3DGS)** | One of the studio's AI providers starts emitting it → read-only format |
+
+## Composants React obligatoires d’un banc
+
+La coque du Lab appartient à `src/components`, jamais à un banc. Toute route 00–15 utilise `LabSection` pour les quatre panneaux dans l’ordre Configuration, Métriques, Campagne, Rapports. Les contrôles utilisent `Field`, `Select`, `Input`, `Button` et `SegmentedControl`; les quatre mesures principales passent exclusivement par `LabStats`/`StatsGrid`, puis les mesures propres au banc par `MetricGrid`. Les états d’attente, chargement et erreur utilisent les composants partagés correspondants. Un banc fournit ses libellés, options, métriques et actions par son descriptor/adapter public; aucune primitive commune ne contient de donnée métier d’un banc.
+
+Pour ajouter un banc, déclarer d’abord son descriptor et son runner public, puis alimenter ces composants par données. `test/labStatsContract.test.ts` vérifie les seize routes et tous les états de la machine. `test/uiPrimitives.test.ts` verrouille les classes DaisyUI et les associations label/contrôle.
 
 ## Running it
 

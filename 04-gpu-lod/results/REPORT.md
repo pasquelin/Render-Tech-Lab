@@ -73,4 +73,4 @@ $$\text{pixels} = \frac{D \times H}{2d \tan(\text{FOV} / 2)}$$
 ## 5. Prochaine Étape
 
 La décimation géométrique et la sélection LOD étant validées, le laboratoire peut aborder le découpage infra-maillage :
-👉 **[05 · Meshlets & Cluster Partitioning](../05-meshlets/README.md)**
+👉 **[05 · Meshlets & Cluster Partitioning](../../05-meshlets/README.md)**

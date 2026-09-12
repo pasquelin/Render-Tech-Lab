@@ -1,0 +1,33 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:'chrome',headless:true});
+try {
+ const page=await browser.newPage({viewport:{width:1400,height:900}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const assets=[];page.on('request',r=>{if(r.url().includes('/benchmark-assets/emerald'))assets.push(r.url());});
+ await page.route('**/emerald-derived/native/full/manifest.json',r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}),{times:1});
+ await page.goto('http://localhost:5174/?test=15-virtualized-integration');
+ await page.locator('[data-emerald-availability="error"]').waitFor();
+ assert.equal(await page.locator('canvas').count(),0);
+ await page.getByRole('button',{name:'Réessayer la disponibilité',exact:true}).click();
+ await page.locator('[data-emerald-availability="ready"]').waitFor({timeout:30000});
+ assert.equal(await page.locator('canvas').count(),0);
+ assert.ok(assets.every(url=>url.endsWith('.json')));
+ await page.getByRole('radio',{name:'Fixture procédurale'}).click();
+ await page.getByRole('radio',{name:'Emerald Square'}).click();
+ await page.locator('[data-emerald-availability="ready"]').waitFor({timeout:30000});
+ assert.equal(await page.locator('canvas').count(),0);
+ assert.equal(await page.getByRole('button',{name:'Explorer Emerald Square',exact:true}).count(),2);
+ await page.getByRole('button',{name:'Explorer Emerald Square',exact:true}).first().click();
+ await page.locator('[data-emerald-status="loading"]').waitFor();
+ assert.equal(await page.locator('#emerald-scene').count(),0);
+ await page.locator('[data-emerald-status="ready"], [data-emerald-status="error"]').waitFor({timeout:180000});
+ assert.equal(await page.locator('[data-emerald-status]').getAttribute('data-emerald-status'),'ready',await page.locator('main').innerText());
+ assert.ok(await page.locator('#canvas-emerald').isVisible());
+ await page.getByRole('button',{name:'Arrêter l’exploration',exact:true}).click();
+ await page.locator('[data-emerald-status="stopped"]').waitFor();
+ assert.equal(await page.locator('canvas').count(),0);
+ assert.equal(await page.getByRole('button',{name:'Relancer Emerald Square',exact:true}).count(),2);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: absent → retry → available → fixture → Emerald idle (no canvas/assets) → explicit launch → loader → real frame → stop.');
+} finally {await browser.close();}

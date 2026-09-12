@@ -1,37 +1,38 @@
 {
-  "timestamp": "2026-09-11T21:28:57.377726+00:00",
   "test": "02-gpu-frustum-culling",
-  "commit": null,
-  "status": "not-run",
-  "verdict": "not-yet-decided",
-  "environment": {
-    "gpu": null,
-    "browser": null,
-    "threeVersion": null,
-    "webgpuFeatures": []
+  "status": "measured",
+  "reason": null,
+  "records": [
+    {
+      "test": "02-gpu-frustum-culling",
+      "variant": "atomic",
+      "cpuMs": 0,
+      "gpuMs": 0.213816,
+      "custom": {
+        "scope": "webgpu-physical",
+        "samples": 3,
+        "timing": "timestamp-query",
+        "correctnessReadback": true,
+        "instances": 2000
+      }
+    },
+    {
+      "test": "02-gpu-frustum-culling",
+      "variant": "workgroup",
+      "cpuMs": 0.0333333412806193,
+      "gpuMs": 0.29498166666666664,
+      "custom": {
+        "scope": "webgpu-physical",
+        "samples": 3,
+        "timing": "timestamp-query",
+        "correctnessReadback": true,
+        "instances": 2000
+      }
+    }
+  ],
+  "gates": {
+    "correctness": true,
+    "detail": "Readback physique conforme avant et après chaque variante."
   },
-  "scene": {
-    "objects": null,
-    "triangles": null,
-    "materials": null,
-    "lights": null
-  },
-  "cpu": {
-    "frameMs": null,
-    "submitMs": null
-  },
-  "gpu": {
-    "frameMs": null
-  },
-  "memory": {
-    "gpuBytes": null
-  },
-  "draw": {
-    "submitted": null,
-    "visible": null
-  },
-  "customMetrics": {
-    "reason": "Historical results lack verified physical provenance and may include modeled or hardcoded values. Run the browser benchmark for new measurements.",
-    "archivedArtifact": "02-gpu-frustum-culling/results/legacy-unverified/latest.json"
-  }
+  "timestamp": "2026-09-12T15:20:52.249Z"
 }

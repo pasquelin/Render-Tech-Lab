@@ -1,27 +1,12 @@
-> **Historique non vérifié — ne pas utiliser pour une décision de performance.** Ce rapport peut contenir des estimations ou des valeurs codées en dur. Les nouveaux résultats physiques sont générés par `npm run bench` dans `benchmark-runs/measurements/`. Les modules sans banc matériel restent `not-run`.
+# 06-meshlet-culling — campagne intégrée
 
-# Rapport du Banc : 06-meshlet-culling
+Date : 2026-09-12T19:46:34.760Z.
+Statut : measured.
+Contrôle : Tous les invariants du runner ont été vérifiés.
+Exécution : oracle CPU. Aucun dispatch, timestamp ni readback GPU n’a été exécuté.
 
-**Date :** 2026-09-11T20:23:45.852Z  
-**Statut :** `INTEGRATE`  
-**Meshlets soumis :** 8  
-**Meshlets visibles :** 4  
-**Taux de rejet global :** 50.0%
+| Stratégie | CPU (ms) | GPU (ms) | Éléments traités |
+|---|---:|---:|---:|
+| cone-50 | 0.033 | non mesuré | non renseigné |
 
----
-
-## 1. Décomposition des Rejets par Test
-
-| Test | Meshlets Éliminés | Part Relative | Observation |
-|---|---|---|---|
-| **Frustum** | 0 | 0.0% | Élimine les clusters hors champ |
-| **Backface (Cône)** | 4 | 50.0% | Élimine les faces arrière sans rasterisation |
-| **Sub-pixel** | 0 | 0.0% | Élimine les clusters dont la projection < 2 px |
-| **TOTAL** | **4** | **50.0%** | **Gain direct sur la rasterisation résiduelle** |
-
----
-
-## 2. Invariants Validés
-- **Conservation stricte :** Aucun faux négatif sur la face avant orientée vers la caméra.
-- **Décomposition rigoureuse :** Métriques séparées pour frustum, cone et sub-pixel.
-- **latest.json conforme :** Enregistré dans `06-meshlet-culling/results/latest.json`.
+La durée de présentation de l’interface est exclue.
