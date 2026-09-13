@@ -29,6 +29,7 @@ export type ReportPackageInput = {
 
 type MediaAsset = { origin: string; path: string; mime: string; bytes: number; sha256: string; buffer: Buffer };
 type MediaReference = { $media: { path: string; mime: string; bytes: number; sha256: string } };
+type VisualGroup = { name: string; cells: Array<{ engine: string; path: string }> };
 
 export type ReportPackage = {
   directory: string;
@@ -81,7 +82,25 @@ function externalizeMedia(value: JsonValue, origin = '$', found = new Map<string
   return { value, media: [...found.values()] };
 }
 
-export function packageMarkdown(humanMarkdown: string, media: MediaAsset[], events: EngineEvent[], packagePath = '') {
+function visualGroups(value: unknown): VisualGroup[] {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as { captures?: unknown }).captures)) return [];
+  const groups = new Map<string, VisualGroup>();
+  for (const capture of (value as { captures: unknown[] }).captures) {
+    if (!capture || typeof capture !== 'object') continue;
+    const item = capture as { segment?: unknown; name?: unknown; engine?: unknown; image?: unknown };
+    const media = item.image && typeof item.image === 'object' ? (item.image as { $media?: { path?: unknown } }).$media : undefined;
+    if (typeof media?.path !== 'string') continue;
+    const segment = typeof item.segment === 'number' ? item.segment : groups.size;
+    const name = typeof item.name === 'string' && item.name ? item.name : `Prise de vue ${segment + 1}`;
+    const engine = typeof item.engine === 'string' && item.engine ? item.engine : 'Moteur non renseigné';
+    const group = groups.get(`${segment}:${name}`) ?? { name, cells: [] };
+    group.cells.push({ engine, path: media.path });
+    groups.set(`${segment}:${name}`, group);
+  }
+  return [...groups.values()];
+}
+
+export function packageMarkdown(humanMarkdown: string, media: MediaAsset[], events: EngineEvent[], packagePath = '', visuals: VisualGroup[] = []) {
   const sections = [packagePath ? `<!-- report-package:${packagePath} -->` : '', humanMarkdown.trim(), '', '## Dossier de preuve', '', '### Objets machine compressés', '', '- [Manifeste des objets](./objects/manifest.json)', '- [Données brutes compressées](./objects/result.json.gz)', '- [Logs moteur exhaustifs](./logs/engine-events.jsonl)'];
   sections.push('', '## Logs moteur', '');
   if (!events.length) sections.push('Aucun événement moteur n’a été enregistré.');
@@ -92,7 +111,14 @@ export function packageMarkdown(humanMarkdown: string, media: MediaAsset[], even
   }
   sections.push('', '## Comparaisons visuelles', '');
   if (!media.length) sections.push('Aucune capture visuelle n’a été archivée.');
-  else for (const asset of media.filter(item => item.mime.startsWith('image/'))) sections.push(`![${mediaAlt(asset.origin)}](./${asset.path})`, '', `Capture : \`${asset.origin}\` · ${asset.bytes} octets · SHA-256 \`${asset.sha256}\`.`, '');
+  else {
+    const grouped = new Set(visuals.flatMap(group => group.cells.map(cell => cell.path)));
+    for (const group of visuals) {
+      const count = group.cells.length;
+      sections.push(`### ${group.name} · ${count} moteur${count > 1 ? 's' : ''}`, '', `| ${group.cells.map(cell => cell.engine).join(' | ')} |`, `| ${group.cells.map(() => '---').join(' | ')} |`, `| ${group.cells.map(cell => `![${cell.engine}](./${cell.path})`).join(' | ')} |`, '');
+    }
+    for (const asset of media.filter(item => item.mime.startsWith('image/') && !grouped.has(item.path))) sections.push(`![${mediaAlt(asset.origin)}](./${asset.path})`, '', `Capture : \`${asset.origin}\` · ${asset.bytes} octets · SHA-256 \`${asset.sha256}\`.`, '');
+  }
   return `${sections.join('\n')}\n`;
 }
 
@@ -152,6 +178,6 @@ export async function writeReportPackage(root: string, input: ReportPackageInput
     media: externalized.media.map(({ path: mediaPath, mime, bytes, sha256, origin }) => ({ path: mediaPath, mime, bytes, sha256, origin })),
   };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx' });
-  await writeFile(markdownPath, packageMarkdown(input.humanMarkdown, externalized.media, events, `${testId}/${id}`), { flag: 'wx' });
+  await writeFile(markdownPath, packageMarkdown(input.humanMarkdown, externalized.media, events, `${testId}/${id}`, visualGroups(externalized.value)), { flag: 'wx' });
   return { directory, markdownPath, manifestPath, resultPath, engineLogPath, mediaDirectory };
 }

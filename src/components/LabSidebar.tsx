@@ -1,10 +1,11 @@
-import { EmeraldRunBody } from './EmeraldRunBody.tsx';
-import { EmeraldMetricsBody } from './EmeraldMetricsBody.tsx';
-import { EmeraldLiveFields } from './EmeraldLiveFields.tsx';
+import { ModelRunBody } from './ModelRunBody.tsx';
+import { ModelMetricsBody } from './ModelMetricsBody.tsx';
+import { ModelLiveFields } from './ModelLiveFields.tsx';
+import { ModelPreparationFields } from './ModelLaunchFields.tsx';
 import { CampaignSidebar } from './CampaignSidebar.tsx';
 import type { RefObject } from 'react';
-import { FileText, Flame, Folder, Play } from 'lucide-react';
-import { HINT_BASE, MODULE_NAV } from '../lab/catalog.ts';
+import { Flame, Play } from 'lucide-react';
+import { MODULE_NAV } from '../lab/catalog.ts';
 import { useLab } from './LabContext.tsx';
 import { isIntegratedRunnerId } from '../../bench/runners.ts';
 import { moduleUi } from '../lab/moduleUi.ts';
@@ -18,20 +19,24 @@ import { ChoiceCard } from './ui/ChoiceCard.tsx';
 import { MetricGrid } from './ui/MetricGrid.tsx';
 import { StatusBadge } from './ui/StatusBadge.tsx';
 import { ErrorState } from './ui/ErrorState.tsx';
+import { ReportSection } from './ReportSection.tsx';
 
 type LabSidebarProps = {
   chartRef: RefObject<HTMLCanvasElement | null>;
 };
 
 export function LabSidebar({ chartRef }: LabSidebarProps) {
-  const { state, actions, emerald } = useLab();
+  const { state, actions, model } = useLab();
   const ui = moduleUi(state.moduleId);
   const baseline = state.moduleId === '00-baseline';
-  const integrationFixture = state.moduleId === '15-virtualized-integration' && !emerald;
+  const integrationFixture = state.moduleId === '15-virtualized-integration' && !model;
   const integrationPending = ui.sceneChoice && !isIntegratedRunnerId(state.moduleId);
   const chartUnavailable = state.moduleId === '02-gpu-frustum-culling' && state.execution.status === 'error';
   const showChart = (ui.showChart && state.showChart) || chartUnavailable;
-  const pathCampaign = emerald?.config.mode === 'path';
+  const showModelLiveControls = model?.config.mode === 'explore' && model.status === 'ready' && state.running;
+  const showModelPreparation = Boolean(model && !state.running);
+  const showModelMetrics = Boolean(model && state.running && model.status === 'ready');
+  const reportNumber = model ? 2 + Number(showModelPreparation) + Number(showModelLiveControls) + Number(showModelMetrics) : 4;
 
   if (baseline) return (
       <aside id="sidebar" className="min-w-0 h-full min-h-0 bg-base-200 p-3.5 pr-0.5 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col border-l border-base-content/10">
@@ -64,65 +69,8 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
 
   return (
     <aside id="sidebar" className="min-w-0 h-full min-h-0 bg-base-200 p-3.5 pr-0.5 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col border-l border-base-content/10">
-        {pathCampaign ? null : <LabSection
-          id="lab-mode-card"
-          number={1}
-          title={emerald ? 'Contrôles pendant le rendu' : 'Configuration / mode d’exécution'}
-          badge={emerald || integrationFixture ? undefined : ui.hasModeChoice ? 'Bascule' : 'Mode unique'}
-          help={emerald ? 'Pendant le rendu, seuls les réglages encore actifs restent ici.' : integrationFixture ? 'La scène se choisit dans le panneau principal. Pendant la fixture, étendue et caméra sont imposées.' : ui.modeHint}
-        >
-          {emerald ? <EmeraldLiveFields /> : integrationFixture ? (
-            <>
-              <Select id="select-diagnostic-view" label="Vue de diagnostic" help="Le coût des diagnostics est exclu des mesures officielles." defaultValue="beauty" disabled={state.running}>
-                {(ui.diagnostics ?? []).map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
-              </Select>
-              <p className="text-[10px] text-base-content/55">La scène se choisit dans le panneau principal. Étendue, détail et caméra sont imposés par les trois contrôles procéduraux.</p>
-            </>
-          ) : (
-            <>
-              {ui.hasModeChoice ? (
-                <SegmentedControl value={state.mode} label="Mode d’exécution" disabled={state.running} onChange={actions.setMode} options={ui.modeOptions.map(option => ({ ...option, value: option.value as typeof state.mode }))} />
-              ) : <p className="text-[10px] text-base-content/55">Mode unique : le bouton central exécute les variantes prévues par ce contrôle, sans bascule A/B décorative.</p>}
-              {ui.previewHint ? <p id="mode-preview-hint" className="text-[10px] leading-snug text-base-content/50">{ui.previewHint}</p> : null}
-              {ui.diagnostics ? (
-                <Select id="select-diagnostic-view" label="Vue de diagnostic" help="Le coût des diagnostics est exclu des mesures officielles." defaultValue="beauty" disabled={state.running}>
-                  {ui.diagnostics.map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
-                </Select>
-              ) : null}
-              {ui.sceneChoice ? <p className="text-[10px] text-base-content/55">Scène active : fixture procédurale de validation, indépendante des modèles préparés.</p> : (
-                <Select
-                  id="select-count"
-                  label={ui.countLabel}
-                  disabled={state.running || integrationPending}
-                  className="select-sm w-full font-mono text-xs focus:outline-none focus:border-primary border-base-content/15"
-                  value={state.scenarioVal}
-                  onChange={event => actions.setScenario(event.target.value)}
-                >
-                  {state.scenarioOptions.map(option => (
-                    <option key={option.val} value={option.val} disabled={option.disabled} className={option.selected ? 'active' : undefined}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </>
-          )}
-        </LabSection>}
-
-        <LabSection id="lab-metrics-card" number={2} title="Métriques en direct" badge={emerald ? undefined : '350ms MA'}>
-          {emerald ? <EmeraldMetricsBody /> : (
-            <>
-              <LabStats stats={state.stats} />
-              <MetricGrid label="Contexte de soumission" items={[
-                { id: 'stat-mode', label: 'Pipeline', value: state.stats.modeLabel },
-                { id: 'stat-objects', label: 'Objets', value: state.stats.objects },
-              ]} />
-            </>
-          )}
-        </LabSection>
-
-        <LabSection id="lab-run-card" number={3} title="Campagne / comparaison">
-          {emerald ? <EmeraldRunBody /> : (
+        <LabSection id="lab-run-card" number={1} title="Campagne / comparaison">
+          {model ? <ModelRunBody /> : (
             <>
               {showChart ? (
                 <ChartPanel label="Graphe de campagne">
@@ -162,26 +110,71 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
           )}
         </LabSection>
 
-        <LabSection id="lab-report-card" number={4} title="Rapports et suivi">
-          <>
-              <div className="text-xs text-base-content/60 leading-tight">
-                Résultats archivés dans le fichier unique :{' '}
-                <code className="text-[11px] bg-base-100 px-1.5 py-0.5 rounded font-mono text-primary border border-base-content/10">REPORT.md</code>
-              </div>
-              <p className="text-[10px] text-base-content/50">2 derniers rapports complets conservés.</p>
-              <div className="flex gap-2">
-                <Button id="btn-view-report" disabled={state.running} className="flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2" onClick={() => actions.openReport()}>
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Voir rapport</span>
-                </Button>
-                <Button id="btn-open-reports" variant="secondary" disabled={state.running} className="flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2" onClick={actions.openFinder}>
-                  <Folder className="w-3.5 h-3.5" />
-                  <span>Révéler Finder</span>
-                </Button>
-              </div>
-              <div id="open-report-hint" className={`${HINT_BASE} text-base-content/40`}>{state.reportHint}</div>
-          </>
-        </LabSection>
+        {showModelPreparation ? <LabSection
+          id="lab-preparation-card"
+          number={2}
+          title="Préparation du modèle"
+          help="Ces réglages sont appliqués au prochain lancement."
+        >
+          <ModelPreparationFields />
+        </LabSection> : model && !showModelLiveControls ? null : <LabSection
+          id="lab-mode-card"
+          number={2}
+          title={model ? 'Contrôles pendant le rendu' : 'Configuration / mode d’exécution'}
+          badge={model || integrationFixture ? undefined : ui.hasModeChoice ? 'Bascule' : 'Mode unique'}
+          help={model ? 'Pendant le rendu, seuls les réglages encore actifs restent ici.' : integrationFixture ? 'La scène se choisit dans le panneau principal. Pendant la fixture, étendue et caméra sont imposées.' : ui.modeHint}
+        >
+          {model ? <ModelLiveFields /> : integrationFixture ? (
+            <>
+              <Select id="select-diagnostic-view" label="Vue de diagnostic" help="Le coût des diagnostics est exclu des mesures officielles." defaultValue="beauty" disabled={state.running}>
+                {(ui.diagnostics ?? []).map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
+              </Select>
+              <p className="text-[10px] text-base-content/55">La scène se choisit dans le panneau principal. Étendue, détail et caméra sont imposés par les trois contrôles procéduraux.</p>
+            </>
+          ) : (
+            <>
+              {ui.hasModeChoice ? (
+                <SegmentedControl value={state.mode} label="Mode d’exécution" disabled={state.running} onChange={actions.setMode} options={ui.modeOptions.map(option => ({ ...option, value: option.value as typeof state.mode }))} />
+              ) : <p className="text-[10px] text-base-content/55">Mode unique : le bouton central exécute les variantes prévues par ce contrôle, sans bascule A/B décorative.</p>}
+              {ui.previewHint ? <p id="mode-preview-hint" className="text-[10px] leading-snug text-base-content/50">{ui.previewHint}</p> : null}
+              {ui.diagnostics ? (
+                <Select id="select-diagnostic-view" label="Vue de diagnostic" help="Le coût des diagnostics est exclu des mesures officielles." defaultValue="beauty" disabled={state.running}>
+                  {ui.diagnostics.map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
+                </Select>
+              ) : null}
+              {ui.sceneChoice ? <p className="text-[10px] text-base-content/55">Scène active : fixture procédurale de validation, indépendante des modèles préparés.</p> : (
+                <Select
+                  id="select-count"
+                  label={ui.countLabel}
+                  disabled={state.running || integrationPending}
+                  className="select-sm w-full font-mono text-xs focus:outline-none focus:border-primary border-base-content/15"
+                  value={state.scenarioVal}
+                  onChange={event => actions.setScenario(event.target.value)}
+                >
+                  {state.scenarioOptions.map(option => (
+                    <option key={option.val} value={option.val} disabled={option.disabled} className={option.selected ? 'active' : undefined}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </>
+          )}
+        </LabSection>}
+
+        {!model || showModelMetrics ? <LabSection id="lab-metrics-card" number={model && !showModelLiveControls ? 2 : 3} title="Métriques en direct" badge={model ? undefined : '350ms MA'}>
+          {model ? <ModelMetricsBody /> : (
+            <>
+              <LabStats stats={state.stats} />
+              <MetricGrid label="Contexte de soumission" items={[
+                { id: 'stat-mode', label: 'Pipeline', value: state.stats.modeLabel },
+                { id: 'stat-objects', label: 'Objets', value: state.stats.objects },
+              ]} />
+            </>
+          )}
+        </LabSection> : null}
+
+        <ReportSection testId={state.moduleId} refreshKey={state.execution.status} running={state.running} number={reportNumber} hint={state.reportHint} onOpen={() => actions.openReport()} onReveal={actions.openFinder} />
       </aside>
   );
 }

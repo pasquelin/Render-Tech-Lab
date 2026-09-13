@@ -1,11 +1,11 @@
 import { BENCH_ENGINES } from '../../15-virtualized-integration/index.ts';
-import { segmentNames, type EmeraldReport, type EmeraldStill } from './emeraldCampaign.ts';
+import { segmentNames, type ModelReport, type ModelStill } from './modelCampaign.ts';
 
 const engineLabel = (id: string) => BENCH_ENGINES.find(engine => engine.id === id)?.label ?? id;
 const value = (number: number | null, digits = 0) => number === null || !Number.isFinite(number) ? 'Non mesuré' : number.toFixed(digits);
 const cell = (value: string | number) => String(value).replaceAll('|', '\\|');
 
-function rowsFor(stills: EmeraldStill[]) {
+function rowsFor(stills: ModelStill[]) {
   return [
     ['Moteur / backend', ...stills.map(still => `${engineLabel(still.engine)} / ${still.backend}`)],
     ['CPU frame (ms)', ...stills.map(still => value(still.cpuFrameMs, 2))],
@@ -32,7 +32,7 @@ function table(rows: Array<Array<string | number>>) {
 }
 
 /** Human view for the canonical archive. The common archive writer appends the full report and JPEG bytes. */
-export function formatEmeraldDiagnosticReport(report: EmeraldReport) {
+export function formatModelDiagnosticReport(report: ModelReport) {
   const engines = report.pathEngines.length ? report.pathEngines : [...new Set(report.captures.map(still => still.engine))];
   const sections = [
     '# 15-virtualized-integration — rapport de diagnostic',

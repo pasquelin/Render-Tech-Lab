@@ -136,6 +136,12 @@ function saveReportPlugin(): Plugin {
           const requestedPreview = Number(url.searchParams.get('previewBytes'));
 
           const existing = reportPath && fs.existsSync(reportPath) ? reportPath : null;
+          if (req.method === 'HEAD') {
+            res.statusCode = 200;
+            res.setHeader('X-Report-Available', existing ? 'true' : 'false');
+            res.end();
+            return;
+          }
           if (existing) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');

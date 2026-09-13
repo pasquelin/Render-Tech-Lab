@@ -1,12 +1,12 @@
-import { segmentNames, stillsComparable, type EmeraldReport, type EmeraldStill } from '../lab/emeraldCampaign.ts';
-import { emeraldNumber as number } from './emeraldFormat.ts';
+import { segmentNames, stillsComparable, type ModelReport, type ModelStill } from '../lab/modelCampaign.ts';
+import { modelNumber as number } from './modelFormat.ts';
 import { MetricGrid } from './ui/MetricGrid.tsx';
 import { ReportSummary } from './ui/ReportSummary.tsx';
 import { BENCH_ENGINES } from '../../15-virtualized-integration/implementation/engines.ts';
 
 function engineLabel(id:string){return BENCH_ENGINES.find(engine=>engine.id===id)?.label??id;}
 
-export function stillFacts(still:EmeraldStill){
+export function stillFacts(still:ModelStill){
  return [
   {label:'Moteur',value:engineLabel(still.engine)},
   {label:'Backend',value:still.backend},
@@ -32,7 +32,7 @@ export function stillFacts(still:EmeraldStill){
  ];
 }
 
-export function EmeraldStillCard({still,title}:{still:EmeraldStill;title:string}){
+export function ModelStillCard({still,title}:{still:ModelStill;title:string}){
  return (
   <figure className="space-y-2 min-w-0">
    <img src={still.image} alt={title} className="w-full max-w-full rounded-box" />
@@ -42,7 +42,7 @@ export function EmeraldStillCard({still,title}:{still:EmeraldStill;title:string}
  );
 }
 
-export function EmeraldCaptureCompare({report,history}:{report:EmeraldReport;history:EmeraldReport[]}){
+export function ModelCaptureCompare({report,history}:{report:ModelReport;history:ModelReport[]}){
  const peer=history.find(other=>other.id!==report.id&&stillsComparable(report,other).status==='comparable');
  if(!peer)return null;
  const comparison=stillsComparable(report,peer);
@@ -55,8 +55,8 @@ export function EmeraldCaptureCompare({report,history}:{report:EmeraldReport;his
     const name=segmentNames[segment]??left.name;
     return (
      <div key={segment} className="grid grid-cols-1 xl:grid-cols-2 gap-3 min-w-0">
-      <EmeraldStillCard still={left} title={`${name} · ${engineLabel(left.engine)}`} />
-      <EmeraldStillCard still={right} title={`${name} · ${engineLabel(right.engine)}`} />
+      <ModelStillCard still={left} title={`${name} · ${engineLabel(left.engine)}`} />
+      <ModelStillCard still={right} title={`${name} · ${engineLabel(right.engine)}`} />
      </div>
     );
    })}

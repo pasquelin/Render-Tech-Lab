@@ -30,5 +30,5 @@ test('all model catalogue entries have required attributes', () => {
 
 test('one generic command prepares every bench 15 model', () => {
   assert.equal(packageJson.scripts['prepare:models'], 'node --experimental-strip-types 15-virtualized-integration/assets/prepare-models.ts');
-  assert.equal('prepare:emerald' in packageJson.scripts, false);
+  assert.equal('prepare:model' in packageJson.scripts, false);
 });

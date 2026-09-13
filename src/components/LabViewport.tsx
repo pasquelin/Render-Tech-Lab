@@ -1,4 +1,4 @@
-import { EmeraldViewport } from './EmeraldViewport.tsx';
+import { ModelViewport } from './ModelViewport.tsx';
 import { PreparationStation } from './PreparationStation.tsx';
 import { useCallback, useEffect, useState, type RefObject } from 'react';
 import { ViewportCanvases } from './ViewportCanvases.tsx';
@@ -10,7 +10,7 @@ import { MetricGrid } from './ui/MetricGrid.tsx';
 import { ChoiceCard } from './ui/ChoiceCard.tsx';
 import { FrustumCullingScene } from './FrustumCullingScene.tsx';
 import { RadioBoard } from './ui/RadioBoard.tsx';
-import { INTEGRATION_SCENE_OPTIONS, type IntegrationScene } from '../lab/emeraldView.ts';
+import { INTEGRATION_SCENE_OPTIONS, type IntegrationScene } from '../lab/modelView.ts';
 
 type LabViewportProps = {
   webglRef: RefObject<HTMLCanvasElement | null>;
@@ -26,13 +26,13 @@ export const hasPresentedFrame = (state: Pick<ReturnType<typeof useLab>['state']
   state.framePresented || [state.stats.submit, state.stats.cpuFrame, state.stats.fps, state.stats.drawCalls].some(isMeasured);
 
 export function LabViewport({ webglRef, webgpuRef }: LabViewportProps) {
-  const { state, emerald, onIntegrationScene } = useLab();
+  const { state, model, onIntegrationScene } = useLab();
   const ui = moduleUi(state.moduleId);
   const live = state.running || state.execution.status === 'running';
   const [animatedSceneReady, setAnimatedSceneReady] = useState(false);
   useEffect(() => setAnimatedSceneReady(false), [state.moduleId, live]);
   const markAnimatedSceneReady = useCallback(() => setAnimatedSceneReady(true), []);
-  if (emerald) return <EmeraldViewport webglRef={webglRef} />;
+  if (model) return <ModelViewport webglRef={webglRef} />;
   const sceneVisible = state.moduleId !== '00-baseline' && live && (ui.algorithmic || state.showWebgl || state.showWebgpu || ui.holdSurfaces);
   const mountSurfaces = live;
   const renderReady = ui.animatedScene ? animatedSceneReady : hasPresentedFrame(state);
@@ -110,7 +110,7 @@ export function LabViewport({ webglRef, webgpuRef }: LabViewportProps) {
             <section aria-label="Configuration de lancement" className="space-y-4 min-w-0">
               <h2 className="text-lg font-semibold">Configuration de lancement</h2>
               <RadioBoard
-                id="emerald-scene"
+                id="model-scene"
                 label="Scène du banc 15"
                 value="procedural"
                 disabled={state.running}

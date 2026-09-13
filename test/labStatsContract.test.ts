@@ -20,7 +20,7 @@ test('shared live statistics keep the canonical metrics, order and missing-value
   } finally { await server.close(); }
 });
 
-test('banks expose the four-section contract while Dashboard stays a compact navigation', async () => {
+test('banks put campaign controls first and show reports only outside a running test', async () => {
   const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' });
   try {
     const { LabSidebar } = await server.ssrLoadModule('/src/components/LabSidebar.tsx');
@@ -42,60 +42,89 @@ test('banks expose the four-section contract while Dashboard stays a compact nav
         assert.doesNotMatch(html, /lab-metrics-card|CPU submit|CPU frame|Draw calls/);
         continue;
       }
-      const ids = ['lab-mode-card', 'lab-metrics-card', 'lab-run-card', 'lab-report-card'];
+      const ids = ['lab-run-card', 'lab-mode-card', 'lab-metrics-card'];
       ids.forEach(id => assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) ?? []).length, 1, `${moduleId}: ${id}`));
+      assert.match(html, /id="lab-report-card"/, `${moduleId}: report section is available at rest`);
+      for (const buttonId of ['btn-view-report', 'btn-open-reports']) {
+        assert.match(html.match(new RegExp(`<button[^>]*id="${buttonId}"[^>]*>`))?.[0] ?? '', /disabled=""/, `${moduleId}: ${buttonId} is disabled until a report is available`);
+      }
       for (let index = 1; index < ids.length; index++) assert.ok(html.indexOf(ids[index - 1]) < html.indexOf(ids[index]), `${moduleId}: section order`);
       for (const label of ['CPU submit', 'CPU frame', 'FPS', 'Draw calls']) assert.match(html, new RegExp(`>${label}<`), `${moduleId}: ${label}`);
     }
-    const emeraldConfig = { cities:1 as const, detail:'source' as const, lodQuality:'high' as const, mode:'explore' as const, camera:'orbit' as const, diagnostic:'beauty' as const, layout:'single' as const, engine:'three-webgl-reference' as const, compareEngine:'exact-cluster-pages' as const, poi:null, wipe:.5 };
-    const emerald = { config:emeraldConfig,setConfig(){},availableEngines:[],selectEngine(){},selectDiagnostic(){},availableTriangles:1200,report:null,history:[],showReport(){},exportReport(){},availability: {status:'ready',message:'Cache disponible'}, retryAvailability() {}, status: 'ready', message: 'Ville prête', progress: null, surfaceKey: '0-0', cameraMode: 'orbit', metrics: { cpuFrameMs: 5, drawCalls: 8, triangles: 1200, pageLoads: 3 }, frameIntervalMs: 20, position: '0 · 0 · 0', setCameraMode() {}, stop() {}, restart() {} };
-    const html = renderShell({ state: initialSnapshot('15-virtualized-integration'), actions, emerald, onIntegrationScene() {} });
+    const modelConfig = { cities:1 as const, detail:'source' as const, lodQuality:'high' as const, mode:'explore' as const, camera:'orbit' as const, diagnostic:'beauty' as const, layout:'single' as const, engine:'three-webgl-reference' as const, compareEngine:'exact-cluster-pages' as const, wipe:.5 };
+    const model = { config:modelConfig,setConfig(){},availableEngines:[],selectEngine(){},selectDiagnostic(){},availableTriangles:1200,report:null,history:[],showReport(){},exportReport(){},availability: {status:'ready',message:'Cache disponible'}, retryAvailability() {}, status: 'ready', message: 'Ville prête', progress: null, surfaceKey: '0-0', cameraMode: 'orbit', metrics: { cpuFrameMs: 5, drawCalls: 8, triangles: 1200, pageLoads: 3 }, frameIntervalMs: 20, position: '0 · 0 · 0', setCameraMode() {}, stop() {}, restart() {} };
+    const idleHtml = renderShell({ state: initialSnapshot('15-virtualized-integration'), actions, model, onIntegrationScene() {} });
+    const runningState = initialSnapshot('15-virtualized-integration');
+    runningState.running = true;
+    runningState.execution = { ...runningState.execution, status: 'running' };
+    const html = renderShell({ state: runningState, actions, model, onIntegrationScene() {} });
     assert.match(html, /id="stat-fps"[^>]*>50 FPS</);
     assert.match(html, /Provenance FPS : 1000 ÷ intervalle requestAnimationFrame \(rAF\)/);
     assert.match(html, /Métriques spécifiques/);
-    assert.ok(html.indexOf('emerald-scene') < html.indexOf('lab-mode-card'), 'la config de lancement est dans le panneau principal');
-    assert.ok(html.indexOf('id="emerald-scene"') < html.indexOf('id="emerald-mode"'), 'la scène précède le mode, l’étendue et le détail');
-    assert.ok(html.indexOf('id="emerald-scene"') < html.indexOf('id="emerald-extent"'));
-    assert.match(html, /id="emerald-detail"[^>]*sm:grid-cols-4/);
-    assert.ok(html.indexOf('emerald-camera') > html.indexOf('lab-mode-card'), 'les contrôles de navigation restent à droite');
+    assert.doesNotMatch(idleHtml, /id="lab-mode-card"/, 'la configuration de lancement reste dans le panneau principal');
+    assert.ok(idleHtml.indexOf('id="model-scene"') < idleHtml.indexOf('id="model-mode"'), 'la scène précède le modèle et le parcours');
+    assert.match(idleHtml, /id="model-start-engine"/, 'le moteur peut être choisi avant le premier lancement libre');
+    assert.match(idleHtml, /name="model-start-engine"/, 'le choix initial de moteur est un groupe radio partagé');
+    assert.match(idleHtml, /id="model-start-engine"[^>]*sm:grid-cols-4/, 'les quatre moteurs sont présentés sur une ligne');
+    assert.match(idleHtml, /id="lab-preparation-card"/, 'la préparation du modèle est dans la colonne droite');
+    assert.ok(idleHtml.indexOf('id="lab-run-card"') < idleHtml.indexOf('id="lab-preparation-card"'), 'la campagne précède la préparation');
+    assert.match(idleHtml, /1\. Campagne \/ comparaison/);
+    assert.match(idleHtml, /2\. Préparation du modèle/);
+    assert.match(idleHtml, /id="model-detail"[^>]*sm:grid-cols-2/, 'le niveau de détail est lisible en deux colonnes');
+    assert.match(idleHtml, /id="model-extent"[^>]*sm:grid-cols-4/, 'les quatre étendues tiennent sur une ligne');
+    assert.ok(html.indexOf('model-camera') > html.indexOf('lab-mode-card'), 'les contrôles de navigation restent à droite');
     assert.doesNotMatch(html, /GPU \/ VRAM/);
-    for (const id of ['emerald-scene', 'emerald-extent', 'emerald-detail']) {
-      assert.match(html, new RegExp(`id="${id}"`), `${id}: launch group`);
-      assert.match(html, new RegExp(`name="${id}"`), `${id}: radio name`);
+    for (const id of ['model-scene', 'model-extent', 'model-detail', 'model-anisotropy']) {
+      assert.match(idleHtml, new RegExp(`id="${id}"`), `${id}: launch group`);
+      assert.match(idleHtml, new RegExp(`name="${id}"`), `${id}: radio name`);
     }
-    for (const id of ['emerald-camera', 'emerald-diagnostic', 'emerald-engine']) {
+    assert.match(idleHtml, /value="12"/, 'la préparation propose une charge de douze modèles');
+    assert.match(idleHtml, /12 modèles/);
+    assert.doesNotMatch(html, /id="model-poi"/, 'la navigation ne propose plus de point d’intérêt prédéfini');
+    for (const id of ['model-camera', 'model-diagnostic', 'model-engine']) {
       assert.match(html, new RegExp(`<label[^>]*for="${id}"`), `${id}: associated label`);
       assert.match(html, new RegExp(`<select[^>]*id="${id}"`), `${id}: control id`);
     }
     const stoppedState = initialSnapshot('15-virtualized-integration');
     stoppedState.running = false;
     stoppedState.execution = { ...stoppedState.execution, status: 'stopped' };
-    const stoppedHtml = renderShell({ state: stoppedState, actions, emerald: { ...emerald, status: 'stopped' }, onIntegrationScene() {} });
-    assert.doesNotMatch(stoppedHtml.match(/<input[^>]*id="emerald-extent-1"[^>]*>/)?.[0] ?? '', /disabled/, 'après arrêt, l’étendue reste configurable');
-    const runningState = initialSnapshot('15-virtualized-integration');
-    runningState.running = true;
-    runningState.execution = { ...runningState.execution, status: 'running' };
-    const runningHtml = renderShell({ state: runningState, actions, emerald: { ...emerald, status: 'ready' }, onIntegrationScene() {} });
-    assert.equal(runningHtml.includes('id="emerald-scene"'), false, 'pendant le rendu, la config de lancement quitte le panneau principal');
-    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="emerald-camera"[^>]*>/)?.[0] ?? '', /disabled/, 'la caméra reste changeable pendant la navigation');
-    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="emerald-diagnostic"[^>]*>/)?.[0] ?? '', /disabled/, 'la vue reste changeable pendant la navigation');
-    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="emerald-engine"[^>]*>/)?.[0] ?? '', /disabled/, 'le moteur reste changeable pendant la navigation');
-    const loadingHtml = renderShell({ state: runningState, actions, emerald: { ...emerald, status: 'loading' }, onIntegrationScene() {} });
-    assert.match(loadingHtml.match(/<select[^>]*id="emerald-engine"[^>]*>/)?.[0] ?? '', /disabled/, 'pendant le chargement, le moteur reste verrouillé');
-    const pathEmerald = { ...emerald, config: { ...emeraldConfig, mode: 'path' as const } };
-    const pathIdleHtml = renderShell({ state: initialSnapshot('15-virtualized-integration'), actions, emerald: pathEmerald, onIntegrationScene() {} });
+    const stoppedHtml = renderShell({ state: stoppedState, actions, model: { ...model, status: 'stopped' }, onIntegrationScene() {} });
+    assert.doesNotMatch(stoppedHtml.match(/<input[^>]*id="model-extent-1"[^>]*>/)?.[0] ?? '', /disabled/, 'après arrêt, l’étendue reste configurable');
+    assert.doesNotMatch(stoppedHtml, /id="lab-mode-card"/, 'hors exécution, les contrôles d’exploration ne sont pas affichés');
+    assert.doesNotMatch(stoppedHtml, /id="lab-metrics-card"/, 'hors exécution, les métriques en direct ne sont pas affichées');
+    assert.match(stoppedHtml, /id="lab-preparation-card"/, 'hors exécution, les réglages de préparation restent à droite');
+    const runningHtml = renderShell({ state: runningState, actions, model: { ...model, status: 'ready' }, onIntegrationScene() {} });
+    assert.equal(runningHtml.includes('id="model-scene"'), false, 'pendant le rendu, la config de lancement quitte le panneau principal');
+    assert.doesNotMatch(runningHtml, /id="lab-preparation-card"/, 'pendant le rendu, les réglages de préparation disparaissent');
+    assert.match(runningHtml, /1\. Campagne \/ comparaison/);
+    assert.match(runningHtml, /2\. Contrôles pendant le rendu/);
+    assert.match(runningHtml, /3\. Métriques en direct/);
+    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="model-camera"[^>]*>/)?.[0] ?? '', /disabled/, 'la caméra reste changeable pendant la navigation');
+    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="model-diagnostic"[^>]*>/)?.[0] ?? '', /disabled/, 'la vue reste changeable pendant la navigation');
+    assert.doesNotMatch(runningHtml.match(/<select[^>]*id="model-engine"[^>]*>/)?.[0] ?? '', /disabled/, 'le moteur reste changeable pendant la navigation');
+    const loadingHtml = renderShell({ state: runningState, actions, model: { ...model, status: 'loading' }, onIntegrationScene() {} });
+    assert.doesNotMatch(loadingHtml, /id="lab-mode-card"/, 'pendant le chargement, les contrôles d’exploration ne sont pas affichés');
+    assert.doesNotMatch(loadingHtml, /id="lab-metrics-card"/, 'pendant le chargement, les métriques en direct ne sont pas affichées');
+    const pathModel = { ...model, config: { ...modelConfig, mode: 'path' as const } };
+    const pathIdleHtml = renderShell({ state: initialSnapshot('15-virtualized-integration'), actions, model: pathModel, onIntegrationScene() {} });
+    assert.doesNotMatch(pathIdleHtml, /id="model-start-engine"/, 'le parcours impose ses moteurs et ne propose pas de moteur initial');
     assert.equal(pathIdleHtml.includes('id="lab-mode-card"'), false, 'le parcours n’affiche pas de contrôles pendant le rendu');
+    assert.match(pathIdleHtml, /id="lab-preparation-card"/, 'le parcours au repos conserve les réglages de préparation à droite');
     assert.doesNotMatch(pathIdleHtml, /Contrôles pendant le rendu|Parcours automatique|Seul Arrêter reste actif/);
-    assert.match(pathIdleHtml, /id="lab-metrics-card"/);
-    const pathRunningHtml = renderShell({ state: runningState, actions, emerald: { ...pathEmerald, status: 'ready' }, onIntegrationScene() {} });
+    assert.doesNotMatch(pathIdleHtml, /id="lab-metrics-card"/, 'le parcours au repos ne montre pas de métriques en direct');
+    const pathRunningHtml = renderShell({ state: runningState, actions, model: { ...pathModel, status: 'ready' }, onIntegrationScene() {} });
     assert.equal(pathRunningHtml.includes('id="lab-mode-card"'), false, 'pendant le parcours, la carte des contrôles disparaît');
     assert.doesNotMatch(pathRunningHtml, /Contrôles pendant le rendu|Seul Arrêter reste actif/);
     assert.match(pathRunningHtml, /id="lab-metrics-card"/);
     assert.match(pathRunningHtml, /id="lab-run-card"/);
+    assert.match(pathRunningHtml, /1\. Campagne \/ comparaison/);
+    assert.match(pathRunningHtml, /2\. Métriques en direct/);
     for (const status of ['idle', 'running', 'completed', 'stopped', 'error']) {
       for (const moduleId of Object.keys(MODULE_DESCRIPTORS).filter((id: string) => id !== '00-baseline')) {
         const state = initialSnapshot(moduleId); state.execution.status = status; state.running = status === 'running';
         const stateHtml = render({ state, actions });
+        if (status === 'running') assert.doesNotMatch(stateHtml, /id="lab-report-card"/, `${moduleId}: reports are hidden while running`);
+        else assert.match(stateHtml, /id="lab-report-card"/, `${moduleId}/${status}: reports are visible outside a test`);
         const labels = ['CPU submit', 'CPU frame', 'FPS', 'Draw calls'];
         labels.forEach(label => assert.equal((stateHtml.match(new RegExp(`>${label}<`, 'g')) ?? []).length, 1, `${moduleId}/${status}/${label}`));
         for (let index = 1; index < labels.length; index++) assert.ok(stateHtml.indexOf(labels[index - 1]) < stateHtml.indexOf(labels[index]), `${moduleId}/${status}: metric order`);

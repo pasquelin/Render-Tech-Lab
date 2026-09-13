@@ -29,6 +29,3 @@ export async function checkModelAvailability(modelId: string, fetcher: typeof fe
   if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète. Relancez pnpm prepare:models.');
   return metadata.selectedTriangles;
 }
-
-export const emeraldManifestUrl = modelManifestUrl(defaultModelId());
-export const checkEmeraldAvailability = (fetcher: typeof fetch = fetch, signal?: AbortSignal) => checkModelAvailability(defaultModelId(), fetcher, signal);

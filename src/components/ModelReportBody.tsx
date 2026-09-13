@@ -1,8 +1,8 @@
-import { useEmeraldPanel } from './useEmeraldPanel.ts';
+import { useModelPanel } from './useModelPanel.ts';
 import { Button } from './ui/Button.tsx';
 
-export function EmeraldReportBody() {
-  const { view, state } = useEmeraldPanel();
+export function ModelReportBody() {
+  const { view, state } = useModelPanel();
   if (!view) return null;
   return (
     <>

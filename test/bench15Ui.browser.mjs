@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
+import { benchmarkModels } from '../15-virtualized-integration/index.ts';
 
 const origin = process.env.LAB_URL ?? 'http://localhost:5174';
 const browser = await chromium.launch({ channel: process.env.RTL_BROWSER_CHANNEL ?? 'chrome', headless: true });
@@ -12,22 +13,25 @@ try {
     hasProtocol: Boolean(section.querySelector('[aria-label="Étapes attendues de la campagne"]')),
     hasActions: Boolean(section.querySelector('button')),
   }));
-  const emeraldSignature = await preparationSignature();
-  assert.equal(await page.locator('canvas').count(), 0, 'Emerald ne crée aucun canvas au repos');
-  assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['emerald-scene', 'bench15-model', 'emerald-mode', 'emerald-extent', 'emerald-detail', 'emerald-anisotropy']);
-  assert.equal(await page.locator('#bench15-model input[type="radio"]').count(), 7);
-  assert.equal(await page.locator('#emerald-mode').count(), 1);
+  const modelSignature = await preparationSignature();
+  assert.equal(await page.locator('canvas').count(), 0, 'Model ne crée aucun canvas au repos');
+  assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['model-scene', 'bench15-model', 'model-mode']);
+  assert.deepEqual(await page.locator('#lab-preparation-card [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['model-extent', 'model-detail', 'model-anisotropy']);
+  assert.equal(await page.locator('#model-extent input[type="radio"]').count(), 4);
+  await page.getByRole('radio', { name: '12 modèles' }).waitFor();
+  assert.equal(await page.locator('#bench15-model input[type="radio"]').count(), benchmarkModels.length);
+  assert.equal(await page.locator('#model-mode').count(), 1);
   await page.getByRole('radio', { name: 'Fixture procédurale' }).click();
   await page.getByRole('heading', { name: '15 · Pipeline de géométrie virtualisée' }).waitFor();
   const fixtureSignature = await preparationSignature();
-  assert.deepEqual(fixtureSignature.children, emeraldSignature.children, 'les deux scènes gardent la même géométrie de fiche');
+  assert.deepEqual(fixtureSignature.children, modelSignature.children, 'les deux scènes gardent la même géométrie de fiche');
   assert.equal(fixtureSignature.hasProtocol, true);
   assert.equal(fixtureSignature.hasActions, true);
   const fixtureText = await page.locator('body').innerText();
   assert.doesNotMatch(fixtureText, /Commutez instantanément entre les pipelines|Mode unique|Aucune campagne mesurée disponible/);
   assert.doesNotMatch(fixtureText, /Explorez la ville réelle et observez les compteurs de navigation/);
-  assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['emerald-scene']);
-  for (const id of ['emerald-mode', 'emerald-extent', 'emerald-detail', 'emerald-anisotropy']) {
+  assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['model-scene']);
+  for (const id of ['model-mode', 'model-extent', 'model-detail', 'model-anisotropy']) {
     assert.equal(await page.locator(`#${id}`).count(), 0, `la fixture masque ${id}`);
   }
   assert.equal(await page.locator('canvas').count(), 0, 'la fixture ne crée aucun canvas au repos');

@@ -24,8 +24,21 @@ export function createModelAssetsPlugin(): Plugin {
           const modelRoot = resolve(root, modelDir);
           const candidate = resolve(root, '.' + relative);
           if (!modelDir || !candidate.startsWith(modelRoot + sep)) { fail(403, 'Resource outside model cache'); return; }
-          const type: Record<string, string> = { '.json': 'application/json', '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.glb': 'model/gltf-binary' };
-          if (!type[extname(candidate)]) { fail(404, 'Unknown model resource type'); return; }
+          const type: Record<string, string> = {
+            '.json': 'application/json',
+            '.gltf': 'model/gltf+json',
+            '.bin': 'application/octet-stream',
+            '.glb': 'model/gltf-binary',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.webp': 'image/webp',
+            '.ktx2': 'image/ktx2',
+            '.dds': 'image/vnd-ms.dds',
+            '.txt': 'text/plain; charset=utf-8',
+          };
+          const ext = extname(candidate).toLowerCase();
+          if (!type[ext]) { fail(404, 'Unknown model resource type'); return; }
           try {
             const [base, target] = await Promise.all([realpath(modelRoot), realpath(candidate)]);
             if (!target.startsWith(base + sep)) { fail(403, 'Resource outside model cache'); return; }
@@ -50,5 +63,3 @@ export function createModelAssetsPlugin(): Plugin {
     }
   };
 }
-
-export const createEmeraldAssetsPlugin = createModelAssetsPlugin;

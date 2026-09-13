@@ -1,10 +1,10 @@
 import { LabStats } from './LabStats.tsx';
-import { emeraldNumber as number } from './emeraldFormat.ts';
-import { useEmeraldPanel } from './useEmeraldPanel.ts';
+import { modelNumber as number } from './modelFormat.ts';
+import { useModelPanel } from './useModelPanel.ts';
 import { MetricGrid } from './ui/MetricGrid.tsx';
 
-export function EmeraldMetricsBody() {
-  const { view, config } = useEmeraldPanel();
+export function ModelMetricsBody() {
+  const { view, config } = useModelPanel();
   if (!view) return null;
   const metrics = view.metrics;
   const exact = config.diagnostic === 'clusters' || config.diagnostic === 'pages' || config.engine !== 'three-webgl-reference';
@@ -16,7 +16,7 @@ export function EmeraldMetricsBody() {
   };
   return (
     <>
-      <p className="text-xs font-mono text-primary" data-emerald-active-engine={config.engine}>Moteur affiché : {config.engine}</p>
+      <p className="text-xs font-mono text-primary" data-model-active-engine={config.engine}>Moteur affiché : {config.engine}</p>
       <LabStats stats={stats} provenance="1000 ÷ intervalle requestAnimationFrame (rAF)" />
       <MetricGrid items={[
         { label: 'Triangles disponibles', value: number(view.availableTriangles), provenance: 'Manifeste source × nombre d’instances du modèle' },
@@ -32,7 +32,7 @@ export function EmeraldMetricsBody() {
         { label: 'Frustum rejeté', value: number(metrics?.frustumRejected) },
         { label: 'Octets de géométrie comptabilisés', value: number(metrics?.geometryAllocationBytes), provenance: 'Tableaux uniques ; pas mémoire GPU physique' },
       ]} />
-      <p className="text-xs">Caméra : <span data-emerald-camera data-camera-pose={view.position}>{view.position || 'Au repos'}</span></p>
+      <p className="text-xs">Caméra : <span data-model-camera data-camera-pose={view.position}>{view.position || 'Au repos'}</span></p>
     </>
   );
 }

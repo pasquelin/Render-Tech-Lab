@@ -4,7 +4,7 @@ import {initialSnapshot,type LabActions,type LabSnapshot} from '../lab/labState.
 import {navigateLabRoute} from '../lab/navigation.ts';
 import {parseMarkdownToHtml} from '../lab/markdown.ts';
 import {loadMarkdownReport} from '../lab/reportReader.ts';
-import type {IntegrationScene} from '../lab/emeraldView.ts';
+import type {IntegrationScene} from '../lab/modelView.ts';
 import {LabContext} from './LabContext.tsx';
 import {LabShell} from './LabShell.tsx';
 const test='15-virtualized-integration';

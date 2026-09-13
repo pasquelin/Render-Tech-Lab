@@ -92,7 +92,7 @@ const MODULE_UI: Record<string, Partial<ModuleUi>> = {
     countLabel: 'Scène :',
     protocol: 'Fixture procédurale : trois contrôles A/B. Les modèles préparés sont une exploration séparée.',
     backend: 'WebGPU · clusters et pages',
-    idleNote: 'La fixture vérifie le rendu et les mécanismes de sélection sur trois scènes contrôlées. Ses résultats ne constituent pas une mesure de performance de la ville réelle.',
+    idleNote: 'La fixture vérifie le rendu et les mécanismes de sélection sur trois scènes contrôlées. Ses résultats ne constituent pas une mesure de performance d’un modèle complet réel.',
     diagnostics: [
       { value: 'beauty', label: 'Rendu final' },
       { value: 'wireframe', label: 'Triangles soumis', disabled: true },

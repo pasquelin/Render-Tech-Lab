@@ -25,6 +25,13 @@ function InlineText({ text, basePath }: { text: string; basePath?: string }) {
   });
 }
 
+function visualComparison(block: Extract<ReturnType<typeof parseMarkdownBlocks>[number], { type: 'table' }>) {
+  return block.rows.length === 1
+    && block.headers.length > 0
+    && block.rows[0]?.length === block.headers.length
+    && block.rows[0].every(cell => /^!\[[^\]]*\]\([^)]*\)$/.test(cell));
+}
+
 export function MarkdownReport({ source, basePath }: { source: string; basePath?: string }) {
   const blocks = parseMarkdownBlocks(source.replace(/<!--\s*report-package:[^>]+-->/g, ''));
   const nodes: ReactNode[] = [];
@@ -48,6 +55,15 @@ export function MarkdownReport({ source, basePath }: { source: string; basePath?
     else if (block.type === 'pre') nodes.push(<details key={index} className="bg-base-100 rounded-box border border-base-content/10 my-2 text-base-content/90"><summary className="cursor-pointer p-3 font-mono text-xs text-primary">Données complètes / binaire intégré ({block.text.length.toLocaleString('fr-FR')} caractères)</summary><pre className="p-3 pt-0 font-mono text-xs overflow-x-auto"><code>{block.text}</code></pre></details>);
     else if (block.type === 'p') nodes.push(<p key={index} className="text-xs text-base-content/80 leading-relaxed mb-1.5"><InlineText text={block.text} basePath={basePath} /></p>);
     else if (block.type === 'table') {
+      if (visualComparison(block)) {
+        const images = block.rows[0] ?? [];
+        nodes.push(
+          <section key={index} className="grid gap-3 min-w-0" style={{ gridTemplateColumns: `repeat(${block.headers.length}, minmax(0, 1fr))` }}>
+            {images.map((image, imageIndex) => <figure key={imageIndex} className="min-w-0 space-y-1"><figcaption className="text-xs font-semibold text-base-content/80 truncate">{block.headers[imageIndex]}</figcaption><InlineText text={image} basePath={basePath} /></figure>)}
+          </section>,
+        );
+        continue;
+      }
       nodes.push(
         <div key={index} className="overflow-x-auto my-3 rounded-box border border-base-content/10 bg-base-200/40">
           <table className="table table-zebra table-sm w-full font-mono text-xs">

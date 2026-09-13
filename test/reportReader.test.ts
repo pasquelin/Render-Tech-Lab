@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { loadMarkdownReport, markdownReportUrl, REPORT_PREVIEW_BYTES } from '../src/lab/reportReader.ts';
+import { hasMarkdownReport, loadMarkdownReport, markdownReportUrl, REPORT_PREVIEW_BYTES } from '../src/lab/reportReader.ts';
 
-function response(body: string, options: { ok?: boolean; truncated?: boolean } = {}) {
+function response(body: string, options: { ok?: boolean; truncated?: boolean; available?: boolean } = {}) {
   return {
     ok: options.ok ?? true,
     text: async () => body,
-    headers: { get: (name: string) => name.toLowerCase() === 'x-report-truncated' && options.truncated ? 'true' : null },
+    headers: { get: (name: string) => name.toLowerCase() === 'x-report-truncated' && options.truncated ? 'true' : name.toLowerCase() === 'x-report-available' ? String(options.available ?? true) : null },
   };
 }
 
@@ -36,11 +36,27 @@ test('the common reader keeps the server error body for a visible error state', 
   assert.equal(report.feedback, '');
 });
 
+test('the report component can determine availability without downloading report content', async () => {
+  let method = '';
+  const available = await hasMarkdownReport(async (_url, init) => { method = init.method ?? ''; return response(''); }, '15-virtualized-integration');
+  assert.equal(available, true);
+  assert.equal(method, 'HEAD');
+  assert.equal(await hasMarkdownReport(async () => { throw new Error('offline'); }, '15-virtualized-integration'), false);
+  assert.equal(await hasMarkdownReport(async () => response('', { available: false }), '15-virtualized-integration'), false, 'l’absence de paquet est une réponse normale, pas une erreur HTTP');
+});
+
+test('the shared report probe retries while a completed campaign is being archived', async () => {
+  let requests = 0;
+  const available = await hasMarkdownReport(async () => response('', { available: ++requests === 2 }), '15-virtualized-integration', 2, 0);
+  assert.equal(available, true);
+  assert.equal(requests, 2);
+});
+
 test('every modal path delegates Markdown retrieval to the common reader', async () => {
   const files = [
     'src/components/UnifiedLab.tsx',
     'src/components/IntegrationFixtureLab.tsx',
-    'src/components/EmeraldLab.tsx',
+    'src/components/ModelLab.tsx',
     'src/lab/bootLab.ts',
   ];
   for (const file of files) {

@@ -4,15 +4,13 @@ La matrice vit dans `@web-geometry/sdk` (`COMPARISON_LIBRARIES`) et le registre 
 
 | Id | Statut | Notes |
 |---|---|---|
-| `three-webgl-reference` | intégrée | Three.js WebGL2, frustum standard, pas de géométrie virtualisée |
-| `exact-cluster-pages` | intégrée | Clusters, hiérarchie, culling CPU, pages, résidence |
-| `three-lod` | intégrée | Exploration libre. `THREE.LOD`, distances dérivées du rayon ; hors parcours urbain |
-| `webgpu-page-raster` | compatible, PBR absent | Raster WebGPU (compute, visbuffer, Hi-Z) dans le parcours de mesure ; hors verdict visuel A/A |
+| `three-webgl-reference` | intégrée | THREE.js basic : Three.js WebGL2, frustum standard, pas de géométrie virtualisée |
+| `three-lod` | intégrée | THREE.js LOD : niveaux de détail classiques, géométrie résidente |
+| `exact-cluster-pages` | intégrée | WebGeometry WebGL : clusters, hiérarchie, culling CPU, pages, résidence |
+| `webgpu-page-raster` | compatible, PBR absent | WebGeometry WebGPU : raster WebGPU (compute, visbuffer, Hi-Z), hors verdict visuel A/A |
 | `meshoptimizer` | non comparable | Bibliothèque de compilation, pas un renderer |
-| `3d-tiles-renderer` / CesiumJS | non comparable | Format 3D Tiles, pas le glTF Emerald |
+| `3d-tiles-renderer` / CesiumJS | non comparable | Format 3D Tiles, pas le glTF Model |
 | `babylon-lod` / PlayCanvas | non comparable | Autre moteur, autres matériaux |
-| `nanite-webgpu` | incompatible | Démo applicative, autre préprocesseur |
-| `three-nanite-example` | non comparable | Exemple Three.js WebGPU, pas une API paquet |
 | VCG Nexus | abandonnée / GPL | Format `.nxs` distinct |
 
 Ajouter un moteur : implémenter `BackendFactory` dans le SDK, l’enregistrer dans `BENCH_ENGINES`. Le shell React et le protocole ne changent pas.

@@ -24,7 +24,7 @@ Documentation : [méthodologie et preuves du Lab](docs/README.md) · [conception
 The laboratory contains a Dashboard and 15 experimental benches (`01`–`15`), plus the consultative baseline `00`. [`docs/PRINCIPES_DU_LAB.md`](docs/PRINCIPES_DU_LAB.md) is the canonical policy.
 
 > **Philosophical Principle :**  
-> Nanite is an architectural inspiration, not a specification to duplicate blindly. The lab determines experimentally which properties make GPU-driven rendering viable in WebGPU / Three.js, using simple, reproducible unit tests.
+> The lab determines experimentally which properties make GPU-driven rendering viable in WebGPU / Three.js, using simple, reproducible unit tests.
 
 ---
 
@@ -58,7 +58,7 @@ To guarantee mathematical and scientific rigor across reports, the laboratory st
 
 ## The R&D Progression
 
-Instead of jumping prematurely to a monolithic Nanite clone, the laboratory builds progressively. The table below reflects the **actual** state of the repository and the governing statuses.
+The laboratory builds progressively from independently verifiable rendering stages. The table below reflects the **actual** state of the repository and the governing statuses.
 
 > **Status legend (honest by construction):**
 > - **[RE-MEASURE]** — historical verdict withdrawn pending a reproducible physical campaign.

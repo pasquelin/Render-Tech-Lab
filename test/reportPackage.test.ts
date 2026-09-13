@@ -37,3 +37,17 @@ test('report package separates readable summary, compressed objects, engine logs
   assert.equal(raw.capture.$media.path, manifest.media[0]?.path);
   assert.match(await readFile(saved.engineLogPath, 'utf8'), /"phase":"loading"/);
 });
+
+test('a report package groups capture images by viewpoint and its actual engines', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'rtl-report-visuals-'));
+  const image = 'data:image/png;base64,iVBORw0KGgo=';
+  const saved = await writeReportPackage(root, { testId: '15-virtualized-integration', humanMarkdown: '# Rapport', result: { captures: [
+    { segment: 0, name: 'Vue générale', engine: 'engine-a', image },
+    { segment: 0, name: 'Vue générale', engine: 'engine-b', image },
+    { segment: 1, name: 'Approche', engine: 'engine-a', image },
+  ] } });
+  const markdown = await readFile(saved.markdownPath, 'utf8');
+  assert.match(markdown, /### Vue générale · 2 moteurs/);
+  assert.match(markdown, /\| engine-a \| engine-b \|/);
+  assert.match(markdown, /### Approche · 1 moteur/);
+});

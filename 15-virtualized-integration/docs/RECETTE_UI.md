@@ -6,13 +6,13 @@ Source testée : projet principal `render-tech-lab`, servi sur `http://localhost
 
 Les trois recettes Chrome suivantes ont terminé sans erreur JavaScript :
 
-- `test/emeraldAvailability.browser.mjs` : cache absent, réessai, cache disponible, changement de scène, aucun canvas Emerald ni géométrie/texture avant clic, lancement et arrêt.
-- `test/emeraldPixels.browser.mjs` : rechargement dur, aller-retour via le banc 01, fiche commune alignée en haut, première image non uniforme, rotation de caméra et redimensionnement. Le framebuffer et le canvas CSS étaient tous deux de 913 × 806 pixels ; la capture comptait 7 557 couleurs et 54 562 échantillons différents du premier pixel.
-- `test/emeraldWorkbench.browser.mjs` : 1, 4 et 9 villes en détails maximum ; caméra libre ; vues texturée, filaire, clusters et pages ; variation des clusters et évictions réelles au zoom ; panneau B explicitement indisponible ; parcours complet ; cinq rapports conservés ; Emerald → Nouvelle exécution → fixture terminée → Nouvelle exécution → Emerald, sans rechargement et sans canvas au repos dans la fixture.
+- `test/modelAvailability.browser.mjs` : cache absent, réessai, cache disponible, changement de scène, aucun canvas Model ni géométrie/texture avant clic, lancement et arrêt.
+- `test/modelPixels.browser.mjs` : rechargement dur, aller-retour via le banc 01, fiche commune alignée en haut, première image non uniforme, rotation de caméra et redimensionnement. Le framebuffer et le canvas CSS étaient tous deux de 913 × 806 pixels ; la capture comptait 7 557 couleurs et 54 562 échantillons différents du premier pixel.
+- `test/modelWorkbench.browser.mjs` : 1, 4 et 9 villes en détails maximum ; caméra libre ; vues texturée, filaire, clusters et pages ; variation des clusters et évictions réelles au zoom ; panneau B explicitement indisponible ; parcours complet ; cinq rapports conservés ; Model → Nouvelle exécution → fixture terminée → Nouvelle exécution → Model, sans rechargement et sans canvas au repos dans la fixture.
 
 Le parcours a produit 480 échantillons et huit captures après 30 images de préchauffage exclues. Les recettes longues ignorent les messages HMR de mise à jour/rechargement pour qu’une édition concurrente ne supprime pas une campagne. Elles chargent le code réel du serveur par navigation explicite.
 
-Preuves locales : [résultat des configurations](../../benchmark-runs/checks/emerald-workbench/result.json), [parcours et échantillons](../../benchmark-runs/checks/emerald-workbench/path.json), [pixels](../../benchmark-runs/checks/emerald-pixels/result.json), [fiche initiale](../../benchmark-runs/checks/emerald-pixels/idle.png), [ville](../../benchmark-runs/checks/emerald-pixels/city.png), [rapport](../../benchmark-runs/checks/emerald-workbench/report.png).
+Preuves locales : [résultat des configurations](../../benchmark-runs/checks/model-workbench/result.json), [parcours et échantillons](../../benchmark-runs/checks/model-workbench/path.json), [pixels](../../benchmark-runs/checks/model-pixels/result.json), [fiche initiale](../../benchmark-runs/checks/model-pixels/idle.png), [ville](../../benchmark-runs/checks/model-pixels/city.png), [rapport](../../benchmark-runs/checks/model-workbench/report.png).
 
 ## Validation automatisée finale
 
@@ -34,12 +34,12 @@ Preuves locales : [résultat des configurations](../../benchmark-runs/checks/eme
 
 Ces fichiers ont également reçu du travail concurrent. Cette liste décrit les surfaces à relire pour la reprise 00–14, sans attribuer toutes leurs modifications à ce chantier.
 
-- [UnifiedLab.tsx](../../src/components/UnifiedLab.tsx) : routage vers les contrôleurs Emerald/fixture ; franchissement explicite de la frontière du banc 15.
-- [LabContext.tsx](../../src/components/LabContext.tsx) : modèle Emerald et choix de scène.
-- [LabViewport.tsx](../../src/components/LabViewport.tsx) : branche Emerald et exclusion des canvases principaux inutilisés de la fixture.
+- [UnifiedLab.tsx](../../src/components/UnifiedLab.tsx) : routage vers les contrôleurs Model/fixture ; franchissement explicite de la frontière du banc 15.
+- [LabContext.tsx](../../src/components/LabContext.tsx) : modèle Model et choix de scène.
+- [LabViewport.tsx](../../src/components/LabViewport.tsx) : branche Model et exclusion des canvases principaux inutilisés de la fixture.
 - [LabSidebar.tsx](../../src/components/LabSidebar.tsx) : champs propres au 15, sélection unique, en-tête cohérent, graphique de fixture seulement pendant exécution.
-- [LabNavbar.tsx](../../src/components/LabNavbar.tsx) : description Emerald et verrouillage de navigation travaillés antérieurement.
-- [PreparationStation.tsx](../../src/components/PreparationStation.tsx) : données de présentation injectées et contenu/commandes du rapport Emerald dans la fiche commune.
+- [LabNavbar.tsx](../../src/components/LabNavbar.tsx) : description Model et verrouillage de navigation travaillés antérieurement.
+- [PreparationStation.tsx](../../src/components/PreparationStation.tsx) : données de présentation injectées et contenu/commandes du rapport Model dans la fiche commune.
 - [ActionBar.tsx](../../src/components/ui/ActionBar.tsx) : intention optionnelle « Nouvelle exécution ».
 - [labState.ts](../../src/lab/labState.ts) : action optionnelle `newExecution`.
 - [bootLab.ts](../../src/lab/bootLab.ts) : retour au repos ; adaptations temporaires de surfaces/graphique et vérifications sans DOM ont aussi été touchées pendant la migration concurrente. Relire l’état final avant une nouvelle modification globale.
@@ -49,6 +49,6 @@ Ces fichiers ont également reçu du travail concurrent. Cette liste décrit les
 
 `test/labRouteIsolation.test.ts` et `test/routes00to14.browser.mjs` ont été conservés sans modification par ce chantier.
 
-Les contrôleurs `EmeraldLab.tsx` et `IntegrationFixtureLab.tsx`, les corps de panneaux Emerald et les modules `emeraldAvailability`, `emeraldCampaign`, `emeraldView` sont propres au banc 15. La fixture crée sa session après le clic puis utilise le même LabShell et les mêmes composants visuels.
+Les contrôleurs `ModelLab.tsx` et `IntegrationFixtureLab.tsx`, les corps de panneaux Model et les modules `modelAvailability`, `modelCampaign`, `modelView` sont propres au banc 15. La fixture crée sa session après le clic puis utilise le même LabShell et les mêmes composants visuels.
 
 Le SDK possède les changements de grille partagée, diagnostics, compteurs, cadrage, libération du contexte et budget de pages ; le Lab ne duplique pas ces algorithmes.

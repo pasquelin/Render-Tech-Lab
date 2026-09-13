@@ -6,8 +6,8 @@ import { SelectControl } from './ui/Select.tsx';
 import { StatusBadge } from './ui/StatusBadge.tsx';
 
 export function LabNavbar() {
-  const { state, actions, emerald } = useLab();
-  const description = emerald ? 'Modèles complets en exploration libre. La comparaison reste indépendante et bloquée par le contrôle A/A.' : moduleDescription(state.moduleId);
+  const { state, actions, model } = useLab();
+  const description = model ? 'Modèles complets en exploration libre. La comparaison reste indépendante et bloquée par le contrôle A/A.' : moduleDescription(state.moduleId);
   const goToDashboard = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (state.running) return;

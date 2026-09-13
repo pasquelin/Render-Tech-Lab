@@ -1,8 +1,8 @@
 # Incrément 2 — assemblage physique, 12 septembre 2026
 
-Le runner 15 exécute désormais par défaut **une véritable hiérarchie procédurale à deux niveaux avec sélection GPU et pages physiques**. Ce n'est plus seulement le contrôle résident du premier jalon. Le domaine prouvé reste volontairement petit : 64 régions statiques opaques, matériau constant par région, caméra perspective frontale. Aucun résultat de performance sur Emerald Square ni sur une hiérarchie générale de meshes arbitraires.
+Le runner 15 exécute désormais par défaut **une véritable hiérarchie procédurale à deux niveaux avec sélection GPU et pages physiques**. Ce n'est plus seulement le contrôle résident du premier jalon. Le domaine prouvé reste volontairement petit : 64 régions statiques opaques, matériau constant par région, caméra perspective frontale. Aucun résultat de performance sur un modèle catalogue ni sur une hiérarchie générale de meshes arbitraires.
 
-L’explorateur Emerald Square charge la ville préparée via `@web-geometry/sdk/browser`. L’exploration libre propose Three.js, pages WebGL2, `THREE.LOD` et le raster WebGPU. Le parcours urbain v4 enchaîne Three.js, pages WebGL2 et raster WebGPU sur les mêmes poses (hors `THREE.LOD`). Une campagne par moteur, puis `comparePathReports`. Le contrôle A/A de la ville complète reste instable : aucune campagne n’est marquée mesurée. GPU et VRAM restent non mesurés. La vue « Triangles soumis » colore chaque triangle rasterisé ; ce n’est pas un filaire GL_LINES.
+L’explorateur charge le modèle préparé via `@web-geometry/sdk/browser`. L’exploration libre propose THREE.js basic, THREE.js LOD, WebGeometry WebGL et WebGeometry WebGPU. Le parcours urbain v5 enchaîne ces quatre moteurs dans cet ordre sur les mêmes poses. Une campagne par moteur, puis `comparePathReports`. Le contrôle A/A du modèle complet reste instable : aucune campagne n’est marquée mesurée. GPU et VRAM restent non mesurés. La vue « Triangles soumis » colore chaque triangle rasterisé ; ce n’est pas un filaire GL_LINES.
 
 ## Ce qui fonctionne ensemble
 
@@ -48,4 +48,4 @@ Tests CPU : couverture et déterminisme des pages, borne projetée hors axe, ég
 
 `node bench/run_integration.mjs --ui` vérifie également dans Chrome le cycle IDLE→COMPLETED, une deuxième exécution et le rapport archivé dans la coque React commune. Construire d'abord (`tsc --noEmit`, `vite build --configLoader runner` dans ce worktree lié aux dépendances partagées).
 
-Prochaine extension : modèle de groupe plus profond et simplification avec certificat de surface indépendant, puis source disque/HTTP et anneau de feedback non bloquant. Emerald est prêt comme source locale inspectée, mais sa conversion ATI2/alpha/double-face et sa licence restent des conditions d'intégration; voir EMERALD.md. Aucune conversion lourde n'a été lancée.
+Prochaine extension : modèle de groupe plus profond et simplification avec certificat de surface indépendant, puis source disque/HTTP et anneau de feedback non bloquant. Le catalogue de modèles est prêt comme source locale inspectée, mais la conversion ATI2/alpha/double-face et la licence de chaque entrée restent des conditions d'intégration ; voir [models.md](models.md). Aucune conversion lourde n'a été lancée.

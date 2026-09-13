@@ -4,7 +4,7 @@ Recommandation : conserver le contrôle procédural sans asset externe pour la r
 
 ## Ce qui a été effectivement vérifié
 
-Le 12 septembre 2026 : page NVIDIA, HEAD HTTP, répertoire central ZIP et petits README/licence/pyscene lus par requêtes Range bornées. **116 761 octets lus**, sans téléchargement des meshes/textures. L'inventaire complet et les notices sont archivés dans `emerald-directory.json`. Le SHA-256 de l'archive entière est inconnu avant téléchargement.
+Le 12 septembre 2026 : page NVIDIA, HEAD HTTP, répertoire central ZIP et petits README/licence/pyscene lus par requêtes Range bornées. **116 761 octets lus**, sans téléchargement des meshes/textures. L'inventaire complet et les notices sont archivés dans `model-directory.json`. Le SHA-256 de l'archive entière est inconnu avant téléchargement.
 
 | Élément | Observation |
 |---|---|
@@ -19,7 +19,7 @@ La source et son README annoncent 10 046 405 triangles instanciés par scène, p
 
 ## Chemin local et conversion reproductible à préparer
 
-Déposer le ZIP dans `/Users/pasquelin/Applications/render-tech-lab/files_local/orca/EmeraldSquare_v4_1.zip`. `files_local` est déjà ignoré par Git; créer les dossiers si absents. Ne pas servir le ZIP dans `public/`. Le dossier public Emerald futur aura besoin de sa propre règle d'exclusion; seule la règle Bistro existe actuellement.
+Déposer le ZIP dans `/Users/pasquelin/Applications/render-tech-lab/files_local/orca/EmeraldSquare_v4_1.zip`. `files_local` est déjà ignoré par Git; créer les dossiers si absents. Ne pas servir le ZIP dans `public/`. Le dossier public Model futur aura besoin de sa propre règle d'exclusion; seule la règle Bistro existe actuellement.
 
 Avant conversion, enregistrer SHA-256, taille, licence et version; extraire avec contrôle des chemins, tailles totales et collisions. Le répertoire distant n'a pas validé CRC/contenu des gros membres. Ne pas exécuter les `.pyscene` téléchargés : interpréter manuellement leurs quelques paramètres connus.
 
@@ -41,13 +41,13 @@ Avant intégration : téléchargement terminé et hash, validation des notices/u
 
 Le dossier utilisateur a été inspecté puis déplacé de `public/EmeraldSquare_v4_1` vers `/Users/pasquelin/Applications/render-tech-lab/files_local/emerald-square/EmeraldSquare_v4_1` par renommage sur le même disque. Les 360 fichiers ont les tailles du répertoire ZIP; mêmes inodes avant/après, ancien dossier public absent, destination confirmée ignorée par Git. Ce déplacement demandé est la seule écriture de cette tâche dans le checkout principal.
 
-`emerald-local-inspection.json` conserve les en-têtes lus : deux FBX binaires version 7300; DDS : 175 DXT1, 115 ATI2, 61 DXT5; dimensions : 302 en 2048×2048, 43 en 16×16, 6 en 1×1. Le décodeur doit donc prendre en charge ATI2, pas seulement DXT1/DXT5, et restituer correctement les normales. La correspondance de tailles établit une intégrité apparente, pas un contrôle CRC de chaque fichier ni une importation réussie. Aucun mesh ou texture n'a été décodé et aucune conversion massive n'a été lancée.
+`model-local-inspection.json` conserve les en-têtes lus : deux FBX binaires version 7300; DDS : 175 DXT1, 115 ATI2, 61 DXT5; dimensions : 302 en 2048×2048, 43 en 16×16, 6 en 1×1. Le décodeur doit donc prendre en charge ATI2, pas seulement DXT1/DXT5, et restituer correctement les normales. La correspondance de tailles établit une intégrité apparente, pas un contrôle CRC de chaque fichier ni une importation réussie. Aucun mesh ou texture n'a été décodé et aucune conversion massive n'a été lancée.
 
 ## Exploration dans le Lab principal
 
-Ouvrir `http://localhost:5174/?test=15-virtualized-integration`. Le sélecteur de scène propose Emerald Square (ville complète) ou la fixture procédurale. Emerald Square est un asset du Lab ; le rendu passe par `createExplorer` de `@web-geometry/sdk/browser`, avec un manifeste et un scope `full` fournis par le Lab. L’étendue 1 / 4 / 9 est `replicaCount`. La caméra orbitale et la caméra libre sont indépendantes de la campagne ; les mesures comparatives complètes restent désactivées tant que le contrôle A/A est instable.
+Ouvrir `http://localhost:5174/?test=15-virtualized-integration`. Le sélecteur de scène propose Emerald Square (ville complète) ou la fixture procédurale. Emerald Square est un asset du Lab ; le rendu passe par `createExplorer` de `@web-geometry/sdk/browser`, avec un manifeste et un scope `full` fournis par le Lab. L’étendue 1 / 4 / 9 / 12 est `replicaCount`. La caméra orbitale et la caméra libre sont indépendantes de la campagne ; les mesures comparatives complètes restent désactivées tant que le contrôle A/A est instable.
 
-Depuis Web Geometry, construire le SDK et le compilateur natif (`npm run build:native` à la racine du SDK). Depuis le Lab, lancer `npm run prepare:emerald` pour publier le cache dans `public/benchmark-assets/emerald-derived/native/full` **avec** `simplification: 'qem-endpoints'`. Sans cette recompilation, le Lab refuse le cache (`simplification !== true`). Le compilateur ajoute lui-même `native/<scope>` : ne pas fournir `full` une seconde fois. Les sources Emerald converties doivent déjà exister dans `public/benchmark-assets/emerald-square`.
+Depuis Web Geometry, construire le SDK et le compilateur natif (`npm run build:native` à la racine du SDK). Depuis le Lab, lancer `npm run prepare:models` pour publier le cache dans `public/benchmark-assets/model-derived/native/full` **avec** `simplification: 'qem-endpoints'`. Sans cette recompilation, le Lab refuse le cache (`simplification !== true`). Le compilateur ajoute lui-même `native/<scope>` : ne pas fournir `full` une seconde fois. Les sources Emerald converties doivent déjà exister dans `public/benchmark-assets/emerald-square`.
 
 L’explorateur envoie `pixelError` (défaut 1 px) à `createExplorer` : la coupe LOD QEM est active. 0 px force les feuilles exactes.
 
@@ -57,6 +57,6 @@ La télémétrie distingue CPU rendu, intervalle rAF, dessins/triangles soumis e
 
 La vue triangles soumet les triangles réellement sélectionnés par le moteur affiché, une couleur unique par triangle.
 
-Le parcours urbain (`pathVersion` 4, dix segments) est un test automatique : un lancement enchaîne Three.js, les pages WebGL2 et le raster WebGPU sur les mêmes poses, en rendu texturé. `THREE.LOD` reste un moteur d’exploration libre. Une photo réelle et ses infos techniques sont prises au début de chaque segment. Le sélecteur de moteur sert à l’exploration libre. Pas de verdict de performance tant que le contrôle A/A de la ville complète est instable. Les JSON de parcours sont archivés sous `benchmark-runs/checks/emerald-path/`.
+Le parcours urbain (`pathVersion` 5, dix segments) est un test automatique : un lancement enchaîne THREE.js basic, THREE.js LOD, WebGeometry WebGL et WebGeometry WebGPU sur les mêmes poses, en rendu texturé. Une photo réelle et ses infos techniques sont prises au début de chaque segment. Le sélecteur de moteur sert à l’exploration libre. Pas de verdict de performance tant que le contrôle A/A du modèle complet est instable. Les JSON de parcours sont archivés sous `benchmark-runs/checks/model-path/`.
 
-Recette Chrome : `node test/emeraldExploration.browser.mjs`. Elle vérifie erreur HTML/Réessayer, chargement sans cache réseau, orbit/free, arrêt/reprise, changement de scène/banc, retour, rechargement direct et resize. Les captures et réponses réseau sont archivées sous `benchmark-runs/checks/emerald-ui`, sans verdict de performance.
+Recette Chrome : `node test/modelExploration.browser.mjs`. Elle vérifie erreur HTML/Réessayer, chargement sans cache réseau, orbit/free, arrêt/reprise, changement de scène/banc, retour, rechargement direct et resize. Les captures et réponses réseau sont archivées sous `benchmark-runs/checks/model-ui`, sans verdict de performance.

@@ -1,6 +1,6 @@
-import { summarizeEmerald, segmentNames, enginesInStills, type EmeraldReport } from '../lab/emeraldCampaign.ts';
-import { emeraldNumber as number } from './emeraldFormat.ts';
-import { EmeraldCaptureCompare, EmeraldStillCard } from './EmeraldCaptureCompare.tsx';
+import { summarizeModel, segmentNames, enginesInStills, type ModelReport } from '../lab/modelCampaign.ts';
+import { modelNumber as number } from './modelFormat.ts';
+import { ModelCaptureCompare, ModelStillCard } from './ModelCaptureCompare.tsx';
 import { MetricGrid } from './ui/MetricGrid.tsx';
 import { ReportSummary } from './ui/ReportSummary.tsx';
 import { BENCH_ENGINES } from '../../15-virtualized-integration/implementation/engines.ts';
@@ -8,12 +8,19 @@ import { modelById } from '../../15-virtualized-integration/index.ts';
 
 function engineLabel(id:string){return BENCH_ENGINES.find(engine=>engine.id===id)?.label??id;}
 
-export function EmeraldReportView({ report, history = [] }: { report: EmeraldReport; history?: EmeraldReport[] }) {
+export function captureGridColumns(engineCount:number){
+  if(engineCount>=4)return 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
+  if(engineCount===3)return 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
+  if(engineCount===2)return 'grid-cols-1 sm:grid-cols-2';
+  return 'grid-cols-1';
+}
+
+export function ModelReportView({ report, history = [] }: { report: ModelReport; history?: ModelReport[] }) {
   const engines = report.pathEngines?.length ? report.pathEngines : enginesInStills(report);
-  const modelLabel = modelById(report.configuration.modelId ?? 'emerald-square')?.label ?? report.configuration.modelId ?? 'Modèle inconnu';
-  const global = summarizeEmerald(report.samples);
+  const modelLabel = (report.configuration.modelId ? modelById(report.configuration.modelId)?.label : undefined) ?? report.configuration.modelId ?? 'Modèle';
+  const global = summarizeModel(report.samples);
   return (
-    <div className="space-y-4" data-emerald-report={report.id}>
+    <div className="space-y-4" data-model-report={report.id}>
       <ReportSummary title={`Résumé de navigation · ${modelLabel}`}>
         {report.error ? <p role="alert" className="text-sm text-error">{report.error}</p> : null}
         <p className="text-xs">{new Date(report.timestamp).toLocaleString('fr-FR')} · {report.configuration.cities} instance(s) du modèle · géométrie partagée · instances ×{report.multipliedInstances ?? report.configuration.cities} · {report.configuration.lodQuality ?? report.configuration.detail} · {(engines.length?engines: [report.configuration.engine]).map(engineLabel).join(' · ')} · {report.configuration.diagnostic} · {report.resolution.join(' × ')} px</p>
@@ -29,7 +36,7 @@ export function EmeraldReportView({ report, history = [] }: { report: EmeraldRep
       </ReportSummary>
       {(engines.length?engines:[report.configuration.engine]).map(engine=>{
         const samples=report.samples.filter(sample=>sample.backend===engine);
-        const summary=summarizeEmerald(samples);
+        const summary=summarizeModel(samples);
         return (
           <ReportSummary key={engine} title={`Moteur · ${engineLabel(engine)}`}>
             <MetricGrid items={[
@@ -48,13 +55,13 @@ export function EmeraldReportView({ report, history = [] }: { report: EmeraldRep
         return (
           <ReportSummary key={name} title={name}>
             <p className="text-xs">{samples.length} images mesurées · {stills.length} capture(s)</p>
-            <div className={`grid grid-cols-1 ${stills.length>2?'xl:grid-cols-3':stills.length>1?'xl:grid-cols-2':''} gap-3 min-w-0`}>
-              {stills.map(still => <EmeraldStillCard key={`${name}-${still.engine}`} still={still} title={`${name} · ${engineLabel(still.engine)}`} />)}
+            <div className={`grid ${captureGridColumns(engines.length)} gap-3 min-w-0`}>
+              {stills.map(still => <ModelStillCard key={`${name}-${still.engine}`} still={still} title={`${name} · ${engineLabel(still.engine)}`} />)}
             </div>
           </ReportSummary>
         );
       })}
-      <EmeraldCaptureCompare report={report} history={history} />
+      <ModelCaptureCompare report={report} history={history} />
       <ReportSummary title="Provenance et limites">
         <p className="text-xs break-all">Source : {report.sourceKey} · trajet v{report.pathVersion} · {report.environment}</p>
         <p className="text-xs">CPU : durée de l’appel de rendu. Cadence : intervalles requestAnimationFrame. Chaque photo conserve pose, moteur, backend, résolution et compteurs. Les surcoûts des captures peuvent affecter l’intervalle rAF suivant.</p>

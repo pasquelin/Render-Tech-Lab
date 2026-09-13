@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { Explorer, FrameMetrics, CameraPose } from '@web-geometry/sdk/browser';
 import * as THREE from 'three';
-import type { EmeraldView, IntegrationScene } from '../lab/emeraldView.ts';
-import { defaultEmeraldConfig, urbanPath, segmentNames, framesPerSegment, warmupFrames, retainReports, pixelErrorFor, pathVersion, stillFromFrame, type EmeraldConfig, type EmeraldReport } from '../lab/emeraldCampaign.ts';
-import { jpegFromRgba } from '../lab/emeraldCapture.ts';
-import { BENCH_ENGINES, PATH_CAMPAIGN_ENGINES, benchEngine, factoriesFor, needsResidentPages, selectableBackend, type BenchEngineId } from '../../15-virtualized-integration/implementation/engines.ts';
+import type { ModelView, IntegrationScene } from '../lab/modelView.ts';
+import { defaultModelConfig, urbanPath, segmentNames, framesPerSegment, warmupFrames, retainReports, pixelErrorFor, pathVersion, stillFromFrame, type ModelConfig, type ModelReport } from '../lab/modelCampaign.ts';
+import { jpegFromRgba } from '../lab/modelCapture.ts';
+import { BENCH_ENGINES, PATH_CAMPAIGN_ENGINES, engineFactories, needsResidentPages, selectableBackend, type BenchEngineId } from '../../15-virtualized-integration/implementation/engines.ts';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
 import { LabContext } from './LabContext.tsx';
-import { checkModelAvailability, modelManifestUrl } from '../lab/emeraldAvailability.ts';
-import { modelById } from '../../15-virtualized-integration/index.ts';
+import { checkModelAvailability, modelManifestUrl, defaultModelId } from '../lab/modelAvailability.ts';
 import { LabShell } from './LabShell.tsx';
-import { formatEmeraldDiagnosticReport } from '../lab/emeraldReportMarkdown.ts';
+import { formatModelDiagnosticReport } from '../lab/modelReportMarkdown.ts';
 import { loadMarkdownReport } from '../lab/reportReader.ts';
-const historyKey='render-tech-lab:emerald-runs:v1';
-const CLUSTER_VIEWS:ReadonlyArray<EmeraldConfig['diagnostic']>=['clusters','pages','lod','visibility','screen-error'];
-const LAUNCH_KEYS:ReadonlyArray<keyof EmeraldConfig>=['modelId','cities','detail','lodQuality','mode'];
-const PATH_KEYS:ReadonlyArray<keyof EmeraldConfig>=['engine','diagnostic','camera','poi'];
-function applyLiveConfig(owned:Explorer,next:EmeraldConfig,previous:EmeraldConfig,controls:{current:ReturnType<Explorer['controls']>|ReturnType<Explorer['flyControls']>|undefined}){
+import { clearColorFromSurface } from '../lab/renderSurface.ts';
+const historyKey='render-tech-lab:model-runs:v1';
+const CLUSTER_VIEWS:ReadonlyArray<ModelConfig['diagnostic']>=['clusters','pages','lod','visibility','screen-error'];
+const LAUNCH_KEYS:ReadonlyArray<keyof ModelConfig>=['modelId','cities','detail','lodQuality','mode'];
+const PATH_KEYS:ReadonlyArray<keyof ModelConfig>=['engine','diagnostic','camera'];
+function applyLiveConfig(owned:Explorer,next:ModelConfig,previous:ModelConfig,controls:{current:ReturnType<Explorer['controls']>|ReturnType<Explorer['flyControls']>|undefined}){
  const cluster=CLUSTER_VIEWS.includes(next.diagnostic);
  let engine=next.engine,diagnostic=next.diagnostic;
  if(cluster&&engine==='three-webgl-reference'){
@@ -37,29 +37,25 @@ function applyLiveConfig(owned:Explorer,next:EmeraldConfig,previous:EmeraldConfi
   controls.current?.dispose();
   controls.current=next.camera==='free'?owned.flyControls():owned.controls();
  }
- if(next.mode!=='path'&&next.poi&&next.poi!==previous.poi){
-  const poi=owned.pointsOfInterest().find(item=>item.id===next.poi);
-  if(poi)owned.setPose(poi.pose);
- }
  return {...next,engine,diagnostic,layout:'single' as const};
 }
-function readHistory():EmeraldReport[]{try{const value=JSON.parse(localStorage.getItem(historyKey)??'[]');return Array.isArray(value)?value.filter(r=>r.version===1&&Array.isArray(r.samples)&&r.configuration).slice(0,2):[];}catch{return [];}}
-type Display=Pick<EmeraldView,'status'|'message'|'progress'|'metrics'|'frameIntervalMs'|'position'>;
+function readHistory():ModelReport[]{try{const value=JSON.parse(localStorage.getItem(historyKey)??'[]');return Array.isArray(value)?value.filter(r=>r.version===1&&Array.isArray(r.samples)&&r.configuration).slice(0,2):[];}catch{return [];}}
+type Display=Pick<ModelView,'status'|'message'|'progress'|'metrics'|'frameIntervalMs'|'position'>;
 const initialDisplay:Display={status:'idle',message:'Choisissez une exploration libre ou un parcours reproductible. Les mesures décrivent cette navigation, sans verdict A/B.',progress:null,metrics:null,frameIntervalMs:null,position:''};
 const engineLabel=(id:string)=>BENCH_ENGINES.find(engine=>engine.id===id)?.label??id;
-const emeraldReportPath='reports/15-virtualized-integration/campaign-<id>/';
-async function archiveEmeraldReport(report:EmeraldReport){
- const markdown=formatEmeraldDiagnosticReport(report);
+const modelReportPath='reports/15-virtualized-integration/campaign-<id>/';
+async function archiveModelReport(report:ModelReport){
+ const markdown=formatModelDiagnosticReport(report);
  const saved=await fetch('/api/save-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',markdown,latest:report,engineEvents:report.engineEvents})});
  if(!saved.ok)throw new Error(`Archive HTTP ${saved.status}`);
  return markdown;
 }
-function retireCanvas(ref:RefObject<HTMLCanvasElement|null>){
+function replaceRenderCanvas(ref:RefObject<HTMLCanvasElement|null>){
  const current=ref.current;
- if(!current?.parentElement)throw new Error('Canvas Emerald absent');
+ if(!current?.parentElement)throw new Error('Canvas absent');
  const next=document.createElement('canvas');
- next.id='canvas-emerald';
- next.className='absolute inset-0 block w-full h-full outline-none';
+ next.id='canvas-model';
+ next.className='absolute inset-0 block w-full h-full outline-none bg-base-100';
  next.tabIndex=current.tabIndex;
  const label=current.getAttribute('aria-label');
  if(label)next.setAttribute('aria-label',label);
@@ -70,29 +66,29 @@ function retireCanvas(ref:RefObject<HTMLCanvasElement|null>){
  return next;
 }
 function yieldFrame(){return new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));}
-export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
+export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
  const webglRef=useRef<HTMLCanvasElement>(null),webgpuRef=useRef<HTMLCanvasElement>(null),chartRef=useRef<HTMLCanvasElement>(null);
- const explorerRef=useRef<Explorer|undefined>(undefined),configRef=useRef<EmeraldConfig>(defaultEmeraldConfig);
+ const explorerRef=useRef<Explorer|undefined>(undefined),configRef=useRef<ModelConfig>(defaultModelConfig);
  const controlsRef=useRef<ReturnType<Explorer['controls']>|ReturnType<Explorer['flyControls']>|undefined>(undefined);
- const campaignRef=useRef<EmeraldReport|null>(null);
- const [config,setConfig]=useState<EmeraldConfig>(defaultEmeraldConfig),[attempt,setAttempt]=useState(0),[enabled,setEnabled]=useState(false);
+ const campaignRef=useRef<ModelReport|null>(null);
+ const [config,setConfig]=useState<ModelConfig>(defaultModelConfig),[attempt,setAttempt]=useState(0),[enabled,setEnabled]=useState(false);
  configRef.current=config;
- const [display,setDisplay]=useState<Display>(initialDisplay),[availability,setAvailability]=useState<EmeraldView['availability']>({status:'checking',message:'Vérification du cache préparé…'}),[availableTriangles,setAvailableTriangles]=useState(0),[availabilityAttempt,setAvailabilityAttempt]=useState(0);
- const [history,setHistory]=useState<EmeraldReport[]>(readHistory),[report,setReport]=useState<EmeraldReport|null>(null),[liveBackends,setLiveBackends]=useState<string[]>([]);
+ const [display,setDisplay]=useState<Display>(initialDisplay),[availability,setAvailability]=useState<ModelView['availability']>({status:'checking',message:'Vérification du cache préparé…'}),[availableTriangles,setAvailableTriangles]=useState(0),[availabilityAttempt,setAvailabilityAttempt]=useState(0);
+ const [history,setHistory]=useState<ModelReport[]>(readHistory),[report,setReport]=useState<ModelReport|null>(null),[liveBackends,setLiveBackends]=useState<string[]>([]);
  const [reportModal,setReportModal]=useState(()=>initialSnapshot('15-virtualized-integration').reportModal);
- const finishRef=useRef<(status:EmeraldReport['status'],error?:string)=>void>(()=>{});
- useEffect(()=>{const abort=new AbortController(),modelId=config.modelId??'emerald-square';setAvailability({status:'checking',message:'Vérification du cache préparé…'});void checkModelAvailability(modelId,fetch,abort.signal).then(triangles=>{if(!abort.signal.aborted){setAvailableTriangles(triangles);setAvailability({status:'ready',message:`Cache disponible · ${triangles.toLocaleString('fr-FR')} triangles par modèle.`});}}).catch(error=>{if(!abort.signal.aborted)setAvailability({status:'error',message:String(error.message)});});return()=>abort.abort();},[availabilityAttempt,config.modelId]);
+ const finishRef=useRef<(status:ModelReport['status'],error?:string)=>void>(()=>{});
+ useEffect(()=>{const abort=new AbortController(),modelId=config.modelId||defaultModelId();setAvailability({status:'checking',message:'Vérification du cache préparé…'});void checkModelAvailability(modelId,fetch,abort.signal).then(triangles=>{if(!abort.signal.aborted){setAvailableTriangles(triangles);setAvailability({status:'ready',message:`Cache disponible · ${triangles.toLocaleString('fr-FR')} triangles par modèle.`});}}).catch(error=>{if(!abort.signal.aborted)setAvailability({status:'error',message:String(error.message)});});return()=>abort.abort();},[availabilityAttempt,config.modelId]);
  useEffect(()=>{
   if(!enabled||!webglRef.current)return;
   const abort=new AbortController(),started=performance.now();let owned:Explorer|undefined,frame=0,resize:ResizeObserver|undefined,finished=false;
   const pathCampaign=config.mode==='path';
   const queue=pathCampaign?[...PATH_CAMPAIGN_ENGINES]:[config.engine];
- const run:EmeraldReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'Le contrôle A/A du modèle complet reste instable : la comparaison visuelle est synchronisée, le verdict de performance reste bloqué.'};
- const log=(level:EmeraldReport['engineEvents'][number]['level'],phase:string,message:string,context:Record<string,unknown>={})=>run.engineEvents.push({timestamp:new Date().toISOString(),level,phase,message,context});
- log('info','created','Campagne créée',{modelId:config.modelId??'emerald-square',engines:queue,resolution:run.resolution,instances:config.cities});
+ const run:ModelReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'Le contrôle A/A du modèle complet reste instable : la comparaison visuelle est synchronisée, le verdict de performance reste bloqué.'};
+ const log=(level:ModelReport['engineEvents'][number]['level'],phase:string,message:string,context:Record<string,unknown>={})=>run.engineEvents.push({timestamp:new Date().toISOString(),level,phase,message,context});
+ log('info','created','Campagne créée',{modelId:config.modelId||defaultModelId(),engines:queue,resolution:run.resolution,instances:config.cities});
   campaignRef.current=run;
   const drop=()=>{cancelAnimationFrame(frame);resize?.disconnect();resize=undefined;controlsRef.current?.dispose();controlsRef.current=undefined;if(explorerRef.current===owned)explorerRef.current=undefined;owned?.dispose();owned=undefined;THREE.Cache.clear();};
-  const finish=(status:EmeraldReport['status'],error?:string)=>{if(finished)return;finished=true;run.status=status;run.error=error??null;log(status==='error'?'error':'info','finished',error??`Campagne ${status}`,{samples:run.samples.length,captures:run.captures.length,fallbacks:run.fallbacks});drop();abort.abort();setEnabled(false);setReport(run);setHistory(previous=>{const next=retainReports(previous,run);try{localStorage.setItem(historyKey,JSON.stringify(next));}catch{run.error=[run.error,'Historique conservé en mémoire : stockage local indisponible. Exportez le rapport.'].filter(Boolean).join(' ');}return next;});void archiveEmeraldReport(run).catch(archiveError=>setDisplay(old=>({...old,message:`${old.message} Archivage à réessayer : ${String(archiveError)}`})));setDisplay(old=>({...old,status,message:error??(status==='completed'?'Parcours terminé. Rapport archivé avec les captures et compteurs de diagnostic.':'Exploration arrêtée. Les ressources ont été libérées.'),progress:null,metrics:null,frameIntervalMs:null}));};
+  const finish=(status:ModelReport['status'],error?:string)=>{if(finished)return;finished=true;run.status=status;run.error=error??null;log(status==='error'?'error':'info','finished',error??`Campagne ${status}`,{samples:run.samples.length,captures:run.captures.length,fallbacks:run.fallbacks});drop();abort.abort();setEnabled(false);setReport(run);setHistory(previous=>{const next=retainReports(previous,run);try{localStorage.setItem(historyKey,JSON.stringify(next));}catch{run.error=[run.error,'Historique conservé en mémoire : stockage local indisponible. Exportez le rapport.'].filter(Boolean).join(' ');}return next;});void archiveModelReport(run).catch(archiveError=>setDisplay(old=>({...old,message:`${old.message} Archivage à réessayer : ${String(archiveError)}`})));setDisplay(old=>({...old,status,message:error??(status==='completed'?'Parcours terminé. Rapport archivé avec les captures et compteurs de diagnostic.':'Exploration arrêtée. Les ressources ont été libérées.'),progress:null,metrics:null,frameIntervalMs:null}));};
   finishRef.current=finish;
   void(async()=>{try{
    const {createExplorer}=await import('@web-geometry/sdk/browser');
@@ -102,15 +98,20 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     log('info','engine-start','Initialisation du moteur',{engine:engineId,index:enginePass,total:queue.length});
     setDisplay({status:'loading',message:`${engineLabel(engineId)} · canvas isolé`,progress:pathCampaign?{completed:enginePass,total:queue.length}:null,metrics:null,frameIntervalMs:null,position:''});
     if(enginePass>0){drop();await yieldFrame();if(abort.signal.aborted||finished)return;}
-    const canvas=enginePass>0?retireCanvas(webglRef):webglRef.current;
-    if(!canvas)throw new Error('Canvas Emerald absent');
+    const canvas=enginePass>0?replaceRenderCanvas(webglRef):webglRef.current;
+    if(!canvas)throw new Error('Canvas absent');
     const box=canvas.getBoundingClientRect();
     const width=Math.max(1,Math.round(box.width)),height=Math.max(1,Math.round(box.height));
+    const surfaceColor=clearColorFromSurface(canvas);
+    const clearColor=surfaceColor.value;
+    const colorContext={engine:engineId,source:surfaceColor.source,themeColor:surfaceColor.themeColor,computedBackground:surfaceColor.computedBackground,clearColor:surfaceColor.hex};
+    log('info','surface-color','Couleur de fond transmise au moteur',colorContext);
+    console.info('[render-tech-lab] couleur de fond transmise au moteur',colorContext);
     if(enginePass===0)run.resolution=[width,height];
     else if(width!==run.resolution[0]||height!==run.resolution[1])throw new Error('La résolution a changé entre les moteurs. Relancez pour conserver un protocole identique.');
-    owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId??'emerald-square'),scope:'full',signal:abort.signal,width,height,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:needsResidentPages(engineId,engineId)?'all':'visible',backends:pathCampaign?[benchEngine(engineId).factory]:factoriesFor(config.engine,config.engine,config.diagnostic),comparisonLayout:'single',comparisonPair:[engineId,engineId],onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:progress.total});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
+    owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId||defaultModelId()),scope:'full',signal:abort.signal,width,height,clearColor,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:pathCampaign&&needsResidentPages(engineId,engineId)?'all':'visible',backends:engineFactories([engineId]),comparisonLayout:'single',comparisonPair:[engineId,engineId],onDiagnostic:diagnostic=>log('info',`engine:${diagnostic.phase}`,diagnostic.message,{engine:engineId,...diagnostic.context}),onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:queue.length});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
     if(abort.signal.aborted){drop();return;}
-    if(!owned)throw new Error('Canvas Emerald absent');
+    if(!owned)throw new Error('Canvas absent');
     const session=owned;
     explorerRef.current=session;
     setLiveBackends(owned.backends.map(backend=>backend.id));
@@ -123,7 +124,6 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     await owned.awaitPages();
     log('info','pages-ready','Pages requises prêtes',{engine:engineId});
     if(abort.signal.aborted){drop();return;}
-    if(config.poi&&!pathCampaign){const poi=owned.pointsOfInterest().find(item=>item.id===config.poi);if(poi)owned.setPose(poi.pose);}
     if(!pathCampaign)controlsRef.current=config.camera==='free'?owned.flyControls():owned.controls();
     const path=urbanPath(owned.bounds);
     if(pathCampaign){
@@ -196,10 +196,10 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   return()=>{abort.abort();drop();};
  },[enabled,attempt]);
  const running=display.status==='loading'||display.status==='ready';
- const restart=useCallback(()=>{if(running||availability.status!=='ready')return;const model=modelById(configRef.current.modelId??'emerald-square');setDisplay({...initialDisplay,status:'loading',message:`Chargement de ${model?.label??'ce modèle'}…`});setEnabled(true);setAttempt(v=>v+1);},[running,availability.status]);
+ const restart=useCallback(()=>{if(running||availability.status!=='ready')return;setDisplay({...initialDisplay,status:'loading',message:'Chargement du modèle…'});setEnabled(true);setAttempt(v=>v+1);},[running,availability.status]);
  const stop=useCallback(()=>finishRef.current('stopped'),[]);
  const availableEngines=useMemo(()=>BENCH_ENGINES.map(engine=>({id:engine.id,label:engine.label,available:!liveBackends.length||liveBackends.includes(engine.id)})),[liveBackends]);
- const commitConfig=useCallback((patch:Partial<EmeraldConfig>)=>{
+ const commitConfig=useCallback((patch:Partial<ModelConfig>)=>{
   const current=configRef.current;
   let next={...current,...patch,layout:'single' as const};
   const owned=explorerRef.current;
@@ -208,28 +208,40 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   }
   setConfig(next);
  },[]);
- const selectEngine=useCallback((id:BenchEngineId)=>{commitConfig({engine:id});},[commitConfig]);
- const selectDiagnostic=useCallback((mode:EmeraldConfig['diagnostic'])=>{commitConfig({diagnostic:mode});},[commitConfig]);
- const updateConfig=useCallback((value:Partial<EmeraldConfig>)=>{
-  const patch=running?Object.fromEntries(Object.entries(value).filter(([key])=>!LAUNCH_KEYS.includes(key as keyof EmeraldConfig)&&!(configRef.current.mode==='path'&&PATH_KEYS.includes(key as keyof EmeraldConfig)))) as Partial<EmeraldConfig>:value;
+ const selectEngine=useCallback((id:BenchEngineId)=>{
+  const current=configRef.current;
+  if(id===current.engine)return;
+  if(running&&current.mode==='explore'&&explorerRef.current){
+   replaceRenderCanvas(webglRef);
+   setLiveBackends([]);
+   setConfig({...current,engine:id,layout:'single'});
+   setDisplay({...initialDisplay,status:'loading',message:`Changement vers ${engineLabel(id)} · nouveau canvas isolé`});
+   setAttempt(value=>value+1);
+   return;
+  }
+  commitConfig({engine:id});
+ },[running,commitConfig]);
+ const selectDiagnostic=useCallback((mode:ModelConfig['diagnostic'])=>{commitConfig({diagnostic:mode});},[commitConfig]);
+ const updateConfig=useCallback((value:Partial<ModelConfig>)=>{
+  if(value.engine!==undefined&&value.engine!==configRef.current.engine){selectEngine(value.engine);return;}
+  const patch=running?Object.fromEntries(Object.entries(value).filter(([key])=>!LAUNCH_KEYS.includes(key as keyof ModelConfig)&&!(configRef.current.mode==='path'&&PATH_KEYS.includes(key as keyof ModelConfig)))) as Partial<ModelConfig>:value;
   if(!Object.keys(patch).length)return;
   commitConfig(patch);
- },[running,commitConfig]);
- const showReport=useCallback((id:string)=>{if(running)return;const saved=history.find(r=>r.id===id);if(saved){setConfig({...defaultEmeraldConfig,...saved.configuration});setReport(saved);setDisplay(old=>({...old,status:saved.status,message:saved.error??'Rapport de navigation archivé'}));}},[running,history]);
- const exportReport=useCallback(()=>{if(!report||running)return;const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`emerald-${report.id}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},[report,running]);
+ },[running,commitConfig,selectEngine]);
+ const showReport=useCallback((id:string)=>{if(running)return;const saved=history.find(r=>r.id===id);if(saved){setConfig({...defaultModelConfig,...saved.configuration});setReport(saved);setDisplay(old=>({...old,status:saved.status,message:saved.error??'Rapport de navigation archivé'}));}},[running,history]);
+ const exportReport=useCallback(()=>{if(!report||running)return;const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`model-${report.id}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},[report,running]);
  const state=useMemo(()=>{
   const next=initialSnapshot('15-virtualized-integration');
   next.running=running;
   next.execution={status:running?'running':display.status==='idle'?'idle':display.status==='error'?'error':display.status==='completed'?'completed':'stopped',phase:display.message,lastCampaign:null};
-  const modelLabel=modelById(config.modelId??'emerald-square')?.label??'le modèle';
-  next.benchLabel=config.mode==='path'?'Lancer le parcours du modèle':`Explorer ${modelLabel}`;
-  if(display.status!=='idle'&&!running)next.benchLabel=config.mode==='path'?'Relancer le parcours du modèle':`Relancer ${modelLabel}`;
+  next.benchLabel=config.mode==='path'?'Lancer le parcours du modèle':'Explorer le modèle';
+  if(display.status!=='idle'&&!running)next.benchLabel=config.mode==='path'?'Relancer le parcours du modèle':'Relancer l’exploration';
   next.reportModal=reportModal;
   return next;
  },[running,display.status,display.message,config.mode,reportModal]);
  const openReport=useCallback(async()=>{
   if(running)return;
-  setReportModal(current=>({...current,open:true,title:'Rapport d’analyse R&D — 15-virtualized-integration',path:emeraldReportPath,raw:'',html:'<p>Chargement du rapport depuis le disque…</p>',feedback:''}));
+  setReportModal(current=>({...current,open:true,title:'Rapport d’analyse R&D — 15-virtualized-integration',path:modelReportPath,raw:'',html:'<p>Chargement du rapport depuis le disque…</p>',feedback:''}));
   try{
    const report=await loadMarkdownReport(fetch,'15-virtualized-integration');
    setReportModal(current=>({...current,raw:report.ok?report.raw:'',html:report.ok?'':`<p>${report.raw}</p>`,feedback:report.feedback}));
@@ -238,7 +250,7 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
  const copyReport=useCallback(()=>{const raw=reportModal.raw;if(!raw)return;void navigator.clipboard.writeText(raw).then(()=>setReportModal(current=>({...current,feedback:'Markdown copié dans le presse-papier.'}))).catch(()=>setReportModal(current=>({...current,feedback:'Copie indisponible.'})));},[reportModal.raw]);
  const openFinder=useCallback(()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',folder:'reports'})}).then(response=>response.json()).then(data=>setReportModal(current=>({...current,feedback:`Finder ouvert : ${data.targetFile??data.targetDir??'reports/'}`}))).catch(()=>setReportModal(current=>({...current,feedback:'Rapports : ./reports/'})));},[]);
  const actions=useMemo<LabActions>(()=>({newExecution:()=>{if(!running){setEnabled(false);setReport(null);setDisplay(initialDisplay);}},switchModule:id=>{if(!running)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},runBenchmark:restart,stopBenchmark:stop,runPain:stop,openReport,closeReport:()=>setReportModal(current=>({...current,open:false,feedback:''})),copyReport,refreshReport:openReport,openFinder }),[running,restart,stop,openReport,copyReport,openFinder]);
- const emerald=useMemo(()=>({...display,surfaceKey:String(attempt),availability,retryAvailability:()=>setAvailabilityAttempt(v=>v+1),availableTriangles:availableTriangles*config.cities,config,setConfig:updateConfig,availableEngines,selectEngine,selectDiagnostic,report,history,showReport,exportReport,stop,restart}),[display,attempt,availability,availableTriangles,config,updateConfig,availableEngines,selectEngine,selectDiagnostic,report,history,showReport,exportReport,stop,restart]);
- const value=useMemo(()=>({state,actions,onIntegrationScene:(scene:IntegrationScene)=>{if(!running)onScene(scene);},emerald}),[state,actions,running,onScene,emerald]);
+ const model=useMemo(()=>({...display,surfaceKey:String(attempt),availability,retryAvailability:()=>setAvailabilityAttempt(v=>v+1),availableTriangles:availableTriangles*config.cities,config,setConfig:updateConfig,availableEngines,selectEngine,selectDiagnostic,report,history,showReport,exportReport,stop,restart}),[display,attempt,availability,availableTriangles,config,updateConfig,availableEngines,selectEngine,selectDiagnostic,report,history,showReport,exportReport,stop,restart]);
+ const value=useMemo(()=>({state,actions,onIntegrationScene:(scene:IntegrationScene)=>{if(!running)onScene(scene);},model}),[state,actions,running,onScene,model]);
  return <LabContext.Provider value={value}><LabShell webglRef={webglRef} webgpuRef={webgpuRef} chartRef={chartRef}/></LabContext.Provider>;
 }

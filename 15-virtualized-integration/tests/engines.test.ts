@@ -1,8 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {webgpuPagesBackend} from '@web-geometry/sdk/browser';
-import {BENCH_ENGINES,PATH_CAMPAIGN_ENGINES,benchEngine,competitorMatrix,factoriesFor,needsResidentPages,pathCampaignFactories,selectableBackend} from '../implementation/engines.ts';
+import {BENCH_ENGINES,PATH_CAMPAIGN_ENGINES,benchEngine,competitorMatrix,engineFactories,factoriesFor,needsResidentPages,pathCampaignFactories,selectableBackend} from '../implementation/engines.ts';
 test('bench engines expose a stable comparison contract without simulating missing libraries',()=>{
- assert.deepEqual(BENCH_ENGINES.map(engine=>engine.id),['three-webgl-reference','exact-cluster-pages','three-lod','webgpu-page-raster']);
+ assert.deepEqual(BENCH_ENGINES.map(engine=>engine.id),['three-webgl-reference','three-lod','exact-cluster-pages','webgpu-page-raster']);
+ assert.deepEqual(BENCH_ENGINES.map(engine=>engine.label),['THREE.js basic','THREE.js LOD','WebGeometry WebGL','WebGeometry WebGPU']);
  assert.equal(benchEngine('three-lod').comparable,true);
  assert.equal(benchEngine('webgpu-page-raster').comparable,false);
  assert.equal(benchEngine('webgpu-page-raster').factory,webgpuPagesBackend);
@@ -16,13 +17,13 @@ test('bench engines expose a stable comparison contract without simulating missi
  assert.equal(needsResidentPages('three-webgl-reference','exact-cluster-pages'),false);
  const matrix=competitorMatrix();
  assert.ok(matrix.every(row=>row.status!=='integrated'||['three-webgl-reference','exact-cluster-pages','three-lod'].includes(row.id)));
- assert.ok(matrix.some(row=>row.status==='incompatible'));
+ assert.ok(matrix.some(row=>row.status==='not-comparable'));
  assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference','webgpu-page-raster']),'webgpu-page-raster');
  assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference']),'three-webgl-reference');
  assert.equal(selectableBackend('webgpu-page-raster','pages',['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']),'webgpu-page-raster');
- assert.deepEqual([...PATH_CAMPAIGN_ENGINES],['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']);
- assert.ok(!PATH_CAMPAIGN_ENGINES.includes('three-lod'));
- assert.equal(pathCampaignFactories().length,3);
+ assert.deepEqual([...PATH_CAMPAIGN_ENGINES],['three-webgl-reference','three-lod','exact-cluster-pages','webgpu-page-raster']);
+ assert.equal(pathCampaignFactories().length,4);
+ assert.deepEqual(engineFactories(['three-lod']),[benchEngine('three-lod').factory]);
  assert.equal(needsResidentPages('three-lod','three-lod'),true);
  assert.equal(needsResidentPages('three-webgl-reference','three-webgl-reference'),false);
  assert.equal(needsResidentPages('exact-cluster-pages','exact-cluster-pages'),false);

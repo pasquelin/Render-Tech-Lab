@@ -12,8 +12,8 @@ test('the shell has a single presentation catalog and no per-bench UI copies', a
   const navbar = await readFile('src/components/LabNavbar.tsx', 'utf8');
   const campaign = await readFile('src/components/CampaignSidebar.tsx', 'utf8');
   const modal = await readFile('src/components/ReportModal.tsx', 'utf8');
-  assert.doesNotMatch(sidebar, /EmeraldPanels/);
-  assert.doesNotMatch(viewport, /EmeraldPanels/);
+  assert.doesNotMatch(sidebar, /ModelPanels/);
+  assert.doesNotMatch(viewport, /ModelPanels/);
   assert.doesNotMatch(modal, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(sidebar, /ACCESS_META|MODE_CHOICE/);
   assert.doesNotMatch(sidebar, /<a[^>]*id="btn-lod-comparison"/);
@@ -48,8 +48,12 @@ test('every bench exposes the same sidebar contract from moduleUi', async () => 
         assert.match(html, /data-bench-access="01-indirect-draw"/);
         assert.doesNotMatch(html, /id="btn-benchmark"/);
       } else {
-      const ids = ['lab-mode-card', 'lab-metrics-card', 'lab-run-card', 'lab-report-card'];
+      const ids = ['lab-mode-card', 'lab-metrics-card', 'lab-run-card'];
       ids.forEach(section => assert.equal((html.match(new RegExp(`id="${section}"`, 'g')) ?? []).length, 1, `${id}: ${section}`));
+      assert.match(html, /id="lab-report-card"/, `${id}: report area stays visible outside a test`);
+      for (const buttonId of ['btn-view-report', 'btn-open-reports']) {
+        assert.match(html.match(new RegExp(`<button[^>]*id="${buttonId}"[^>]*>`))?.[0] ?? '', /disabled=""/, `${id}: ${buttonId} is disabled until a report is available`);
+      }
       for (const label of ['CPU submit', 'CPU frame', 'FPS', 'Draw calls']) assert.match(html, new RegExp(`>${label}<`), `${id}: ${label}`);
         assert.match(html, /id="bench-status"/);
         assert.match(html, /id="stat-mode"/);

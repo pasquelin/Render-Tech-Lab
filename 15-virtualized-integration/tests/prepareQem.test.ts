@@ -68,9 +68,9 @@ test('prepare with qem-endpoints writes coarse LOD pages the lab availability ch
     assert.ok(coarse.length >= 1, 'expected coarse QEM pages');
     assert.equal(clusters.simplification, true);
     assert.ok(clusters.primitives[0].hierarchy.coarsePages?.length >= 1);
-    const { checkEmeraldAvailability, emeraldManifestUrl } = await import('../../src/lab/emeraldAvailability.ts');
-    assert.match(emeraldManifestUrl, /native\/full\/manifest\.json$/);
-    const trianglesSeen = await checkEmeraldAvailability((async (url: string) => {
+    const { checkModelAvailability, defaultModelId, modelManifestUrl } = await import('../../src/lab/modelAvailability.ts');
+    assert.match(modelManifestUrl(defaultModelId()), /native\/full\/manifest\.json$/);
+    const trianglesSeen = await checkModelAvailability(defaultModelId(), (async (url: string) => {
       const path = String(url).replace(/^https?:\/\/[^/]+/, '');
       if (path.endsWith('manifest.json')) return new Response(JSON.stringify(pointer), { headers: { 'content-type': 'application/json' } });
       return new Response(JSON.stringify(clusters), { headers: { 'content-type': 'application/json' } });

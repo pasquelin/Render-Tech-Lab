@@ -4,7 +4,7 @@ Le runner exécute désormais la hiérarchie procédurale, la sélection/rasteri
 
 # 15 — Intégration de géométrie virtualisée : état vérifiable
 
-**Livraison initiale bornée : l'architecture complète reste bloquée.** Ce banc ne démontre pas Nanite ni une géométrie virtualisée fonctionnelle. Il fournit une matrice de dix scénarios explicitement non exécutés et un contrôle physique résident utile pour valider le contrat A/B et la métrologie avant assemblage des briques manquantes.
+**Livraison initiale bornée : l'architecture complète reste bloquée.** Ce banc ne démontre pas une géométrie virtualisée fonctionnelle. Il fournit une matrice de dix scénarios explicitement non exécutés et un contrôle physique résident utile pour valider le contrat A/B et la métrologie avant assemblage des briques manquantes.
 
 ## Inventaire vérifié dans les sources 01–14
 
@@ -65,30 +65,30 @@ Le smoke archive dans `benchmark-runs/checks/15-<date>-<uuid>/raw.json` : config
 
 Résultat local corrigé du 12 septembre 2026 : TypeScript/build, 14 tests ciblés et smoke sur Apple M2 Max réussis. Dernier smoke runtime : `15-2026-09-12T10-39-42.398Z-7c74ce68-f2c1-4d12-9d19-27d599493923` (inclut conservation des blocs partiels). Les corrections de types suivantes produisent les mêmes bundles. L'archive précédente `15-2026-09-12T10-31-55.654Z-d771fb05-d7e5-4e9c-a336-0a522c207726` est invalidée par son `REVIEW.md` : timestamps d'une passe compute vide sur A. **Aucun verdict général de performance.**
 
-Voir [EMERALD.md](docs/emerald.md) pour le candidat urbain réel et les conditions de conversion.
+Voir [models.md](docs/models.md) pour le catalogue de modèles et les conditions de conversion.
 
 ## Source layout
 
 Public API: [index.ts](index.ts); metadata: [manifest.ts](manifest.ts); contracts: [contracts.ts](contracts.ts). See [migration](docs/migration.md), [hypothesis](docs/hypothesis.md), [protocol](docs/protocol.md) and [limits](docs/limits.md). Canonical runner sources are under `runner/`, scenario metadata under `scenarios/`, and boundary tests under `tests/`. Compatibility forwarding modules have been removed.
 
-## Explorateur Emerald dans le Lab
+## Explorateur de modèles dans le Lab
 
-Le sélecteur de configuration distingue la fixture procédurale et Emerald Square. Au repos, seuls le pointeur et les métadonnées du cache sont vérifiés ; aucun canvas Emerald ni chargement de géométrie/textures n’est créé avant le lancement explicite. Le passage à la première image exige des pixels distincts du fond et des dimensions visibles non nulles.
+Le sélecteur de configuration distingue la fixture procédurale et les modèles préparés. Au repos, seuls le pointeur et les métadonnées du cache sont vérifiés ; aucun canvas ni chargement de géométrie/textures n’est créé avant le lancement explicite. Le passage à la première image exige des pixels distincts du fond et des dimensions visibles non nulles.
 
-L’étendue 1 / 4 / 9 villes est transmise au SDK via `replicaCount`. `prepare:emerald` écrit des pages QEM ; l’explorateur coupe l’arbre LOD avec `pixelError` (défaut 1 px, 0 = exact seulement). « Détails maximum » conserve toute la géométrie et les textures source et demande l’anisotropie maximale disponible. Ces réglages sont figés pendant une exécution. Le Lab appelle `createExplorer` de `@web-geometry/sdk/browser`.
+L’étendue 1 / 4 / 9 / 12 modèles est transmise au SDK via `replicaCount`. `prepare:models` écrit les caches QEM de tous les modèles ; l’explorateur coupe l’arbre LOD avec `pixelError` (défaut 1 px, 0 = exact seulement). « Détails maximum » conserve toute la géométrie et les textures source et demande l’anisotropie maximale disponible. Ces réglages sont figés pendant une exécution. Le Lab appelle `createExplorer` de `@web-geometry/sdk/browser`.
 
 Les vues texturée et filaire utilisent le moteur A choisi. `webgpu-page-raster` consomme `createGpuPageCache` ; sur le parcours urbain son absence interrompt la campagne. Les diagnostics clusters et pages utilisent les feuilles exactes (ou le raster WebGPU s’il est le moteur A). Les transparences partagées conservent leurs matériaux. Un dépassement du budget de pages interrompt le diagnostic au lieu de dessiner une surface incomplète.
 
-Le parcours v4 rejoue dix segments : Three.js, pages WebGL2, raster WebGPU, 60 poses par segment après 30 images de préchauffage et préchargement des pages aux checkpoints. Il est déterministe ; les rues et zones de végétation ne sont pas encore calibrées. Les rapports vont dans `localStorage` et `benchmark-runs/checks/emerald-path/`. Les captures peuvent affecter l’intervalle rAF suivant et ne prouvent aucune fidélité A/B. CPU et rAF ont des distributions séparées ; GPU et VRAM restent non mesurés.
+Le parcours v5 rejoue dix segments avec quatre moteurs : THREE.js basic, THREE.js LOD, WebGeometry WebGL et WebGeometry WebGPU. Chacun reçoit 60 poses par segment après 30 images de préchauffage et le préchargement requis aux checkpoints. Il est déterministe ; les rues et zones de végétation ne sont pas encore calibrées. Les rapports vont dans `localStorage` et `benchmark-runs/checks/model-path/`. Les captures peuvent affecter l’intervalle rAF suivant et ne prouvent aucune fidélité A/B. CPU et rAF ont des distributions séparées ; GPU et VRAM restent non mesurés.
 
 Les cinq dernières exécutions sont conservées dans le navigateur. « Relancer » reprend la configuration du rapport ; « Nouvelle exécution » revient à la fiche au repos ; le rapport reste consultable et exportable. La comparaison mesurée reste indisponible tant que la pipeline B complète manque et que le contrôle A/A reste instable.
 
 Recettes Chrome sur le serveur local :
 
 ```sh
-node test/emeraldAvailability.browser.mjs
-node test/emeraldPixels.browser.mjs
-node test/emeraldWorkbench.browser.mjs
+node test/modelAvailability.browser.mjs
+node test/modelPixels.browser.mjs
+node test/modelWorkbench.browser.mjs
 ```
 
 Les captures et contrôles de ces recettes restent dans `benchmark-runs/checks/`. Ils attestent le fonctionnement observé, sans promouvoir de résultat de performance.

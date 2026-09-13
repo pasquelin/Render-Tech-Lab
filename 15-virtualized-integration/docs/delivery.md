@@ -4,7 +4,7 @@ Premier jalon livré, architecture virtualisée complète toujours bloquée. Pas
 
 Fichiers propres au jalon :
 
-- `15-virtualized-integration/` : protocole/matrice, contrôle natif, factory runner, tests, harness smoke, documentation et inventaires Emerald.
+- `15-virtualized-integration/` : protocole/matrice, contrôle natif, factory runner, tests, harness smoke, documentation et inventaires Model.
 - `bench/run_integration.mjs` : smoke et archives, y compris échecs.
 - `shared/benchmark/integratedRunners.ts`, `bench/runners.ts`, `bench/integratedRunners.test.ts` : ajout minimal de l'identifiant 15 et factory. Ces fichiers étaient déjà présents non suivis dans le snapshot de départ; reprendre les ajouts ciblés plutôt que remplacer le chantier React.
 - `01-indirect-draw/implementation/gpuDrivenRenderer.ts` : readback annulable et prise en charge d'un timer raster seul pour la référence directe; ancien contrat 2 passes conservé.
@@ -20,7 +20,7 @@ Les dépendances absentes du worktree sont accessibles via un lien `node_modules
 
 Seule opération demandée hors worktree : déplacement atomique et réversible de l'asset utilisateur depuis `public/EmeraldSquare_v4_1` vers `files_local/emerald-square/EmeraldSquare_v4_1` dans le checkout principal. 360 fichiers, tailles/inodes conservés, ancien chemin absent, destination ignorée. Pas de conversion lourde. Aucun autre fichier du checkout principal modifié par cette tâche.
 
-Pour la suite : construire une véritable hiérarchie de remplacement avec erreur certifiée, cluster raster et coupe complète; relier ensuite pages physiques et occlusion. Emerald Day convient à la fixture urbaine future, après conversion ATI2/alpha/ORM/normales vérifiée et conditions NC/SA prises en compte. Les chiffres du contrôle résident ne doivent jamais apparaître dans les cases non exécutées de cette matrice.
+Pour la suite : construire une véritable hiérarchie de remplacement avec erreur certifiée, cluster raster et coupe complète; relier ensuite pages physiques et occlusion. Model Day convient à la fixture urbaine future, après conversion ATI2/alpha/ORM/normales vérifiée et conditions NC/SA prises en compte. Les chiffres du contrôle résident ne doivent jamais apparaître dans les cases non exécutées de cette matrice.
 
 # Mise à jour — incrément 2
 
@@ -30,4 +30,4 @@ Ajouts : geometryAsset.ts, physicalPages.ts, clusterGpu.ts, virtualizedCampaign.
 
 Validation : 22 tests ciblés (incluant la coque et les archives), npm test, TypeScript, build. Smoke physique Chrome/M2 Max : trois scénarios avec/sans timestamps, annulation verify/measure, puis deux lancements par la vraie coque React, archivage et ouverture de rapport. Le smoke du 12 septembre 11:04:07 est passé : 48 évictions physiques dans le scénario sous pression, aucune différence RGBA A/A/B aux poses testées; profondeur et dépassements de budget géométrique des fallbacks explicitement conservés.
 
-Limites : micro-fixture opaque/unlit, pages lues en mémoire CPU, feedback sérialisé et coûteux; pas de campagne de performance ni de généralisation à Emerald. Les dix catégories représentatives générales restent séparément non exécutées. La réussite de la fixture vaut `procedural-validated`, pas validation d'un moteur Nanite général. Aucun commit/push/merge.
+Limites : micro-fixture opaque/unlit, pages lues en mémoire CPU, feedback sérialisé et coûteux; pas de campagne de performance ni de généralisation à un modèle catalogue. Les dix catégories représentatives générales restent séparément non exécutées. La réussite de la fixture vaut `procedural-validated`, pas validation d'un moteur général. Aucun commit/push/merge.

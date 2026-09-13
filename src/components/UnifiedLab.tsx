@@ -1,6 +1,6 @@
 import { IntegrationFixtureLab } from './IntegrationFixtureLab.tsx';
-import { EmeraldLab } from './EmeraldLab.tsx';
-import type { IntegrationScene } from '../lab/emeraldView.ts';
+import { ModelLab } from './ModelLab.tsx';
+import type { IntegrationScene } from '../lab/modelView.ts';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { parseMarkdownToHtml } from '../lab/markdown.ts';
 import { loadMarkdownReport } from '../lab/reportReader.ts';
@@ -21,8 +21,8 @@ export function UnifiedLab({ test, native }: { test: string; native: boolean }) 
   return test === '15-virtualized-integration' ? <IntegrationLab /> : <StandardLab test={test} native={native} />;
 }
 function IntegrationLab() {
-  const [scene, setScene] = useState<IntegrationScene>('emerald');
-  return scene === 'emerald' ? <EmeraldLab onScene={setScene}/> : <IntegrationFixtureLab onScene={setScene}/>;
+  const [scene, setScene] = useState<IntegrationScene>('model');
+  return scene === 'model' ? <ModelLab onScene={setScene}/> : <IntegrationFixtureLab onScene={setScene}/>;
 }
 function StandardLab({ test, native, onScene }: { test: string; native: boolean; onScene?: (scene: IntegrationScene) => void }) {
   const webglRef = useRef<HTMLCanvasElement>(null);

@@ -81,7 +81,7 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
         state.execution.status = 'running';
         const locked = render(LabSidebar);
         const modeControls = ['01-indirect-draw', '03-gpu-scene', '04-gpu-lod', '14-open-world'].includes(module.id) ? ['btn-classic','btn-gpu-driven'] : [];
-        for (const id of [...modeControls,module.id === '15-virtualized-integration' ? 'select-diagnostic-view' : 'select-count','btn-benchmark','btn-view-report','btn-open-reports']) {
+        for (const id of [...modeControls,module.id === '15-virtualized-integration' ? 'select-diagnostic-view' : 'select-count','btn-benchmark']) {
           const tag = locked.match(new RegExp(`<[^>]+id="${id}"[^>]*>`))?.[0];
           assert.ok(tag?.includes('disabled=""'), `${module.id}: ${id} must be disabled`);
         }

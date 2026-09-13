@@ -1,11 +1,11 @@
-import type { EmeraldView, IntegrationScene } from '../lab/emeraldView.ts';
+import type { ModelView, IntegrationScene } from '../lab/modelView.ts';
 import { createContext, useContext } from 'react';
 import type { LabActions, LabSnapshot } from '../lab/labState.ts';
 
 export type LabContextValue = {
   state: LabSnapshot;
   actions: LabActions;
-  emerald?: EmeraldView;
+  model?: ModelView;
   onIntegrationScene?: (scene: IntegrationScene) => void;
 };
 

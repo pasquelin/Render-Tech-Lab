@@ -7,6 +7,7 @@ export type BenchmarkModel = Readonly<{
 }>;
 
 export const benchmarkModels: readonly BenchmarkModel[] = [
+  { id: 'emerald-square', label: 'Emerald Square', sourceDirectory: 'public/benchmark-assets/emerald-square', derivedDirectory: 'public/benchmark-assets/emerald-square-derived', runtimeFile: 'emerald-day-smoke.glb' },
   { id: 'bistro-exterior', label: 'Bistro Exterior', sourceDirectory: 'public/benchmark-assets/bistro', derivedDirectory: 'public/benchmark-assets/bistro-exterior-derived', runtimeFile: 'bistro-exterior.glb' },
   { id: 'low-poly-city', label: 'Low Poly City', sourceDirectory: 'public/benchmark-assets/low-poly-city', derivedDirectory: 'public/benchmark-assets/low-poly-city-derived', runtimeFile: 'low-poly-city.glb' },
   { id: 'accucities-london', label: 'AccuCities London', sourceDirectory: 'public/benchmark-assets/accucities-london', derivedDirectory: 'public/benchmark-assets/accucities-london-derived', runtimeFile: 'accucities-london.glb' },
