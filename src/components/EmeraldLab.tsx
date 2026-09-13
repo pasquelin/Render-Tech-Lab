@@ -227,7 +227,12 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   if(running)return;
   if(history[0])showReport(history[0].id);
   setReportModal(current=>({...current,open:true,title:'Rapport d’analyse R&D — 15-virtualized-integration',path:emeraldReportPath,raw:'',html:'<p>Chargement du rapport depuis le disque…</p>',feedback:''}));
-  try{const response=await fetch('/api/get-report?testId=15-virtualized-integration');const raw=await response.text();setReportModal(current=>({...current,raw:response.ok?raw:'',html:response.ok?parseMarkdownToHtml(raw):`<p>${raw}</p>`}));}catch(error){setReportModal(current=>({...current,html:`<p>Erreur réseau : ${String(error)}</p>`}));}
+  try{
+   const [markdownResponse,evidenceResponse]=await Promise.all([fetch('/api/get-report?testId=15-virtualized-integration'),fetch('/api/emerald-archive')]);
+   const raw=await markdownResponse.text();
+   if(evidenceResponse.ok){const saved=await evidenceResponse.json() as EmeraldReport;if(saved.version===1&&Array.isArray(saved.captures)){setReport(saved);setConfig({...defaultEmeraldConfig,...saved.configuration});}}
+   setReportModal(current=>({...current,raw:markdownResponse.ok?raw:'',html:markdownResponse.ok?parseMarkdownToHtml(raw):`<p>${raw}</p>`}));
+  }catch(error){setReportModal(current=>({...current,html:`<p>Erreur réseau : ${String(error)}</p>`}));}
  },[running,history,showReport]);
  const copyReport=useCallback(()=>{const raw=reportModal.raw;if(!raw)return;void navigator.clipboard.writeText(raw).then(()=>setReportModal(current=>({...current,feedback:'Markdown copié dans le presse-papier.'}))).catch(()=>setReportModal(current=>({...current,feedback:'Copie indisponible.'})));},[reportModal.raw]);
  const openFinder=useCallback(()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',folder:'reports'})}).then(response=>response.json()).then(data=>setReportModal(current=>({...current,feedback:`Finder ouvert : ${data.targetFile??data.targetDir??'reports/'}`}))).catch(()=>setReportModal(current=>({...current,feedback:'Rapports : ./reports/'})));},[]);
