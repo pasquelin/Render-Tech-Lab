@@ -280,7 +280,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [createEmeraldAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',
