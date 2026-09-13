@@ -168,7 +168,7 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
                 Résultats archivés dans le fichier unique :{' '}
                 <code className="text-[11px] bg-base-100 px-1.5 py-0.5 rounded font-mono text-primary border border-base-content/10">REPORT.md</code>
               </div>
-              <p className="text-[10px] text-base-content/50">5 derniers rapports conservés.</p>
+              <p className="text-[10px] text-base-content/50">2 derniers rapports complets conservés.</p>
               <div className="flex gap-2">
                 <Button id="btn-view-report" disabled={state.running} className="flex-1 gap-1.5 shadow-xs whitespace-nowrap text-xs px-2" onClick={() => actions.openReport()}>
                   <FileText className="w-3.5 h-3.5" />

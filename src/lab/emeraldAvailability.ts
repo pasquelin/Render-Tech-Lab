@@ -1,19 +1,28 @@
-export const emeraldManifestUrl = '/benchmark-assets/emerald-derived/native/full/manifest.json';
-export async function checkEmeraldAvailability(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<number> {
+import { modelById } from '../../15-virtualized-integration/index.ts';
+
+export function modelManifestUrl(modelId: string) {
+  const model = modelById(modelId);
+  if (!model) throw new Error(`Modèle inconnu : ${modelId}`);
+  return `/${model.derivedDirectory.replace(/^public\//, '')}/native/full/manifest.json`;
+}
+export async function checkModelAvailability(modelId: string, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<number> {
   const read = async (url: string) => {
     const response = await fetcher(url, { signal, cache: 'no-store' });
-    if (!response.ok) throw new Error(`Cache indisponible (HTTP ${response.status}). Préparez Emerald puis réessayez.`);
-    if (!response.headers.get('content-type')?.includes('json')) throw new Error('Cache invalide : réponse JSON attendue. Préparez Emerald puis réessayez.');
+    if (!response.ok) throw new Error(`Cache indisponible (HTTP ${response.status}). Préparez les modèles puis réessayez.`);
+    if (!response.headers.get('content-type')?.includes('json')) throw new Error('Cache invalide : réponse JSON attendue. Préparez les modèles puis réessayez.');
     return response.json();
   };
-  const pointer = await read(emeraldManifestUrl);
-  if (pointer.status !== 'ready' || pointer.scope !== 'full' || typeof pointer.url !== 'string') throw new Error('Manifeste Emerald incomplet. Préparez Emerald puis réessayez.');
-  const base = new URL(emeraldManifestUrl, 'http://localhost');
+  const manifestUrl = modelManifestUrl(modelId);
+  const pointer = await read(manifestUrl);
+  if (pointer.status !== 'ready' || pointer.scope !== 'full' || typeof pointer.url !== 'string') throw new Error('Manifeste de modèle incomplet. Préparez les modèles puis réessayez.');
+  const base = new URL(manifestUrl, 'http://localhost');
   const target = new URL(pointer.url, base);
-  if (target.origin !== base.origin || !target.pathname.startsWith('/benchmark-assets/emerald-derived/native/')) throw new Error('Adresse du cache Emerald invalide.');
+  if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname.replace(/manifest\.json$/, ''))) throw new Error('Adresse du cache de modèle invalide.');
   const metadata = await read(target.pathname);
-  if (metadata.status !== 'ready' || metadata.scope !== 'full' || metadata.schema !== 1 || !Array.isArray(metadata.primitives) || !Array.isArray(metadata.selectedNodes) || !Number.isFinite(metadata.selectedTriangles) || metadata.selectedTriangles <= 0) throw new Error('Cache Emerald invalide. Préparez Emerald puis réessayez.');
-  if (metadata.simplification !== true) throw new Error('Cache sans pages QEM. Relancez npm run prepare:emerald.');
-  if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète (modèle d’erreur manquant). Relancez npm run prepare:emerald.');
+  if (metadata.status !== 'ready' || metadata.scope !== 'full' || metadata.schema !== 1 || !Array.isArray(metadata.primitives) || !Array.isArray(metadata.selectedNodes) || !Number.isFinite(metadata.selectedTriangles) || metadata.selectedTriangles <= 0) throw new Error('Cache de modèle invalide. Préparez les modèles puis réessayez.');
+  if (metadata.simplification !== true) throw new Error('Cache sans pages QEM. Relancez pnpm prepare:models.');
+  if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète. Relancez pnpm prepare:models.');
   return metadata.selectedTriangles;
 }
+export const emeraldManifestUrl = modelManifestUrl('emerald-square');
+export const checkEmeraldAvailability = (fetcher: typeof fetch = fetch, signal?: AbortSignal) => checkModelAvailability('emerald-square', fetcher, signal);

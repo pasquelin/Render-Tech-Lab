@@ -7,7 +7,7 @@ import { StatusBadge } from './ui/StatusBadge.tsx';
 
 export function LabNavbar() {
   const { state, actions, emerald } = useLab();
-  const description = emerald ? 'Emerald Square · ville complète en exploration libre. La comparaison reste indépendante et bloquée par le contrôle A/A.' : moduleDescription(state.moduleId);
+  const description = emerald ? 'Modèles complets en exploration libre. La comparaison reste indépendante et bloquée par le contrôle A/A.' : moduleDescription(state.moduleId);
   const goToDashboard = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (state.running) return;

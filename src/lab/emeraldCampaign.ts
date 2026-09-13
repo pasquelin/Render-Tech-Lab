@@ -2,9 +2,9 @@ import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 import {LOD_QUALITY, type LodQualityId} from '@web-geometry/sdk';
 import type {BenchEngineId} from '../../15-virtualized-integration/index.ts';
 export type EmeraldLayout='single'|'comparison'|'wipe'|'toggle'|'difference';
-export type EmeraldConfig={cities:1|4|9;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:EmeraldLayout;engine:BenchEngineId;compareEngine:BenchEngineId;poi:'overview'|'street'|'ground'|'foliage'|'detail'|null;wipe:number};
-export const defaultEmeraldConfig:EmeraldConfig={cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',poi:null,wipe:.5};
-export const segmentNames=['Vue générale de la ville','Entrée dans une rue dense','Déplacement au niveau du sol','Végétation et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et streaming','Forte pression de pages','Retour vers une zone visitée'];
+export type EmeraldConfig={modelId?:string;cities:1|4|9;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:EmeraldLayout;engine:BenchEngineId;compareEngine:BenchEngineId;poi:'overview'|'street'|'ground'|'foliage'|'detail'|null;wipe:number};
+export const defaultEmeraldConfig:EmeraldConfig={modelId:'emerald-square',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',poi:null,wipe:.5};
+export const segmentNames=['Vue générale du modèle','Approche de la géométrie','Déplacement au niveau de référence','Matériaux et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et chargement','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;
 export const warmupFrames=30;
 export const pathVersion=4;
@@ -45,16 +45,18 @@ export type EmeraldStill={
  pageEvictions:number|null;frustumRejected:number|null;pagesRequested:number|null;pageLoads:number|null;
  gpuMs:null;vramBytes:null;
 };
-export type EmeraldReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:EmeraldConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:EmeraldSample[];captures:EmeraldStill[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;};
+export type EmeraldEngineEvent={timestamp:string;level:'debug'|'info'|'warn'|'error';phase:string;message:string;context:Record<string,unknown>};
+export type EmeraldReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:EmeraldConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:EmeraldSample[];captures:EmeraldStill[];engineEvents:EmeraldEngineEvent[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;};
 export function distribution(values:number[]){const sorted=values.filter(v=>Number.isFinite(v)&&v>=0).sort((a,b)=>a-b);if(!sorted.length)return null;const q=(p:number)=>sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*p)-1)];return {count:sorted.length,p50:q(.5),p95:q(.95),p99:q(.99),max:sorted.at(-1)!};}
 export function summarizeEmerald(samples:EmeraldSample[]){const intervals=samples.flatMap(s=>s.rafIntervalMs!==null&&s.rafIntervalMs>0?[s.rafIntervalMs]:[]);return {cpu:distribution(samples.map(s=>s.cpuFrameMs)),raf:distribution(intervals),minFps:intervals.length?1000/Math.max(...intervals):null,gpu:distribution(samples.flatMap(s=>s.gpuMs===null?[]:[s.gpuMs])),frames:samples.length};}
-export function retainReports(previous:EmeraldReport[],report:EmeraldReport){return [report,...previous.filter(r=>r.id!==report.id)].slice(0,5);}
+export function retainReports(previous:EmeraldReport[],report:EmeraldReport){return [report,...previous.filter(r=>r.id!==report.id)].slice(0,2);}
 export function pathPoses(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).map(step=>step.pose);}
 export function urbanCheckpoints(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).filter((_,index)=>index%framesPerSegment===0);}
 function poseEqual(a:CameraPose,b:CameraPose){return a.fov===b.fov&&a.near===b.near&&a.far===b.far&&a.position.every((v,i)=>v===b.position[i])&&a.target.every((v,i)=>v===b.target[i]);}
 /** Same trajectory for every engine. Never invents a performance verdict. */
 export function comparePathReports(a:EmeraldReport,b:EmeraldReport){
  if(a.pathVersion!==b.pathVersion)return {status:'blocked' as const,reason:'Versions de parcours différentes.'};
+ if((a.configuration.modelId??'emerald-square')!==(b.configuration.modelId??'emerald-square'))return {status:'blocked' as const,reason:'Modèles différents.'};
  if(a.resolution[0]!==b.resolution[0]||a.resolution[1]!==b.resolution[1])return {status:'blocked' as const,reason:'Résolutions différentes.'};
  if(a.configuration.cities!==b.configuration.cities||a.configuration.lodQuality!==b.configuration.lodQuality||a.configuration.detail!==b.configuration.detail)return {status:'blocked' as const,reason:'Configuration de scène différente.'};
  if(a.configuration.engine===b.configuration.engine)return {status:'blocked' as const,reason:'Les deux campagnes utilisent le même moteur.'};
@@ -82,6 +84,7 @@ export function stillFromFrame(input:{
 }
 export function stillsComparable(a:EmeraldReport,b:EmeraldReport){
  if(a.pathVersion!==b.pathVersion)return {status:'blocked' as const,reason:'Versions de parcours différentes.',segments:[] as number[]};
+ if((a.configuration.modelId??'emerald-square')!==(b.configuration.modelId??'emerald-square'))return {status:'blocked' as const,reason:'Modèles différents.',segments:[] as number[]};
  if(a.resolution[0]!==b.resolution[0]||a.resolution[1]!==b.resolution[1])return {status:'blocked' as const,reason:'Résolutions différentes.',segments:[] as number[]};
  if(a.configuration.cities!==b.configuration.cities||a.configuration.lodQuality!==b.configuration.lodQuality||a.configuration.detail!==b.configuration.detail||a.configuration.diagnostic!==b.configuration.diagnostic)return {status:'blocked' as const,reason:'Configuration ou vue de diagnostic différente.',segments:[] as number[]};
  if(a.configuration.engine===b.configuration.engine)return {status:'blocked' as const,reason:'Les deux campagnes utilisent le même moteur.',segments:[] as number[]};

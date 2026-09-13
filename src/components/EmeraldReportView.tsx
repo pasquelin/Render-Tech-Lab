@@ -4,17 +4,19 @@ import { EmeraldCaptureCompare, EmeraldStillCard } from './EmeraldCaptureCompare
 import { MetricGrid } from './ui/MetricGrid.tsx';
 import { ReportSummary } from './ui/ReportSummary.tsx';
 import { BENCH_ENGINES } from '../../15-virtualized-integration/implementation/engines.ts';
+import { modelById } from '../../15-virtualized-integration/index.ts';
 
 function engineLabel(id:string){return BENCH_ENGINES.find(engine=>engine.id===id)?.label??id;}
 
 export function EmeraldReportView({ report, history = [] }: { report: EmeraldReport; history?: EmeraldReport[] }) {
   const engines = report.pathEngines?.length ? report.pathEngines : enginesInStills(report);
+  const modelLabel = modelById(report.configuration.modelId ?? 'emerald-square')?.label ?? report.configuration.modelId ?? 'Modèle inconnu';
   const global = summarizeEmerald(report.samples);
   return (
     <div className="space-y-4" data-emerald-report={report.id}>
-      <ReportSummary title="Résumé de navigation">
+      <ReportSummary title={`Résumé de navigation · ${modelLabel}`}>
         {report.error ? <p role="alert" className="text-sm text-error">{report.error}</p> : null}
-        <p className="text-xs">{new Date(report.timestamp).toLocaleString('fr-FR')} · {report.configuration.cities} ville(s) · géométrie partagée · instances ×{report.multipliedInstances ?? report.configuration.cities} · {report.configuration.lodQuality ?? report.configuration.detail} · {(engines.length?engines: [report.configuration.engine]).map(engineLabel).join(' · ')} · {report.configuration.diagnostic} · {report.resolution.join(' × ')} px</p>
+        <p className="text-xs">{new Date(report.timestamp).toLocaleString('fr-FR')} · {report.configuration.cities} instance(s) du modèle · géométrie partagée · instances ×{report.multipliedInstances ?? report.configuration.cities} · {report.configuration.lodQuality ?? report.configuration.detail} · {(engines.length?engines: [report.configuration.engine]).map(engineLabel).join(' · ')} · {report.configuration.diagnostic} · {report.resolution.join(' × ')} px</p>
         <MetricGrid items={[
           { label: 'Première image depuis le clic', value: number(report.firstImageMs, 1), unit: 'ms' },
           { label: 'Préparation SDK', value: number(report.preparationMs, 1), unit: 'ms' },

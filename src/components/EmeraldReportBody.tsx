@@ -10,7 +10,7 @@ export function EmeraldReportBody() {
       {(view.history ?? []).length
         ? (view.history ?? []).map((report, index) => (
           <Button key={report.id} variant="secondary" disabled={state.running} onClick={() => view.showReport(report.id)}>
-            {index === 0 ? 'Voir le rapport' : `Rapport ${index + 1}`} · {report.configuration.cities} ville(s) · {report.status}
+            {index === 0 ? 'Voir le rapport' : `Rapport ${index + 1}`} · {report.configuration.cities} instance(s) · {report.status}
           </Button>
         ))
         : <p className="text-xs text-base-content/60">Aucune exécution enregistrée.</p>}

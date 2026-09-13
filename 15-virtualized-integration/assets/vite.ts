@@ -23,7 +23,7 @@ export function createEmeraldAssetsPlugin(): Plugin {
      res.setHeader('Content-Type',type[extname(target)]);res.setHeader('Content-Length',info.size);res.setHeader('Cache-Control','no-cache');
      if(req.method==='HEAD'){res.end();return;}
      const stream=createReadStream(target);res.once('close',()=>stream.destroy());stream.on('error',()=>res.destroy());stream.pipe(res);
-    }catch{fail(404,'Emerald cache resource missing; run npm run prepare:emerald');}
+    }catch{fail(404,'Model cache resource missing; run pnpm prepare:models');}
    })().catch(()=>{res.statusCode=500;res.end();});
   });
  }};

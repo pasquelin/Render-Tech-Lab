@@ -8,13 +8,14 @@ import { BENCH_ENGINES, PATH_CAMPAIGN_ENGINES, benchEngine, factoriesFor, needsR
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
 import { LabContext } from './LabContext.tsx';
-import { checkEmeraldAvailability, emeraldManifestUrl } from '../lab/emeraldAvailability.ts';
+import { checkModelAvailability, modelManifestUrl } from '../lab/emeraldAvailability.ts';
+import { modelById } from '../../15-virtualized-integration/index.ts';
 import { LabShell } from './LabShell.tsx';
 import { formatEmeraldDiagnosticReport } from '../lab/emeraldReportMarkdown.ts';
-import { parseMarkdownToHtml } from '../lab/markdown.ts';
+import { loadMarkdownReport } from '../lab/reportReader.ts';
 const historyKey='render-tech-lab:emerald-runs:v1';
 const CLUSTER_VIEWS:ReadonlyArray<EmeraldConfig['diagnostic']>=['clusters','pages','lod','visibility','screen-error'];
-const LAUNCH_KEYS:ReadonlyArray<keyof EmeraldConfig>=['cities','detail','lodQuality','mode'];
+const LAUNCH_KEYS:ReadonlyArray<keyof EmeraldConfig>=['modelId','cities','detail','lodQuality','mode'];
 const PATH_KEYS:ReadonlyArray<keyof EmeraldConfig>=['engine','diagnostic','camera','poi'];
 function applyLiveConfig(owned:Explorer,next:EmeraldConfig,previous:EmeraldConfig,controls:{current:ReturnType<Explorer['controls']>|ReturnType<Explorer['flyControls']>|undefined}){
  const cluster=CLUSTER_VIEWS.includes(next.diagnostic);
@@ -42,18 +43,15 @@ function applyLiveConfig(owned:Explorer,next:EmeraldConfig,previous:EmeraldConfi
  }
  return {...next,engine,diagnostic,layout:'single' as const};
 }
-function readHistory():EmeraldReport[]{try{const value=JSON.parse(localStorage.getItem(historyKey)??'[]');return Array.isArray(value)?value.filter(r=>r.version===1&&Array.isArray(r.samples)&&r.configuration).slice(0,5):[];}catch{return [];}}
+function readHistory():EmeraldReport[]{try{const value=JSON.parse(localStorage.getItem(historyKey)??'[]');return Array.isArray(value)?value.filter(r=>r.version===1&&Array.isArray(r.samples)&&r.configuration).slice(0,2):[];}catch{return [];}}
 type Display=Pick<EmeraldView,'status'|'message'|'progress'|'metrics'|'frameIntervalMs'|'position'>;
 const initialDisplay:Display={status:'idle',message:'Choisissez une exploration libre ou un parcours reproductible. Les mesures décrivent cette navigation, sans verdict A/B.',progress:null,metrics:null,frameIntervalMs:null,position:''};
 const engineLabel=(id:string)=>BENCH_ENGINES.find(engine=>engine.id===id)?.label??id;
-const emeraldReportPath='reports/15-virtualized-integration.md & 15-virtualized-integration/results/REPORT.md';
+const emeraldReportPath='reports/15-virtualized-integration/campaign-<id>/';
 async function archiveEmeraldReport(report:EmeraldReport){
  const markdown=formatEmeraldDiagnosticReport(report);
- const latest={...report,captures:report.captures.map(({image,...capture})=>capture),captureArchive:'benchmark-runs/checks/emerald-path/latest.json'};
- const saved=await fetch('/api/save-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',markdown,latest})});
+ const saved=await fetch('/api/save-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',markdown,latest:report,engineEvents:report.engineEvents})});
  if(!saved.ok)throw new Error(`Archive HTTP ${saved.status}`);
- const evidence=await fetch('/api/emerald-archive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(report)});
- if(!evidence.ok)throw new Error(`Archive des images HTTP ${evidence.status}`);
  return markdown;
 }
 function retireCanvas(ref:RefObject<HTMLCanvasElement|null>){
@@ -83,22 +81,25 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
  const [history,setHistory]=useState<EmeraldReport[]>(readHistory),[report,setReport]=useState<EmeraldReport|null>(null),[liveBackends,setLiveBackends]=useState<string[]>([]);
  const [reportModal,setReportModal]=useState(()=>initialSnapshot('15-virtualized-integration').reportModal);
  const finishRef=useRef<(status:EmeraldReport['status'],error?:string)=>void>(()=>{});
- useEffect(()=>{const abort=new AbortController();setAvailability({status:'checking',message:'Vérification du cache préparé…'});void checkEmeraldAvailability(fetch,abort.signal).then(triangles=>{if(!abort.signal.aborted){setAvailableTriangles(triangles);setAvailability({status:'ready',message:`Cache disponible · ${triangles.toLocaleString('fr-FR')} triangles par ville.`});}}).catch(error=>{if(!abort.signal.aborted)setAvailability({status:'error',message:String(error.message)});});return()=>abort.abort();},[availabilityAttempt]);
+ useEffect(()=>{const abort=new AbortController(),modelId=config.modelId??'emerald-square';setAvailability({status:'checking',message:'Vérification du cache préparé…'});void checkModelAvailability(modelId,fetch,abort.signal).then(triangles=>{if(!abort.signal.aborted){setAvailableTriangles(triangles);setAvailability({status:'ready',message:`Cache disponible · ${triangles.toLocaleString('fr-FR')} triangles par modèle.`});}}).catch(error=>{if(!abort.signal.aborted)setAvailability({status:'error',message:String(error.message)});});return()=>abort.abort();},[availabilityAttempt,config.modelId]);
  useEffect(()=>{
   if(!enabled||!webglRef.current)return;
   const abort=new AbortController(),started=performance.now();let owned:Explorer|undefined,frame=0,resize:ResizeObserver|undefined,finished=false;
   const pathCampaign=config.mode==='path';
   const queue=pathCampaign?[...PATH_CAMPAIGN_ENGINES]:[config.engine];
-  const run:EmeraldReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'Le contrôle A/A de la ville complète reste instable : la comparaison visuelle est synchronisée, le verdict de performance reste bloqué.'};
+ const run:EmeraldReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'Le contrôle A/A du modèle complet reste instable : la comparaison visuelle est synchronisée, le verdict de performance reste bloqué.'};
+ const log=(level:EmeraldReport['engineEvents'][number]['level'],phase:string,message:string,context:Record<string,unknown>={})=>run.engineEvents.push({timestamp:new Date().toISOString(),level,phase,message,context});
+ log('info','created','Campagne créée',{modelId:config.modelId??'emerald-square',engines:queue,resolution:run.resolution,instances:config.cities});
   campaignRef.current=run;
   const drop=()=>{cancelAnimationFrame(frame);resize?.disconnect();resize=undefined;controlsRef.current?.dispose();controlsRef.current=undefined;if(explorerRef.current===owned)explorerRef.current=undefined;owned?.dispose();owned=undefined;THREE.Cache.clear();};
-  const finish=(status:EmeraldReport['status'],error?:string)=>{if(finished)return;finished=true;run.status=status;run.error=error??null;drop();abort.abort();setEnabled(false);setReport(run);setHistory(previous=>{const next=retainReports(previous,run);try{localStorage.setItem(historyKey,JSON.stringify(next));}catch{run.error=[run.error,'Historique conservé en mémoire : stockage local indisponible. Exportez le rapport.'].filter(Boolean).join(' ');}return next;});void archiveEmeraldReport(run).catch(archiveError=>setDisplay(old=>({...old,message:`${old.message} Archivage à réessayer : ${String(archiveError)}`})));setDisplay(old=>({...old,status,message:error??(status==='completed'?'Parcours terminé. Rapport archivé avec les captures et compteurs de diagnostic.':'Exploration arrêtée. Les ressources ont été libérées.'),progress:null,metrics:null,frameIntervalMs:null}));};
+  const finish=(status:EmeraldReport['status'],error?:string)=>{if(finished)return;finished=true;run.status=status;run.error=error??null;log(status==='error'?'error':'info','finished',error??`Campagne ${status}`,{samples:run.samples.length,captures:run.captures.length,fallbacks:run.fallbacks});drop();abort.abort();setEnabled(false);setReport(run);setHistory(previous=>{const next=retainReports(previous,run);try{localStorage.setItem(historyKey,JSON.stringify(next));}catch{run.error=[run.error,'Historique conservé en mémoire : stockage local indisponible. Exportez le rapport.'].filter(Boolean).join(' ');}return next;});void archiveEmeraldReport(run).catch(archiveError=>setDisplay(old=>({...old,message:`${old.message} Archivage à réessayer : ${String(archiveError)}`})));setDisplay(old=>({...old,status,message:error??(status==='completed'?'Parcours terminé. Rapport archivé avec les captures et compteurs de diagnostic.':'Exploration arrêtée. Les ressources ont été libérées.'),progress:null,metrics:null,frameIntervalMs:null}));};
   finishRef.current=finish;
   void(async()=>{try{
    const {createExplorer}=await import('@web-geometry/sdk/browser');
    for(let enginePass=0;enginePass<queue.length;enginePass++){
     if(abort.signal.aborted||finished)return;
     const engineId=queue[enginePass];
+    log('info','engine-start','Initialisation du moteur',{engine:engineId,index:enginePass,total:queue.length});
     setDisplay({status:'loading',message:`${engineLabel(engineId)} · canvas isolé`,progress:pathCampaign?{completed:enginePass,total:queue.length}:null,metrics:null,frameIntervalMs:null,position:''});
     if(enginePass>0){drop();await yieldFrame();if(abort.signal.aborted||finished)return;}
     const canvas=enginePass>0?retireCanvas(webglRef):webglRef.current;
@@ -107,18 +108,20 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     const width=Math.max(1,Math.round(box.width)),height=Math.max(1,Math.round(box.height));
     if(enginePass===0)run.resolution=[width,height];
     else if(width!==run.resolution[0]||height!==run.resolution[1])throw new Error('La résolution a changé entre les moteurs. Relancez pour conserver un protocole identique.');
-    owned=await createExplorer(canvas,{manifestUrl:emeraldManifestUrl,scope:'full',signal:abort.signal,width,height,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:needsResidentPages(engineId,engineId)?'all':'visible',backends:pathCampaign?[benchEngine(engineId).factory]:factoriesFor(config.engine,config.engine,config.diagnostic),comparisonLayout:'single',comparisonPair:[engineId,engineId],onPreparation:progress=>{if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
+    owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId??'emerald-square'),scope:'full',signal:abort.signal,width,height,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:needsResidentPages(engineId,engineId)?'all':'visible',backends:pathCampaign?[benchEngine(engineId).factory]:factoriesFor(config.engine,config.engine,config.diagnostic),comparisonLayout:'single',comparisonPair:[engineId,engineId],onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:progress.total});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
     if(abort.signal.aborted){drop();return;}
     if(!owned)throw new Error('Canvas Emerald absent');
     const session=owned;
     explorerRef.current=session;
     setLiveBackends(owned.backends.map(backend=>backend.id));
     run.preparationMs=(run.preparationMs??0)+owned.preparationMs;run.sourceKey=owned.metadata.key;
+    log('info','engine-ready','Moteur prêt',{engine:engineId,backend:owned.backend,preparationMs:owned.preparationMs,sourceKey:run.sourceKey});
     if(!owned.backends.some(backend=>backend.id===engineId))throw new Error(engineId==='webgpu-page-raster'?`Le raster WebGPU n’a pas été créé (adaptateur absent, device perdu ou repli silencieux).`:`Le moteur ${engineLabel(engineId)} n’a pas été créé sur son canvas isolé.`);
     owned.select(engineId);owned.setDiagnostic(pathCampaign?'beauty':config.diagnostic);
     if(!pathCampaign&&config.engine==='webgpu-page-raster'&&owned.backend!=='webgpu-page-raster'&&!run.fallbacks.includes('WebGPU page raster unavailable'))run.fallbacks.push('WebGPU page raster unavailable');
     owned.setComparison('single',[owned.backend,owned.backend],0,0);
     await owned.awaitPages();
+    log('info','pages-ready','Pages requises prêtes',{engine:engineId});
     if(abort.signal.aborted){drop();return;}
     if(config.poi&&!pathCampaign){const poi=owned.pointsOfInterest().find(item=>item.id===config.poi);if(poi)owned.setPose(poi.pose);}
     if(!pathCampaign)controlsRef.current=config.camera==='free'?owned.flyControls():owned.controls();
@@ -193,7 +196,7 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   return()=>{abort.abort();drop();};
  },[enabled,attempt]);
  const running=display.status==='loading'||display.status==='ready';
- const restart=useCallback(()=>{if(running||availability.status!=='ready')return;setDisplay({...initialDisplay,status:'loading',message:'Chargement d’Emerald Square…'});setEnabled(true);setAttempt(v=>v+1);},[running,availability.status]);
+ const restart=useCallback(()=>{if(running||availability.status!=='ready')return;const model=modelById(configRef.current.modelId??'emerald-square');setDisplay({...initialDisplay,status:'loading',message:`Chargement de ${model?.label??'ce modèle'}…`});setEnabled(true);setAttempt(v=>v+1);},[running,availability.status]);
  const stop=useCallback(()=>finishRef.current('stopped'),[]);
  const availableEngines=useMemo(()=>BENCH_ENGINES.map(engine=>({id:engine.id,label:engine.label,available:!liveBackends.length||liveBackends.includes(engine.id)})),[liveBackends]);
  const commitConfig=useCallback((patch:Partial<EmeraldConfig>)=>{
@@ -218,22 +221,20 @@ export function EmeraldLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   const next=initialSnapshot('15-virtualized-integration');
   next.running=running;
   next.execution={status:running?'running':display.status==='idle'?'idle':display.status==='error'?'error':display.status==='completed'?'completed':'stopped',phase:display.message,lastCampaign:null};
-  next.benchLabel=config.mode==='path'?'Lancer le parcours urbain':'Explorer Emerald Square';
-  if(display.status!=='idle'&&!running)next.benchLabel=config.mode==='path'?'Relancer le parcours urbain':'Relancer Emerald Square';
+  const modelLabel=modelById(config.modelId??'emerald-square')?.label??'le modèle';
+  next.benchLabel=config.mode==='path'?'Lancer le parcours du modèle':`Explorer ${modelLabel}`;
+  if(display.status!=='idle'&&!running)next.benchLabel=config.mode==='path'?'Relancer le parcours du modèle':`Relancer ${modelLabel}`;
   next.reportModal=reportModal;
   return next;
  },[running,display.status,display.message,config.mode,reportModal]);
  const openReport=useCallback(async()=>{
   if(running)return;
-  if(history[0])showReport(history[0].id);
   setReportModal(current=>({...current,open:true,title:'Rapport d’analyse R&D — 15-virtualized-integration',path:emeraldReportPath,raw:'',html:'<p>Chargement du rapport depuis le disque…</p>',feedback:''}));
   try{
-   const [markdownResponse,evidenceResponse]=await Promise.all([fetch('/api/get-report?testId=15-virtualized-integration'),fetch('/api/emerald-archive')]);
-   const raw=await markdownResponse.text();
-   if(evidenceResponse.ok){const saved=await evidenceResponse.json() as EmeraldReport;if(saved.version===1&&Array.isArray(saved.captures)){setReport(saved);setConfig({...defaultEmeraldConfig,...saved.configuration});}}
-   setReportModal(current=>({...current,raw:markdownResponse.ok?raw:'',html:markdownResponse.ok?parseMarkdownToHtml(raw):`<p>${raw}</p>`}));
+   const report=await loadMarkdownReport(fetch,'15-virtualized-integration');
+   setReportModal(current=>({...current,raw:report.ok?report.raw:'',html:report.ok?'':`<p>${report.raw}</p>`,feedback:report.feedback}));
   }catch(error){setReportModal(current=>({...current,html:`<p>Erreur réseau : ${String(error)}</p>`}));}
- },[running,history,showReport]);
+ },[running]);
  const copyReport=useCallback(()=>{const raw=reportModal.raw;if(!raw)return;void navigator.clipboard.writeText(raw).then(()=>setReportModal(current=>({...current,feedback:'Markdown copié dans le presse-papier.'}))).catch(()=>setReportModal(current=>({...current,feedback:'Copie indisponible.'})));},[reportModal.raw]);
  const openFinder=useCallback(()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:'15-virtualized-integration',folder:'reports'})}).then(response=>response.json()).then(data=>setReportModal(current=>({...current,feedback:`Finder ouvert : ${data.targetFile??data.targetDir??'reports/'}`}))).catch(()=>setReportModal(current=>({...current,feedback:'Rapports : ./reports/'})));},[]);
  const actions=useMemo<LabActions>(()=>({newExecution:()=>{if(!running){setEnabled(false);setReport(null);setDisplay(initialDisplay);}},switchModule:id=>{if(!running)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},runBenchmark:restart,stopBenchmark:stop,runPain:stop,openReport,closeReport:()=>setReportModal(current=>({...current,open:false,feedback:''})),copyReport,refreshReport:openReport,openFinder }),[running,restart,stop,openReport,copyReport,openFinder]);

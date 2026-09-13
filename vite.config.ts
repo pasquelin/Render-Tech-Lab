@@ -6,8 +6,30 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { directoryRetention } from './shared/archive/index.ts';
+import { Readable } from 'node:stream';
+import { writeReportArchive, writeStreamedReportArchive } from './shared/archive/index.ts';
+
+async function streamedReportRequest(req: NodeJS.ReadableStream) {
+  const iterator = req[Symbol.asyncIterator]();
+  let header = Buffer.alloc(0), rest: Buffer | null = null;
+  for (;;) {
+    const next = await iterator.next();
+    if (next.done) throw new Error('En-tête de rapport manquant.');
+    header = Buffer.concat([header, Buffer.from(next.value)]);
+    const newline = header.indexOf(10);
+    if (newline < 0) {
+      if (header.byteLength > 1024 * 1024) throw new Error('En-tête de rapport trop volumineux.');
+      continue;
+    }
+    rest = header.subarray(newline + 1);
+    header = header.subarray(0, newline);
+    break;
+  }
+  const metadata = JSON.parse(header.toString('utf8')) as { testId?: unknown; markdown?: unknown };
+  if (typeof metadata.testId !== 'string' || typeof metadata.markdown !== 'string') throw new Error('En-tête de rapport invalide.');
+  async function* body() { if (rest?.byteLength) yield rest; for (;;) { const next = await iterator.next(); if (next.done) return; yield Buffer.from(next.value); } }
+  return { header: { testId: metadata.testId, humanMarkdown: metadata.markdown }, result: Readable.from(body()) };
+}
 
 function saveReportPlugin(): Plugin {
   return {
@@ -16,6 +38,16 @@ function saveReportPlugin(): Plugin {
       // 1. Sauvegarde du rapport Markdown sur disque
       server.middlewares.use('/api/save-report', (req, res) => {
         if (req.method === 'POST') {
+          if (req.headers['content-type'] === 'application/x-rtl-streamed-report') {
+            void (async () => {
+              try {
+                const { header, result } = await streamedReportRequest(req);
+                const saved = await writeStreamedReportArchive(server.config.root, header, result);
+                res.statusCode = 200; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ success: true, ...saved }));
+              } catch (error) { res.statusCode = 400; res.end(JSON.stringify({ error: error instanceof Error ? error.message : String(error) })); }
+            })();
+            return;
+          }
           let body = '';
           req.on('data', (chunk) => {
             body += chunk;
@@ -27,32 +59,11 @@ function saveReportPlugin(): Plugin {
               const markdown = data.markdown;
 
               if (markdown) {
-                // Sauvegarde locale au module
-                const testReportPath = path.resolve(server.config.root, testId, 'results', 'REPORT.md');
-                fs.mkdirSync(path.dirname(testReportPath), { recursive: true });
-                fs.writeFileSync(testReportPath, markdown, 'utf-8');
-
-                // Sauvegarde synchronisée dans reports/
-                const globalReportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
-                fs.mkdirSync(path.dirname(globalReportPath), { recursive: true });
-                fs.writeFileSync(globalReportPath, markdown, 'utf-8');
-
-                if (data.latest && typeof data.latest === 'object') {
-                  const campaignsDir = path.resolve(server.config.root, testId, 'results', 'campaigns');
-                  const campaignDir = path.join(campaignsDir, `campaign-${randomUUID()}`);
-                  fs.mkdirSync(campaignDir, { recursive: true });
-                  fs.writeFileSync(path.join(campaignDir, 'raw.json'), `${JSON.stringify({ archivedAt: data.latest.timestamp ?? new Date().toISOString(), result: data.latest }, null, 2)}\n`, 'utf-8');
-                  fs.writeFileSync(path.join(campaignDir, 'report.md'), markdown, 'utf-8');
-                  const latestPath = path.resolve(server.config.root, testId, 'results', 'latest.json');
-                  const temporaryLatest = `${latestPath}.${randomUUID()}.tmp`;
-                  fs.writeFileSync(temporaryLatest, `${JSON.stringify(data.latest, null, 2)}\n`, 'utf-8');
-                  fs.renameSync(temporaryLatest, latestPath);
-                  await directoryRetention(campaignsDir, 'campaign-', true);
-                }
+                const saved = await writeReportArchive(server.config.root, { testId, markdown, latest: data.latest && typeof data.latest === 'object' ? data.latest : undefined, engineEvents: Array.isArray(data.engineEvents) ? data.engineEvents : undefined });
 
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ success: true, testReportPath, globalReportPath }));
+                res.end(JSON.stringify({ success: true, ...saved }));
                 return;
               }
             } catch (err: any) {
@@ -119,20 +130,19 @@ function saveReportPlugin(): Plugin {
           const url = new URL(req.url || '', 'http://localhost');
           const rawId = url.searchParams.get('testId') || '01-indirect-draw';
           const testId = path.basename(rawId);
-          const reportPath = path.resolve(server.config.root, 'reports', `${testId}.md`);
-          const localReportPath = path.resolve(server.config.root, testId, 'results', 'REPORT.md');
+          const indexPath = path.resolve(server.config.root, 'reports', testId, 'latest.json');
+          const latest = fs.existsSync(indexPath) ? JSON.parse(fs.readFileSync(indexPath, 'utf8')).reportPackage : null;
+          const reportPath = typeof latest === 'string' && /^[A-Za-z0-9-]+$/.test(latest) ? path.resolve(server.config.root, 'reports', testId, latest, 'REPORT.md') : null;
+          const requestedPreview = Number(url.searchParams.get('previewBytes'));
 
-          let content = '';
-          if (fs.existsSync(reportPath)) {
-            content = fs.readFileSync(reportPath, 'utf-8');
-          } else if (fs.existsSync(localReportPath)) {
-            content = fs.readFileSync(localReportPath, 'utf-8');
-          }
-
-          if (content) {
+          const existing = reportPath && fs.existsSync(reportPath) ? reportPath : null;
+          if (existing) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.end(content);
+            const size = fs.statSync(existing).size;
+            const preview = Number.isSafeInteger(requestedPreview) && requestedPreview > 0 ? Math.min(requestedPreview, size) : size;
+            if (preview < size) res.setHeader('X-Report-Truncated', 'true');
+            fs.createReadStream(existing, { start: 0, end: Math.max(0, preview - 1) }).on('error', error => { if (!res.writableEnded) { res.statusCode = 500; res.end(`Erreur serveur : ${error.message}`); } }).pipe(res);
           } else {
             res.statusCode = 404;
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -146,6 +156,25 @@ function saveReportPlugin(): Plugin {
 
       server.middlewares.use('/api/get-report', handleGetReport);
       server.middlewares.use('/api/read-report', handleGetReport);
+      server.middlewares.use('/api/report-artifact', (req, res) => {
+        try {
+          const url = new URL(req.url || '', 'http://localhost');
+          const packagePath = String(url.searchParams.get('package') || '');
+          const file = String(url.searchParams.get('file') || '');
+          if (!/^\d\d-[a-z0-9-]+\/campaign-[a-z0-9-]+$/.test(packagePath) || !/^(objects|logs|media)\/[a-zA-Z0-9._-]+$/.test(file)) throw new Error('Chemin de rapport invalide');
+          const base = path.resolve(server.config.root, 'reports', packagePath);
+          const target = path.resolve(base, file);
+          if (!target.startsWith(`${base}${path.sep}`) || !fs.statSync(target).isFile()) throw new Error('Artefact absent');
+          const extension = path.extname(target).toLowerCase();
+          const types: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.json': 'application/json', '.gz': 'application/gzip', '.jsonl': 'application/x-ndjson' };
+          res.statusCode = 200;
+          res.setHeader('Content-Type', types[extension] || 'application/octet-stream');
+          fs.createReadStream(target).pipe(res);
+        } catch {
+          res.statusCode = 404;
+          res.end('Artefact de rapport introuvable.');
+        }
+      });
 
       // 3. Lecture des métriques latest.json pour le module
       server.middlewares.use('/api/get-latest', (req, res) => {

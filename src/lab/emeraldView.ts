@@ -3,13 +3,14 @@ import type { EmeraldConfig, EmeraldReport } from './emeraldCampaign.ts';
 import type { BenchEngineId } from '../../15-virtualized-integration/index.ts';
 export type IntegrationScene = 'emerald' | 'procedural';
 export const INTEGRATION_SCENE_OPTIONS = [
-  { value: 'emerald' as const, title: 'Emerald Square', detail: 'Ville réelle, texturée, navigable.' },
+  { value: 'emerald' as const, title: 'Modèles préparés', detail: 'Modèles complets, texturés et navigables.' },
   { value: 'procedural' as const, title: 'Fixture procédurale', detail: 'Petite scène déterministe pour les contrôles algorithmiques.' },
 ];
 export type EmeraldView = {
  status:'idle'|'loading'|'ready'|'completed'|'stopped'|'error';message:string;
  availability:{status:'checking'|'ready'|'error';message:string};retryAvailability():void;
  progress:{completed:number;total:number}|null;metrics:FrameMetrics|null;frameIntervalMs:number|null;position:string;surfaceKey:string;
+ telemetry?:any;
  config:EmeraldConfig;setConfig(value:Partial<EmeraldConfig>):void;
  availableEngines:Array<{id:BenchEngineId;label:string;available:boolean}>;
  selectEngine(id:BenchEngineId):void;

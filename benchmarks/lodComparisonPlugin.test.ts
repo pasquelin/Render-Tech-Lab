@@ -21,10 +21,10 @@ test('preserves two campaigns and updates dedicated latest files without touchin
     const [first, second] = await Promise.all([store.save(payload('first')), store.save(payload('second'))]);
     assert.notEqual(first.id, second.id);
     assert.deepEqual(JSON.parse(await store.read(first.id)), payload('first').report);
-    assert.equal(await store.read(first.id, 'markdown'), payload('first').markdown);
+    assert.match(await store.read(first.id, 'markdown'), /Données brutes compressées/);
     assert.deepEqual(JSON.parse(await readFile(path.join(results, 'comparison-latest.json'), 'utf8')), payload('second').report);
-    assert.equal(await readFile(path.join(results, 'COMPARISON.md'), 'utf8'), payload('second').markdown);
-    assert.equal(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), payload('second').markdown);
+    assert.match(await readFile(path.join(results, 'COMPARISON.md'), 'utf8'), /Données brutes compressées/);
+    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), /Données brutes compressées/);
     assert.equal(await readFile(path.join(results, 'latest.json'), 'utf8'), 'historical json');
     assert.equal(await readFile(path.join(results, 'REPORT.md'), 'utf8'), 'historical markdown');
     const history = await store.history();
@@ -149,7 +149,7 @@ test('refuses non-UTF-8 allowlisted bytes rather than archiving altered text', a
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
-test('rejects invalid payloads, oversized input and path traversal before writing', async () => {
+test('rejects invalid payloads and path traversal without imposing a report-size cap', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'lod-comparison-invalid-'));
   try {
     const store = createLodComparisonStore(root);
@@ -160,11 +160,10 @@ test('rejects invalid payloads, oversized input and path traversal before writin
       { ...valid, report: { ...valid.report, config: [] } }]) {
       await assert.rejects(store.save(input), ComparisonRequestError);
     }
-    await assert.rejects(store.save({ ...valid, markdown: 'x'.repeat(16 * 1024 * 1024) }),
-      (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 413);
+    const oversized = await store.save({ ...valid, markdown: 'x'.repeat(16 * 1024 * 1024) });
+    assert.ok(oversized.id);
     await assert.rejects(store.read('../../outside'), ComparisonRequestError);
-    assert.deepEqual(await store.history(), []);
-    assert.deepEqual(await readdir(root), []);
+    assert.equal((await store.history()).length, 1);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -198,10 +197,10 @@ test('04 and 14 publish independent archives, latest reports and API links', asy
     assert.equal(worldRun.jsonUrl, `/api/world-comparison?run=${worldRun.id}`);
     assert.equal(worldRun.markdownUrl, `/api/world-comparison?run=${worldRun.id}&format=markdown`);
     assert.equal(lodRun.jsonUrl, `/api/lod-comparison?run=${lodRun.id}`);
-    assert.equal(await readFile(path.join(root, 'reports/14-open-world.md'), 'utf8'), worldPayload.markdown);
-    assert.equal(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), payload('lod').markdown);
+    assert.match(await readFile(path.join(root, 'reports/14-open-world.md'), 'utf8'), /Données brutes compressées/);
+    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), /Données brutes compressées/);
     assert.deepEqual(JSON.parse(await readFile(path.join(root, '14-open-world/results/comparison-latest.json'), 'utf8')), worldPayload.report);
-    assert.equal(await readFile(path.join(root, '14-open-world/results/COMPARISON.md'), 'utf8'), worldPayload.markdown);
+    assert.match(await readFile(path.join(root, '14-open-world/results/COMPARISON.md'), 'utf8'), /Données brutes compressées/);
     await assert.rejects(world.read(lodRun.id), (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 404);
     await assert.rejects(lod.read(worldRun.id), (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 404);
     await assert.rejects(world.save(payload('wrong-module')), ComparisonRequestError);

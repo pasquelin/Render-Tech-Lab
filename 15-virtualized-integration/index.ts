@@ -1,4 +1,5 @@
 export { manifest } from './manifest.ts';
+export { benchmarkModels, modelById, type BenchmarkModel } from './assets/modelCatalog.ts';
 export type * from './contracts.ts';
 export { VIRTUALIZED_MODULE } from './implementation/presentation.ts';
 export * from './runner/index.ts';

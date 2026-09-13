@@ -3,6 +3,7 @@ import { EmeraldLab } from './EmeraldLab.tsx';
 import type { IntegrationScene } from '../lab/emeraldView.ts';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { parseMarkdownToHtml } from '../lab/markdown.ts';
+import { loadMarkdownReport } from '../lab/reportReader.ts';
 import { LabSession } from '../lab/bootLab.ts';
 import { initialSnapshot, type LabActions, type LabSnapshot } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
@@ -41,7 +42,7 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
         setState(initialSnapshot('00-baseline'));
         setActions({ ...idleActions, openReport: async () => {
           patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline.md', html: '<p>Chargement du rapport…</p>' } });
-          try { const response = await fetch('/api/get-report?testId=00-baseline'); const text = await response.text(); patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline.md', raw: text, html: response.ok ? parseMarkdownToHtml(text) : `<p>${text}</p>` } }); } catch { /* visible loading state remains */ }
+          try { const report = await loadMarkdownReport(fetch, '00-baseline'); patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline.md', raw: report.ok ? report.raw : '', html: report.ok ? parseMarkdownToHtml(report.raw) : `<p>${report.raw}</p>`, feedback: report.feedback } }); } catch { /* visible loading state remains */ }
         }, closeReport: () => patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: false } }) });
         return;
       }

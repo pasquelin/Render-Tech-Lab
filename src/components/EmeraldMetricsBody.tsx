@@ -19,7 +19,7 @@ export function EmeraldMetricsBody() {
       <p className="text-xs font-mono text-primary" data-emerald-active-engine={config.engine}>Moteur affiché : {config.engine}</p>
       <LabStats stats={stats} provenance="1000 ÷ intervalle requestAnimationFrame (rAF)" />
       <MetricGrid items={[
-        { label: 'Triangles disponibles', value: number(view.availableTriangles), provenance: 'Manifeste source × nombre de villes' },
+        { label: 'Triangles disponibles', value: number(view.availableTriangles), provenance: 'Manifeste source × nombre d’instances du modèle' },
         { label: 'Triangles sélectionnés', value: number(metrics?.selectedTriangles), provenance: 'Feuilles exactes visibles, hors transparences partagées' },
         { label: 'Triangles soumis', value: number(metrics?.triangles), provenance: 'Compteur de rasterisation Three.js, passes incluses' },
         { label: 'Clusters visibles', value: number(metrics?.clusters), provenance: 'Hiérarchie CPU exacte' },

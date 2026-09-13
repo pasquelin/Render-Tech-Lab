@@ -12,7 +12,7 @@ export function stillFacts(still:EmeraldStill){
   {label:'Backend',value:still.backend},
   {label:'Vue',value:still.diagnostic},
   {label:'LOD',value:still.lodQuality},
-  {label:'Étendue',value:`${still.cities} ville(s)`},
+  {label:'Étendue',value:`${still.cities} instance(s) du modèle`},
   {label:'Résolution',value:`${still.resolution.join(' × ')} px`},
   {label:'FOV / near / far',value:`${number(still.fov,1)}° / ${number(still.near,3)} / ${number(still.far,1)}`},
   {label:'Position',value:still.pose.position.map(value=>number(value,2)).join(' · ')},

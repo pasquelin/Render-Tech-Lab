@@ -15,6 +15,7 @@ import { createIntegratedRunner, isIntegratedRunnerId, type IntegratedMetric, ty
 import { navigateLabRoute } from './navigation.ts';
 import { getSharedDevice, releaseSharedGLRenderer } from '../common/gpuContext.ts';
 import { parseMarkdownToHtml } from './markdown.ts';
+import { loadMarkdownReport } from './reportReader.ts';
 import { BASELINE_00_SCENARIOS, GPU_SCENE_PRESETS, MODULE_DESCRIPTORS } from './modules.ts';
 import { MODULE_SCHEMAS } from './schemas.ts';
 import { LIVE_MODULES } from './catalog.ts';
@@ -465,14 +466,9 @@ export class LabSession {
       },
     });
     try {
-      const response = await fetch(`/api/get-report?testId=${encodeURIComponent(moduleId)}`);
-      if (response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        const text = await response.text();
-        const html =
-          contentType.includes('text/html') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')
-            ? `<div class="text-xs text-base-content/60 font-mono">Rapport archivé dans <code>reports/${moduleId}.md</code>.</div>`
-            : parseMarkdownToHtml(text);
+      const report = await loadMarkdownReport(fetch, moduleId);
+      if (report.ok) {
+        const html = parseMarkdownToHtml(report.raw);
         this.patch({ workbench: { ...this.state.workbench, reportHtml: html } });
       } else {
         this.patch({
@@ -730,28 +726,18 @@ export class LabSession {
       },
     });
     try {
-      const response = await fetch(testId === '15-virtualized-integration' ? '/api/integration-archive' : `/api/get-report?testId=${encodeURIComponent(testId)}`);
-      if (response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        const text = await response.text();
-        if (contentType.includes('text/html') || text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-          this.patch({
-            reportModal: {
-              ...this.state.reportModal,
-              html: `<div class="alert alert-warning text-xs font-mono">⚠️ Rapport Markdown non disponible pour ${testId}.</div>`,
-            },
-          });
-        } else {
-          this.patch({
-            reportModal: {
-              ...this.state.reportModal,
-              raw: text,
-              html: parseMarkdownToHtml(text),
-            },
-          });
-        }
+      const report = await loadMarkdownReport(fetch, testId);
+      if (report.ok) {
+        this.patch({
+          reportModal: {
+            ...this.state.reportModal,
+            raw: report.raw,
+            html: parseMarkdownToHtml(report.raw),
+            feedback: report.feedback,
+          },
+        });
       } else {
-        const errText = (await response.text())
+        const errText = report.raw
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
@@ -1028,12 +1014,12 @@ export class LabSession {
       } else if (moduleId === '04-gpu-lod') {
         this.setBenchStatus('⏳ Exécution de la suite 04-gpu-lod (04A / 04B / 04C)...');
         const lodRunner = new LodBenchmarkRunner();
-        const { summary, markdownReport } = await lodRunner.runFullSuite();
+        const { summary, markdownReport, latestJson } = await lodRunner.runFullSuite();
         try {
           await fetch('/api/save-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ testId: '04-gpu-lod', markdown: markdownReport }),
+            body: JSON.stringify({ testId: '04-gpu-lod', markdown: markdownReport, latest: latestJson }),
           });
         } catch {
           // ignore archive errors

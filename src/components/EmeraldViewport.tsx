@@ -1,12 +1,12 @@
 import type { RefObject } from 'react';
 import { useLab } from './LabContext.tsx';
 import { EmeraldLaunchFields } from './EmeraldLaunchFields.tsx';
-import { EmeraldReportView } from './EmeraldReportView.tsx';
 import { PreparationStation } from './PreparationStation.tsx';
 import { ActionBar } from './ui/ActionBar.tsx';
 import { Button } from './ui/Button.tsx';
 import { LoadingState } from './ui/LoadingState.tsx';
 import { ProgressPanel } from './ui/ProgressPanel.tsx';
+import { modelById } from '../../15-virtualized-integration/index.ts';
 
 export function EmeraldViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElement | null> }) {
   const { emerald: view, state, actions } = useLab();
@@ -40,7 +40,7 @@ export function EmeraldViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasEl
         <PreparationStation
           controls={<EmeraldLaunchFields />}
           presentation={{
-            description: `Emerald Square : ${view.config.mode === 'path' ? 'un parcours urbain reproductible. Un lancement enchaîne Three.js, les pages WebGL2 et le raster WebGPU.' : 'une exploration libre de la ville réelle. Caméra, diagnostic et moteur se règlent à droite pendant le rendu.'}`,
+            description: `${modelById(view.config.modelId ?? 'emerald-square')?.label ?? 'Modèle'} : ${view.config.mode === 'path' ? 'un parcours reproductible. Un lancement enchaîne Three.js, les pages WebGL2 et le raster WebGPU.' : 'une exploration libre du modèle. Caméra, diagnostic et moteur se règlent à droite pendant le rendu.'}`,
             question: 'Comment la navigation se comporte-t-elle à cette étendue et à ce niveau de détail ?',
             protocol: view.config.mode === 'path' ? 'Test automatique : mêmes poses pour chaque moteur, une photo technique par segment. Pas un verdict de performance.' : 'Exploration manuelle. Un seul moteur à l’écran, changeable pendant la navigation. Le verdict de performance reste bloqué.',
             steps: view.config.mode === 'path' ? ['Configurer', 'Lancer le parcours', 'Three.js', 'Pages WebGL2', 'Raster WebGPU', 'Rapport'] : ['Configurer', 'Explorer', 'Ajuster à droite', 'Arrêter', 'Rapport'],
@@ -51,19 +51,19 @@ export function EmeraldViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasEl
               {runAction}
               {view.report ? (
                 <>
-                  <Button variant="secondary" onClick={() => document.querySelector('[data-emerald-report]')?.scrollIntoView({ behavior: 'smooth' })}>Voir le rapport</Button>
+                  <Button variant="secondary" onClick={() => actions.openReport()}>Voir le rapport</Button>
                   <Button variant="ghost" onClick={view.exportReport}>Exporter le rapport JSON</Button>
                 </>
-              ) : view.history[0] ? <Button variant="secondary" onClick={() => view.showReport(view.history[0].id)}>Voir le rapport</Button> : null}
+              ) : view.history[0] ? <Button variant="secondary" onClick={() => actions.openReport()}>Voir le rapport</Button> : null}
             </ActionBar>
           )}
         >
-          {view.report ? <EmeraldReportView report={view.report} history={view.history} /> : (
-            <p className="text-xs" data-emerald-availability={view.availability.status}>
+          <p className="text-xs" data-emerald-availability={view.availability.status}>
+            {view.report ? 'Rapport archivé. Ouvrez « Voir le rapport » pour les captures et le diagnostic.' : <>
               {view.availability.message}
               {view.availability.status === 'error' ? <Button onClick={view.retryAvailability}>Réessayer la disponibilité</Button> : null}
-            </p>
-          )}
+            </>}
+          </p>
         </PreparationStation>
       ) : null}
     </main>

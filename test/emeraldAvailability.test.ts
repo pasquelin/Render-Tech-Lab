@@ -13,7 +13,7 @@ test('missing cache gives an actionable failure without claiming preparation is 
 });
 test('HTML and invalid metadata are rejected', async()=>{
  await assert.rejects(checkEmeraldAvailability((async()=>new Response('<html>')) as typeof fetch),/JSON/);
- await assert.rejects(checkEmeraldAvailability((async()=>json({status:'ready',scope:'full',url:'key/clusters.json'})) as typeof fetch),/Cache Emerald invalide/);
+ await assert.rejects(checkEmeraldAvailability((async()=>json({status:'ready',scope:'full',url:'key/clusters.json'})) as typeof fetch),/Cache de modèle invalide/);
  await assert.rejects(checkEmeraldAvailability((async(url:string)=>json(String(url).endsWith('manifest.json')?{status:'ready',scope:'full',url:'key/clusters.json'}:{status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:1,simplification:false})) as typeof fetch),/pages QEM/);
  await assert.rejects(checkEmeraldAvailability((async(url:string)=>json(String(url).endsWith('manifest.json')?{status:'ready',scope:'full',url:'key/clusters.json'}:{status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:1,simplification:true})) as typeof fetch),/obsolète/);
 });

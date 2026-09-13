@@ -50,4 +50,4 @@ export interface CullingBenchmarkRow {
 }
 
 export type { LabCampaign, LabMetric, LabRunnerOptions } from '../shared/contracts/index.ts';
-export const archiveContract = { endpoint: '/api/save-report', report: 'results/REPORT.md', latest: 'results/latest.json', retention: 5 } as const;
+export const archiveContract = { endpoint: '/api/save-report', report: 'results/REPORT.md', latest: 'results/latest.json', retention: 2 } as const;

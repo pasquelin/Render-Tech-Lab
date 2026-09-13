@@ -2,7 +2,7 @@ import { useLab } from './LabContext.tsx';
 import { ChoiceCard } from './ui/ChoiceCard.tsx';
 
 const scenes = [
-  { id: 'emerald' as const, title: 'Emerald Square', description: 'Explorez la ville réelle et observez les compteurs de navigation. Un parcours reproductible permet de suivre la navigation par étapes ; le comparatif reste indisponible.' },
+  { id: 'emerald' as const, title: 'Modèles préparés', description: 'Explorez l’un des modèles complets et observez les compteurs de navigation. Un parcours reproductible permet de suivre la navigation par étapes ; le comparatif reste indisponible.' },
   { id: 'procedural' as const, title: 'Fixture procédurale', description: 'Exécutez trois contrôles reproductibles pour vérifier la qualité du rendu et le fonctionnement des briques techniques.' },
 ];
 

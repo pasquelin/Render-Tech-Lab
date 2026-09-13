@@ -37,7 +37,7 @@
     "bench:15": "npm run build && node bench/run_integration.mjs",
     "test:world": "node --experimental-strip-types --test 14-open-world/tests/*.test.ts",
     "test:structure": "node --experimental-strip-types --test [01][0-9]-*/tests/contract.test.ts [01][0-9]-*/tests/structure.test.ts test/labArchitecture.test.ts",
-    "prepare:emerald": "node 15-virtualized-integration/assets/prepare-emerald.mjs"
+    "prepare:models": "node --experimental-strip-types 15-virtualized-integration/assets/prepare-models.ts"
   },
   "dependencies": {
     "lucide-react": "^1.44.0",

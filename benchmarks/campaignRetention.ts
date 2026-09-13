@@ -1,7 +1,7 @@
 import { readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-export const CAMPAIGN_RETENTION_LIMIT = 5;
+export const CAMPAIGN_RETENTION_LIMIT = 2;
 
 export async function comparisonRetention(directory: string, apply = false) {
   const names = await readdir(directory).catch(() => [] as string[]);

@@ -12,7 +12,7 @@ export function checkStructure(id: string) {
   for (const file of sources(id)) {
     assert.doesNotMatch(readFileSync(file, 'utf8'), /@deprecated Compatibility entry;/, `${file} is a legacy forwarding module`);
   }
-  for (const entry of ['index.ts', 'manifest.ts', 'contracts.ts', 'README.md', 'docs/hypothesis.md', 'docs/protocol.md', 'docs/limits.md', 'docs/migration.md', 'scenarios/index.ts', 'scenarios/fixtures.ts', 'runner/index.ts', 'implementation', 'tests/contract.test.ts', 'tests/structure.test.ts', 'results/REPORT.md', 'results/latest.json']) {
+  for (const entry of ['index.ts', 'manifest.ts', 'contracts.ts', 'README.md', 'docs/hypothesis.md', 'docs/protocol.md', 'docs/limits.md', 'docs/migration.md', 'scenarios/index.ts', 'scenarios/fixtures.ts', 'runner/index.ts', 'implementation', 'tests/contract.test.ts', 'tests/structure.test.ts']) {
     assert.ok(existsSync(resolve(id, entry)), `${id}/${entry} missing`);
   }
 }

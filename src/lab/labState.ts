@@ -105,7 +105,7 @@ export function emptyModal(): ReportModalState {
   return {
     open: false,
     title: 'Rapport R&D — REPORT.md',
-    path: 'reports/01-indirect-draw.md',
+    path: 'reports/01-indirect-draw/campaign-<id>/',
     html: '',
     raw: '',
     feedback: '',
@@ -130,7 +130,7 @@ export function initialSnapshot(moduleId = '00-baseline'): LabSnapshot {
     },
     benchStatus: 'Prêt pour la campagne de mesure.',
     benchTone: 'text-base-content/80',
-    reportHint: `${moduleId}/results/REPORT.md & reports/`,
+    reportHint: `reports/${moduleId}/campaign-<id>/`,
     telemetryMode: desc.telemetryMode,
     telemetryDetail: desc.telemetryDetail,
     workbench: emptyWorkbench(),

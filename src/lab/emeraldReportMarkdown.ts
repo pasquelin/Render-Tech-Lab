@@ -31,10 +31,9 @@ function table(rows: Array<Array<string | number>>) {
   ].join('\n');
 }
 
-/** Markdown archive for the common report reader. Raw JPEG captures remain in the Emerald evidence archive. */
+/** Human view for the canonical archive. The common archive writer appends the full report and JPEG bytes. */
 export function formatEmeraldDiagnosticReport(report: EmeraldReport) {
   const engines = report.pathEngines.length ? report.pathEngines : [...new Set(report.captures.map(still => still.engine))];
-  const capturePath = 'benchmark-runs/checks/emerald-path/latest.json';
   const sections = [
     '# 15-virtualized-integration — rapport de diagnostic',
     '',
@@ -42,7 +41,7 @@ export function formatEmeraldDiagnosticReport(report: EmeraldReport) {
     '',
     '## Configuration reproductible',
     '',
-    `- Trajet v${report.pathVersion} ; ${report.configuration.cities} ville(s) ; ${report.configuration.detail} ; LOD ${report.configuration.lodQuality}.`,
+    `- Trajet v${report.pathVersion} ; ${report.configuration.cities} instance(s) du modèle ; ${report.configuration.detail} ; LOD ${report.configuration.lodQuality}.`,
     `- Résolution : ${report.resolution.join(' × ')} px ; diagnostic : ${report.configuration.diagnostic} ; géométrie partagée : oui.`,
     `- Moteurs enchaînés : ${engines.map(engineLabel).join(', ') || 'Non renseigné'}.`,
     `- Source : ${report.sourceKey} ; environnement : ${report.environment}.`,
@@ -51,7 +50,7 @@ export function formatEmeraldDiagnosticReport(report: EmeraldReport) {
     '',
     `- ${report.comparisonReason || 'Pas un verdict de performance.'}`,
     '- CPU frame correspond à l’appel complet de rendu ; CPU submit, GPU et VRAM : non mesurés.',
-    `- Les JPEG, poses exactes et données brutes de chaque image sont archivés dans \`${capturePath}\`.`,
+    '- Les JPEG, poses exactes et données brutes de chaque image sont intégrés au bloc machine du présent Markdown.',
     '',
     '## Comparaison par point de parcours',
   ];

@@ -6,9 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import type { Plugin } from 'vite';
-import { atomicWrite, comparisonRetention } from '../shared/archive/index.ts';
+import { atomicWrite, comparisonRetention, writeReportPackage } from '../shared/archive/index.ts';
 
-const MAX_BODY_BYTES = 16 * 1024 * 1024;
 const RUN_ID = /^\d{8}T\d{9}Z-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 const COMMON_SOURCE_FILES = ['benchmarks/lodComparisonPlugin.ts', 'package.json', 'pnpm-lock.yaml'] as const;
 const LOD_SOURCE_FILES = [
@@ -178,9 +177,6 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
   async function save(value: unknown) {
     const payload = validatePayload(value, config.test);
     const serialized = JSON.stringify(payload);
-    if (Buffer.byteLength(serialized) > MAX_BODY_BYTES) {
-      throw new ComparisonRequestError('La campagne dépasse 16 MiB.', 413);
-    }
     const snapshot = validatePayload(JSON.parse(serialized), config.test);
     const operation = pending.then(async () => {
       // Hash the exact retained text; compare before any archive/latest publication.
@@ -190,13 +186,15 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
       await mkdir(archives, { recursive: true });
       await mkdir(reports, { recursive: true });
       const { publishLatest, ...archivedSources } = sources;
+      const packageReport = await writeReportPackage(root, { testId: config.test, id: `campaign-${id}`, humanMarkdown: snapshot.markdown, result: { report: snapshot.report, sources: archivedSources }, archivedAt: snapshot.report.timestamp });
+      const markdown = await readFile(packageReport.markdownPath, 'utf8');
       await writeFile(path.join(archives, `${id}.sources.json`), `${JSON.stringify(archivedSources, null, 2)}\n`, { flag: 'wx' });
-      await writeFile(path.join(archives, `${id}.md`), snapshot.markdown, { flag: 'wx' });
+      await writeFile(path.join(archives, `${id}.md`), markdown, { flag: 'wx' });
       await writeFile(path.join(archives, `${id}.json`), json, { flag: 'wx' });
       if (publishLatest) {
         await atomicWrite(path.join(results, 'comparison-latest.json'), json);
-        await atomicWrite(path.join(results, 'COMPARISON.md'), snapshot.markdown);
-        await atomicWrite(path.join(reports, config.reportFile), snapshot.markdown);
+        await atomicWrite(path.join(results, 'COMPARISON.md'), markdown);
+        await atomicWrite(path.join(reports, config.reportFile), markdown);
       }
       await comparisonRetention(archives, true);
       return { ...runInfo(id, snapshot.report, config.apiBase), published: publishLatest };
@@ -265,19 +263,11 @@ export async function readLodComparisonMetadata(root: string, moduleId: Comparis
 function readBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    let size = 0, exceeded = false;
     req.on('data', (chunk: Buffer) => {
-      if (exceeded) return;
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-      size += bytes.length;
-      if (size > MAX_BODY_BYTES) {
-        exceeded = true;
-        chunks.length = 0;
-        reject(new ComparisonRequestError('La campagne dépasse 16 MiB.', 413));
-      } else chunks.push(bytes);
+      chunks.push(bytes);
     });
     req.on('end', () => {
-      if (exceeded) return;
       try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
       catch { reject(new ComparisonRequestError('JSON invalide.')); }
     });
