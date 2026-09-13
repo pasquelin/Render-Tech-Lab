@@ -14,6 +14,8 @@ export function ModelMetricsBody() {
     fps: view.frameIntervalMs ? `${number(1000 / view.frameIntervalMs, 1)} FPS` : 'Non mesuré',
     drawCalls: number(metrics?.drawCalls),
   };
+  const camera = view.cameraPose;
+  const vector = (values: [number, number, number]) => values.map(value => number(value, 2)).join(' / ');
   return (
     <>
       <p className="text-xs font-mono text-primary" data-model-active-engine={config.engine}>Moteur affiché : {config.engine}</p>
@@ -32,7 +34,12 @@ export function ModelMetricsBody() {
         { label: 'Frustum rejeté', value: number(metrics?.frustumRejected) },
         { label: 'Octets de géométrie comptabilisés', value: number(metrics?.geometryAllocationBytes), provenance: 'Tableaux uniques ; pas mémoire GPU physique' },
       ]} />
-      <p className="text-xs">Caméra : <span data-model-camera data-camera-pose={view.position}>{view.position || 'Au repos'}</span></p>
+      <MetricGrid label="Caméra active" items={[
+        { id: 'model-camera-position', label: 'Position X/Y/Z', value: camera ? vector(camera.position) : 'Non mesuré', provenance: 'Coordonnées monde' },
+        { id: 'model-camera-target', label: 'Regarde vers X/Y/Z', value: camera ? vector(camera.target) : 'Non mesuré', provenance: 'Cible reconstruite depuis la direction de vue' },
+        { id: 'model-camera-projection', label: 'Projection', value: camera ? `FOV ${number(camera.fov, 1)}° · plans ${number(camera.near, 2)}–${number(camera.far, 0)}` : 'Non mesuré', provenance: 'Champ de vision vertical ; plan proche–lointain' },
+        { id: 'model-camera-mode', label: 'Navigation', value: config.camera === 'orbit' ? 'Orbite' : 'Libre', provenance: config.camera === 'orbit' ? 'Rotation, zoom et translation' : 'W/A/S/D, R/F et regard souris' },
+      ]} />
     </>
   );
 }

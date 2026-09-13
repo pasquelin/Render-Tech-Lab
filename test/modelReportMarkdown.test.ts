@@ -30,7 +30,8 @@ const report: ModelReport = {
   environment: 'test browser',
   pathVersion,
   comparison: 'visual-only',
-  comparisonReason: 'Contrôle A/A instable.',
+  comparisonReason: 'Ancienne affirmation à ne pas reprendre.',
+  aaControl: { status: 'not-run' },
 };
 
 test('Model archive explains capture-by-capture engine differences without claiming a performance verdict', () => {
@@ -45,6 +46,35 @@ test('Model archive explains capture-by-capture engine differences without claim
   assert.match(markdown, /CPU frame \(ms\).*5\.00.*7\.00/s);
   assert.match(markdown, /Draw calls.*40.*6/s);
   assert.match(markdown, /Pages résidentes.*4.*5/s);
+  assert.match(markdown, /Position X\/Y\/Z : 1 \/ 2 \/ 3/);
+  assert.match(markdown, /Cible X\/Y\/Z : 4 \/ 5 \/ 6/);
+  assert.match(markdown, /FOV 55° ; plans 0\.1 \/ 1000/);
   assert.match(markdown, /GPU et VRAM : non mesurés/);
+  assert.match(markdown, /A\/A non vérifié pour cette campagne/);
+  assert.doesNotMatch(markdown, /Ancienne affirmation à ne pas reprendre/);
   assert.match(markdown, /Pas un verdict de performance/);
+  assert.match(markdown, /0 images mesurées, 2 captures, 0 événements moteur/);
+  assert.doesNotMatch(markdown, /bloc machine du présent Markdown/);
+});
+
+test('Model archive renders the explicit A/A outcome and still blocks the performance verdict', () => {
+  for (const [status, expected] of [
+    ['passed', 'Contrôle A/A réussi pour cette campagne'],
+    ['failed', 'Contrôle A/A échoué pour cette campagne'],
+    ['not-run', 'A/A non vérifié pour cette campagne'],
+  ] as const) {
+    const markdown = formatModelDiagnosticReport({ ...report, aaControl: { status } });
+    assert.match(markdown, new RegExp(expected));
+    assert.match(markdown, /verdict de performance reste bloqué/);
+  }
+});
+
+test('debug reports state instrumentation cost and retain CPU submit measurements',()=>{
+ const sample={...report.samples[0],cpuSubmitMs:3,backend:'webgpu-page-raster'};
+ const output=formatModelDiagnosticReport({...report,configuration:{...report.configuration,debug:true},samples:[sample],captures:[{...report.captures[0],cpuSubmitMs:3}]});
+ assert.match(output,/Debug : actif/);
+ assert.match(output,/instrumentation/);
+ assert.match(output,/CPU submit : 1 \/ 1/);
+ assert.match(output,/CPU submit \(ms\).*3\.00/);
+ assert.doesNotMatch(output,/CPU submit, GPU et VRAM : non mesurés/);
 });

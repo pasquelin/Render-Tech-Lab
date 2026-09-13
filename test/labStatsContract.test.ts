@@ -52,7 +52,7 @@ test('banks put campaign controls first and show reports only outside a running 
       for (const label of ['CPU submit', 'CPU frame', 'FPS', 'Draw calls']) assert.match(html, new RegExp(`>${label}<`), `${moduleId}: ${label}`);
     }
     const modelConfig = { cities:1 as const, detail:'source' as const, lodQuality:'high' as const, mode:'explore' as const, camera:'orbit' as const, diagnostic:'beauty' as const, layout:'single' as const, engine:'three-webgl-reference' as const, compareEngine:'exact-cluster-pages' as const, wipe:.5 };
-    const model = { config:modelConfig,setConfig(){},availableEngines:[],selectEngine(){},selectDiagnostic(){},availableTriangles:1200,report:null,history:[],showReport(){},exportReport(){},availability: {status:'ready',message:'Cache disponible'}, retryAvailability() {}, status: 'ready', message: 'Ville prête', progress: null, surfaceKey: '0-0', cameraMode: 'orbit', metrics: { cpuFrameMs: 5, drawCalls: 8, triangles: 1200, pageLoads: 3 }, frameIntervalMs: 20, position: '0 · 0 · 0', setCameraMode() {}, stop() {}, restart() {} };
+    const model = { config:modelConfig,setConfig(){},availableEngines:[],selectEngine(){},selectDiagnostic(){},availableTriangles:1200,report:null,history:[],showReport(){},exportReport(){},availability: {status:'ready',message:'Cache disponible'}, retryAvailability() {}, status: 'ready', message: 'Ville prête', progress: null, surfaceKey: '0-0', cameraMode: 'orbit', cameraPose: { position: [1,2,3] as [number,number,number], target: [4,5,6] as [number,number,number], fov: 55, near: 0.1, far: 1000 }, metrics: { cpuFrameMs: 5, drawCalls: 8, triangles: 1200, pageLoads: 3 }, frameIntervalMs: 20, position: '0 · 0 · 0', setCameraMode() {}, stop() {}, restart() {} };
     const idleHtml = renderShell({ state: initialSnapshot('15-virtualized-integration'), actions, model, onIntegrationScene() {} });
     const runningState = initialSnapshot('15-virtualized-integration');
     runningState.running = true;
@@ -61,6 +61,10 @@ test('banks put campaign controls first and show reports only outside a running 
     assert.match(html, /id="stat-fps"[^>]*>50 FPS</);
     assert.match(html, /Provenance FPS : 1000 ÷ intervalle requestAnimationFrame \(rAF\)/);
     assert.match(html, /Métriques spécifiques/);
+    assert.match(html, /Caméra active/);
+    assert.match(html, /Position X\/Y\/Z/);
+    assert.match(html, /Regarde vers X\/Y\/Z/);
+    assert.match(html, /FOV 55° · plans 0,1/);
     assert.doesNotMatch(idleHtml, /id="lab-mode-card"/, 'la configuration de lancement reste dans le panneau principal');
     assert.ok(idleHtml.indexOf('id="model-scene"') < idleHtml.indexOf('id="model-mode"'), 'la scène précède le modèle et le parcours');
     assert.match(idleHtml, /id="model-start-engine"/, 'le moteur peut être choisi avant le premier lancement libre');

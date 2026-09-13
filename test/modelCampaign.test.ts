@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {urbanPath,urbanCheckpoints,pathPoses,streetLevel,framesPerSegment,segmentNames,distribution,retainReports,comparePathReports,stillsInReportComparable,stillFromFrame,pathVersion,type ModelReport} from '../src/lab/modelCampaign.ts';
+import {defaultModelConfig,modelMeasurementKind,urbanPath,urbanCheckpoints,pathPoses,streetLevel,framesPerSegment,segmentNames,distribution,retainReports,comparePathReports,stillsInReportComparable,stillFromFrame,pathVersion,compareModelPixels,aaControlFromChecks,applyAaControlResult,runAaControl,type ModelReport} from '../src/lab/modelCampaign.ts';
+const aaPose={position:[0,0,0] as [number,number,number],target:[0,0,0] as [number,number,number],fov:55,near:.1,far:100};
 test('urban replay is deterministic, has ten named segments and a fast rotation',()=>{const bounds={min:{x:-100,y:0,z:-100},max:{x:100,y:50,z:100}},a=urbanPath(bounds);assert.deepEqual(a,urbanPath(bounds));assert.equal(segmentNames.length,10);assert.equal(a.length,framesPerSegment*segmentNames.length);const rotation=a.filter(p=>p.segment===5);assert.notDeepEqual(rotation[0].pose.position,rotation.at(-1)!.pose.position);assert.deepEqual(a[0].pose.position,a.at(-1)!.pose.position);assert.notDeepEqual(a[0].pose,urbanPath({min:bounds.min,max:{x:400,y:50,z:400}})[0].pose);assert.equal(urbanCheckpoints(bounds).length,10);assert.deepEqual(pathPoses(bounds),a.map(step=>step.pose));});
 test('urban path stays above the street when model geometry straddles y=0 with a basement and a height spike',()=>{
  const bounds={min:{x:-115,y:-5,z:-115},max:{x:115,y:108,z:115}};
@@ -19,6 +20,35 @@ test('summaries contain actual percentiles and history retains two unique runs',
 test('campaign reports preserve structured engine events for the report package',()=>{
  const value=report('exact-cluster-pages');
  assert.deepEqual(value.engineEvents,[]);
+});
+test('A/A control compares complete RGBA pixels and preserves the first failed checkpoint',()=>{
+ const comparison=compareModelPixels(new Uint8Array([1,2,3,255,9,8,7,255]),new Uint8Array([1,4,3,255,9,8,7,255]));
+ assert.deepEqual(comparison,{differentPixels:1,maxChannelError:2});
+ const passed=aaControlFromChecks([{engine:'three-webgl-reference',segment:0,differentPixels:0,maxChannelError:0}]);
+ assert.equal(passed.status,'passed');
+ assert.equal(aaControlFromChecks([{engine:'three-webgl-reference',segment:0,differentPixels:0,maxChannelError:0}],2).status,'not-run');
+ const failed=aaControlFromChecks([{engine:'three-webgl-reference',segment:0,...comparison}]);
+ assert.equal(failed.status,'failed');
+ assert.equal(aaControlFromChecks([{engine:'three-webgl-reference',segment:0,...comparison}],2).status,'failed');
+ assert.match(failed.failure??'',/THREE\.js basic.*Vue générale du modèle.*1 pixel/);
+});
+test('A/A result synchronizes the machine-readable reason with a completed control',()=>{
+ const update=applyAaControlResult({comparisonReason:'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.'},[{engine:'three-webgl-reference',segment:0,differentPixels:0,maxChannelError:0}]);
+ assert.equal(update.aaControl.status,'passed');
+ assert.equal(update.comparisonReason,'Contrôle A/A réussi pour cette campagne. Le verdict de performance reste bloqué : ce contrôle visuel ne valide pas la performance.');
+});
+test('A/A sequence waits for residency and flushes each identical capture before returning diagnostics',async()=>{
+ const calls:string[]=[];
+ const captures=[new Uint8Array([1,2,3,255]),new Uint8Array([1,4,3,255])];
+ const checks=await runAaControl({setPose:()=>calls.push('pose'),awaitPages:async()=>{calls.push('pages');},flush:async()=>{calls.push('flush');},render:()=>calls.push('render'),capture:()=>{calls.push('capture');return captures.shift()!;}},'three-webgl-reference',[{segment:0,pose:aaPose}]);
+ assert.deepEqual(calls,['pose','pages','render','flush','capture','render','flush','capture']);
+ assert.deepEqual(checks,[{engine:'three-webgl-reference',segment:0,differentPixels:1,maxChannelError:2}]);
+});
+test('A/A sequence records later checkpoints after a divergent checkpoint',async()=>{
+ let captures=0;
+ const checks=await runAaControl({setPose:()=>{},awaitPages:async()=>{},flush:async()=>{},render:()=>{},capture:()=>new Uint8Array(captures++===0?[1,2,3,255]:[1,4,3,255])},'three-webgl-reference',[{segment:0,pose:aaPose},{segment:1,pose:aaPose}]);
+ assert.equal(captures,4);
+ assert.deepEqual(checks.map(check=>check.differentPixels),[1,0]);
 });
 function report(engine:ModelReport['configuration']['engine'],mutator?:(value:ModelReport)=>void):ModelReport{
  const bounds={min:{x:-1,y:0,z:-1},max:{x:1,y:1,z:1}};
@@ -50,4 +80,11 @@ test('a path campaign still records engine, pose and counters for each photo',()
  const inside=stillsInReportComparable(campaign);
  assert.equal(inside.status,'comparable');
  assert.deepEqual(inside.engines,['exact-cluster-pages','three-webgl-reference']);
+});
+
+test('debug is enabled by default and its frame samples cannot be official measurements',()=>{
+ assert.equal(defaultModelConfig.debug,true);
+ assert.equal(modelMeasurementKind(defaultModelConfig),'diagnostic');
+ assert.equal(modelMeasurementKind({...defaultModelConfig,debug:false}),'official');
+ assert.equal(modelMeasurementKind({...defaultModelConfig,debug:false,diagnostic:'wireframe'}),'diagnostic');
 });

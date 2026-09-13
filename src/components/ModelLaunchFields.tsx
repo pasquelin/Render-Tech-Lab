@@ -1,6 +1,7 @@
 import { INTEGRATION_SCENE_OPTIONS, type IntegrationScene } from '../lab/modelView.ts';
 import type { ModelConfig } from '../lab/modelCampaign.ts';
 import { useModelPanel } from './useModelPanel.ts';
+import { Select } from './ui/Select.tsx';
 import { RadioBoard } from './ui/RadioBoard.tsx';
 import { LOD_QUALITY } from '@web-geometry/sdk';
 import { benchmarkModels } from '../../15-virtualized-integration/index.ts';
@@ -68,6 +69,10 @@ export function ModelPreparationFields() {
   const frozen = state.running;
   return (
     <div className="space-y-4 min-w-0">
+      <Select id="model-debug" label="Mode debug" help="Journal détaillé par image, chargements et décisions. Son coût affecte les temps observés." value={config.debug ? 'trace' : 'summary'} disabled={frozen} onChange={event => set('debug', event.target.value === 'trace')}>
+        <option value="trace">Actif — journal détaillé</option>
+        <option value="summary">Désactivé — journal résumé</option>
+      </Select>
       <RadioBoard
         id="model-extent"
         label="Étendue"

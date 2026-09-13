@@ -1,9 +1,10 @@
 import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 import {LOD_QUALITY, type LodQualityId} from '@web-geometry/sdk';
-import {benchmarkModels, type BenchEngineId} from '../../15-virtualized-integration/index.ts';
+import {BENCH_ENGINES, benchmarkModels, type BenchEngineId} from '../../15-virtualized-integration/index.ts';
 export type ModelLayout='single'|'comparison'|'wipe'|'toggle'|'difference';
-export type ModelConfig={modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number};
-export const defaultModelConfig:ModelConfig={modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5};
+export type ModelConfig={debug?:boolean;modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number};
+export const defaultModelConfig:ModelConfig={debug:true,modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5};
+export function modelMeasurementKind(config:Pick<ModelConfig,'debug'|'diagnostic'>):'official'|'diagnostic'{return config.debug||config.diagnostic!=='beauty'?'diagnostic':'official';}
 export const segmentNames=['Vue générale du modèle','Approche de la géométrie','Déplacement au niveau de référence','Matériaux et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et chargement','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;
 export const warmupFrames=30;
@@ -40,15 +41,67 @@ export type ModelStill={
  resolution:[number,number];engine:string;backend:string;diagnostic:ModelConfig['diagnostic'];
  lodQuality:LodQualityId;cities:1|4|9|12;detail:'source'|'maximum';sourceKey:string;pathVersion:typeof pathVersion;
  fov:number;near:number;far:number;
- cpuFrameMs:number|null;cpuSubmitMs:null;rafIntervalMs:number|null;drawCalls:number|null;
+ cpuFrameMs:number|null;cpuSubmitMs:number|null;rafIntervalMs:number|null;drawCalls:number|null;
  triangles:number|null;selectedTriangles:number|null;clusters:number|null;residentPages:number|null;
  pageEvictions:number|null;frustumRejected:number|null;pagesRequested:number|null;pageLoads:number|null;
  gpuMs:null;vramBytes:null;
 };
 export type ModelEngineEvent={timestamp:string;level:'debug'|'info'|'warn'|'error';phase:string;message:string;context:Record<string,unknown>};
-export type ModelReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:ModelConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9|12;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:ModelSample[];captures:ModelStill[];engineEvents:ModelEngineEvent[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;};
+export type ModelAaCheck={engine:string;segment:number;differentPixels:number;maxChannelError:number};
+export type ModelAaControl={status:'passed'|'failed'|'not-run';checks?:ModelAaCheck[];failure?:string};
+export type ModelReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:ModelConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9|12;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:ModelSample[];captures:ModelStill[];engineEvents:ModelEngineEvent[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;aaControl?:ModelAaControl;};
+
+export function compareModelPixels(a:Uint8Array,b:Uint8Array){
+ if(a.length!==b.length)throw new Error(`Captures A/A de tailles différentes : ${a.length} et ${b.length} octets.`);
+ let differentPixels=0,maxChannelError=0;
+ for(let offset=0;offset<a.length;offset+=4){let different=false;for(let channel=0;channel<4;channel++){
+  const delta=Math.abs(a[offset+channel]-b[offset+channel]);
+  if(delta)different=true;
+  if(delta>maxChannelError)maxChannelError=delta;
+ }if(different)differentPixels++;}
+ return {differentPixels,maxChannelError};
+}
+
+export type ModelAaRenderer={setPose:(pose:CameraPose)=>void;awaitPages:()=>Promise<void>;render:(pose:CameraPose)=>unknown;flush:()=>Promise<void>;capture:()=>Uint8Array};
+export async function runAaControl(renderer:ModelAaRenderer,engine:string,checkpoints:Array<{segment:number;pose:CameraPose}>):Promise<ModelAaCheck[]>{
+ const checks:ModelAaCheck[]=[];
+ for(const checkpoint of checkpoints){
+  renderer.setPose(checkpoint.pose);
+  await renderer.awaitPages();
+  renderer.render(checkpoint.pose);
+  await renderer.flush();
+  const first=renderer.capture();
+  renderer.render(checkpoint.pose);
+  await renderer.flush();
+  const repeat=renderer.capture();
+  const check={engine,segment:checkpoint.segment,...compareModelPixels(first,repeat)};
+  checks.push(check);
+ }
+ return checks;
+}
+
+export function aaControlFromChecks(checks:ModelAaCheck[],expectedChecks=checks.length):ModelAaControl{
+ const failed=checks.find(check=>check.differentPixels>0);
+ if(!checks.length)return {status:'not-run',checks};
+ if(!failed&&checks.length<expectedChecks)return {status:'not-run',checks};
+ if(!failed)return {status:'passed',checks};
+ const engine=BENCH_ENGINES.find(candidate=>candidate.id===failed.engine)?.label??failed.engine;
+ const segment=segmentNames[failed.segment]??`Point ${failed.segment+1}`;
+ return {status:'failed',checks,failure:`${engine} · ${segment} : ${failed.differentPixels} pixel${failed.differentPixels>1?'s':''} différent${failed.differentPixels>1?'s':''}, écart de canal maximal ${failed.maxChannelError}.`};
+}
+
+export function aaControlReason(report:Pick<ModelReport,'aaControl'|'comparisonReason'>){
+ if(report.aaControl?.status==='passed')return 'Contrôle A/A réussi pour cette campagne. Le verdict de performance reste bloqué : ce contrôle visuel ne valide pas la performance.';
+ if(report.aaControl?.status==='failed')return `Contrôle A/A échoué pour cette campagne${report.aaControl.failure?` : ${report.aaControl.failure}`:''}. Le verdict de performance reste bloqué sans validation réelle.`;
+ if(report.aaControl?.status==='not-run')return 'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.';
+ return report.comparisonReason||'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.';
+}
+export function applyAaControlResult(report:Pick<ModelReport,'comparisonReason'>,checks:ModelAaCheck[],expectedChecks=checks.length):{aaControl:ModelAaControl;comparisonReason:string}{
+ const aaControl=aaControlFromChecks(checks,expectedChecks);
+ return {aaControl,comparisonReason:aaControlReason({aaControl,comparisonReason:report.comparisonReason})};
+}
 export function distribution(values:number[]){const sorted=values.filter(v=>Number.isFinite(v)&&v>=0).sort((a,b)=>a-b);if(!sorted.length)return null;const q=(p:number)=>sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*p)-1)];return {count:sorted.length,p50:q(.5),p95:q(.95),p99:q(.99),max:sorted.at(-1)!};}
-export function summarizeModel(samples:ModelSample[]){const intervals=samples.flatMap(s=>s.rafIntervalMs!==null&&s.rafIntervalMs>0?[s.rafIntervalMs]:[]);return {cpu:distribution(samples.map(s=>s.cpuFrameMs)),raf:distribution(intervals),minFps:intervals.length?1000/Math.max(...intervals):null,gpu:distribution(samples.flatMap(s=>s.gpuMs===null?[]:[s.gpuMs])),frames:samples.length};}
+export function summarizeModel(samples:ModelSample[]){const intervals=samples.flatMap(s=>s.rafIntervalMs!==null&&s.rafIntervalMs>0?[s.rafIntervalMs]:[]);return {cpuSubmit:distribution(samples.flatMap(s=>typeof s.cpuSubmitMs==='number'?[s.cpuSubmitMs]:[])),cpu:distribution(samples.map(s=>s.cpuFrameMs)),raf:distribution(intervals),minFps:intervals.length?1000/Math.max(...intervals):null,gpu:distribution(samples.flatMap(s=>s.gpuMs===null?[]:[s.gpuMs])),frames:samples.length};}
 export function retainReports(previous:ModelReport[],report:ModelReport){return [report,...previous.filter(r=>r.id!==report.id)].slice(0,2);}
 export function pathPoses(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).map(step=>step.pose);}
 export function urbanCheckpoints(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).filter((_,index)=>index%framesPerSegment===0);}
@@ -76,7 +129,7 @@ export function stillFromFrame(input:{
   resolution:input.resolution,engine:input.engine,backend:input.backend,diagnostic:configuration.diagnostic,
   lodQuality:configuration.lodQuality,cities:configuration.cities,detail:configuration.detail,sourceKey:input.sourceKey,pathVersion,
   fov:pose.fov,near:pose.near,far:pose.far,
-  cpuFrameMs:metrics.cpuFrameMs,cpuSubmitMs:null,rafIntervalMs:metrics.rafIntervalMs,drawCalls:metrics.drawCalls,
+  cpuFrameMs:metrics.cpuFrameMs,cpuSubmitMs:metrics.cpuSubmitMs??null,rafIntervalMs:metrics.rafIntervalMs,drawCalls:metrics.drawCalls,
   triangles:metrics.triangles,selectedTriangles:metrics.selectedTriangles??null,clusters:metrics.clusters,residentPages:metrics.residentPages??null,
   pageEvictions:metrics.pageEvictions??null,frustumRejected:metrics.frustumRejected??null,pagesRequested:metrics.pagesRequested??null,pageLoads:metrics.pageLoads,
   gpuMs:null,vramBytes:null,

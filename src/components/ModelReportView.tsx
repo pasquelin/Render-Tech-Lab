@@ -1,4 +1,4 @@
-import { summarizeModel, segmentNames, enginesInStills, type ModelReport } from '../lab/modelCampaign.ts';
+import { aaControlReason, summarizeModel, segmentNames, enginesInStills, type ModelReport } from '../lab/modelCampaign.ts';
 import { modelNumber as number } from './modelFormat.ts';
 import { ModelCaptureCompare, ModelStillCard } from './ModelCaptureCompare.tsx';
 import { MetricGrid } from './ui/MetricGrid.tsx';
@@ -30,8 +30,9 @@ export function ModelReportView({ report, history = [] }: { report: ModelReport;
           { label: 'Moteurs enchaînés', value: String((engines.length?engines:[report.configuration.engine]).length) },
           { label: 'Images observées', value: String(global.frames) },
           { label: 'Préchauffage exclu', value: String(report.warmupFrames), unit: 'images' },
-          { label: 'GPU / VRAM', value: 'Non mesuré' },
-          { label: 'CPU submit', value: 'Non mesuré', provenance: 'Soumission seule non instrumentée ; CPU frame couvre l’appel complet de rendu.' },
+          { label: 'Mode debug', value: report.configuration.debug ? 'Actif' : 'Désactivé / non enregistré' },
+          { label: 'Journal moteur', value: String(report.engineEvents.length), unit: 'événements' },
+          { label: 'GPU / VRAM', value: report.engineEvents.some(event=>event.phase==='engine:gpu-timing') ? 'Passes GPU dans le journal / VRAM non mesurée' : 'Non mesuré' },
         ]} />
       </ReportSummary>
       {(engines.length?engines:[report.configuration.engine]).map(engine=>{
@@ -41,6 +42,7 @@ export function ModelReportView({ report, history = [] }: { report: ModelReport;
           <ReportSummary key={engine} title={`Moteur · ${engineLabel(engine)}`}>
             <MetricGrid items={[
               {label:'Images',value:String(samples.length)},
+              {label:'CPU submit p50 / p95',value:summary.cpuSubmit?`${number(summary.cpuSubmit.p50,2)} / ${number(summary.cpuSubmit.p95,2)}`:'Non mesuré',unit:'ms'},
               {label:'CPU p50 / p95 / p99',value:summary.cpu?`${number(summary.cpu.p50,2)} / ${number(summary.cpu.p95,2)} / ${number(summary.cpu.p99,2)}`:'Non mesuré',unit:'ms'},
               {label:'rAF p50 / p95 / p99',value:summary.raf?`${number(summary.raf.p50,2)} / ${number(summary.raf.p95,2)} / ${number(summary.raf.p99,2)}`:'Non mesuré',unit:'ms'},
               {label:'FPS minimum',value:number(summary.minFps,1)},
@@ -65,7 +67,8 @@ export function ModelReportView({ report, history = [] }: { report: ModelReport;
       <ReportSummary title="Provenance et limites">
         <p className="text-xs break-all">Source : {report.sourceKey} · trajet v{report.pathVersion} · {report.environment}</p>
         <p className="text-xs">CPU : durée de l’appel de rendu. Cadence : intervalles requestAnimationFrame. Chaque photo conserve pose, moteur, backend, résolution et compteurs. Les surcoûts des captures peuvent affecter l’intervalle rAF suivant.</p>
-        <p className="text-xs">{report.comparisonReason ?? 'Comparaison visuelle uniquement. Aucun gain n’est déduit. GPU et VRAM restent non mesurés.'}</p>
+        {report.configuration.debug ? <p className="text-xs">Mode debug actif : l’instrumentation affecte les temps observés. Ces images sont des mesures de diagnostic.</p> : null}
+        <p className="text-xs">{aaControlReason(report)}</p>
         {report.retainedSamplesOnly ? <p className="text-xs">Résumé limité aux 3 600 dernières images de l’exploration.</p> : null}
         {report.fallbacks.length ? <p className="text-xs">Replis observés : {report.fallbacks.join(' · ')}</p> : null}
         {report.error ? <p role="alert" className="text-xs">{report.error}</p> : null}

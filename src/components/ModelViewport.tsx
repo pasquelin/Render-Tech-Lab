@@ -54,6 +54,7 @@ export function ModelViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElem
               {view.report ? (
                 <>
                   <Button variant="secondary" onClick={() => actions.openReport()}>Voir le rapport</Button>
+                  {view.archiveReport ? <Button variant="secondary" onClick={view.archiveReport}>Enregistrer le rapport</Button> : null}
                   <Button variant="ghost" onClick={view.exportReport}>Exporter le rapport JSON</Button>
                 </>
               ) : view.history[0] ? <Button variant="secondary" onClick={() => actions.openReport()}>Voir le rapport</Button> : null}
@@ -61,7 +62,7 @@ export function ModelViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElem
           )}
         >
           <p className="text-xs" data-model-availability={view.availability.status}>
-            {view.report ? 'Rapport archivé. Ouvrez « Voir le rapport » pour les captures et le diagnostic.' : <>
+            {view.report ? view.message : <>
               {view.availability.message}
               {view.availability.status === 'error' ? <Button onClick={view.retryAvailability}>Réessayer la disponibilité</Button> : null}
             </>}
