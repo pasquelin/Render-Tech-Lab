@@ -61,7 +61,7 @@ Les scripts de préparation peuvent produire une matrice de jobs à exécuter pl
 
 Chaque nouvelle exécution des bancs 00–15 écrit un paquet unique dans `reports/<banc>/campaign-<uuid>/`. Il contient `REPORT.md` pour la lecture humaine, `objects/manifest.json` et `objects/result.json.gz` pour la charge exhaustive, `logs/engine-events.jsonl` pour les événements moteur et `media/` pour les images dédupliquées. Le manifeste porte la version `report-package/v1`, les chemins, tailles et empreintes ; le JSON compressé conserve les valeurs indisponibles et les données brutes sans les afficher dans le Markdown.
 
-Les copies `results/REPORT.md` et `reports/<banc>.md` restent des entrées de compatibilité vers le résumé courant. Elles ne sont jamais une seconde archive de données. Les liens du Markdown sont relatifs dans le dossier et la fenêtre du Lab les résout sur le même paquet, sans traversée de chemin.
+`reports/<banc>/latest.json` est un simple pointeur vers la dernière campagne publiée ; il ne recopie aucune donnée. Les liens du Markdown sont relatifs dans le dossier et la fenêtre du Lab les résout sur le même paquet, sans traversée de chemin.
 
 ## 10. Ordre d'implémentation et livrables attendus
 

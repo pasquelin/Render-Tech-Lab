@@ -27,7 +27,13 @@ export async function directoryRetention(directory: string, prefix: string, appl
   const entries: Array<{ id: string; timestamp: number; files: string[] }> = [];
   for (const entry of names) {
     try {
-      const value = JSON.parse(await readFile(path.join(directory, entry.name, 'raw.json'), 'utf8')) as { archivedAt?: string };
+      let rawText: string;
+      try {
+        rawText = await readFile(path.join(directory, entry.name, 'objects', 'manifest.json'), 'utf8');
+      } catch {
+        rawText = await readFile(path.join(directory, entry.name, 'raw.json'), 'utf8');
+      }
+      const value = JSON.parse(rawText) as { archivedAt?: string };
       const timestamp = Date.parse(value.archivedAt ?? '');
       if (Number.isFinite(timestamp)) entries.push({ id: entry.name, timestamp, files: [entry.name] });
     } catch { /* Unrecognized folders are protected. */ }

@@ -6,7 +6,7 @@ import { gzipSync } from 'node:zlib';
 import { createGzip } from 'node:zlib';
 import { Transform, type Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { losslessValue, type JsonValue } from './completeReport.ts';
+import { losslessValue, type JsonValue } from './lossless.ts';
 
 export const REPORT_PACKAGE_SCHEMA = 'report-package/v1';
 
@@ -50,7 +50,7 @@ function validatePackageId(id: string) {
 }
 
 function mediaExtension(mime: string) {
-  return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' } as Record<string, string>)[mime] ?? 'bin';
+  return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg' } as Record<string, string>)[mime] ?? 'bin';
 }
 
 function mediaAlt(origin: string) {

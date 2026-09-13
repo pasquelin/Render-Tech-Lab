@@ -18,7 +18,7 @@ export function formatIntegrationReport(result:IntegrationResult,artifactId:stri
  for(const metric of result.records??[])lines.push(`| ${safe(metric.variant)} | ${duration(metric.cpuMs)} | ${duration(metric.gpuMs)} |`);
  lines.push('', 'Ces petits échantillons incluent une instrumentation de contrôle. Les temps GPU absents restent non mesurés. Le temps de frame complet inclut les attentes et les transferts ; il est distinct du temps CPU du tableau.', '',
   'La RAM et la VRAM physiques ne sont pas instrumentées. Les octets du pool sont une comptabilité des allocations. Les pages proviennent ici de la mémoire CPU ; les copies vers le GPU et les évictions sont réelles.', '',
-  'Limites : petits reliefs statiques, opaques et sans éclairage. Aucune validation d’Emerald Square, de transparence, de déformation ou de scène urbaine complète.', '',
+  'Limites : petits reliefs statiques, opaques et sans éclairage. Aucune validation des modèles complets, de transparence, de déformation ou de scène urbaine complète.', '',
   `[Télécharger les données brutes et leur provenance](/api/integration-archive?id=${artifactId})`, '');
  for(const error of [...(result.archive?.errors??[]),...(campaign?.errors??[])])lines.push(`Erreur : ${safe(error)}`);
  return lines.join('\n');

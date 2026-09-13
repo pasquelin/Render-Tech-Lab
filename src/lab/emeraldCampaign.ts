@@ -1,14 +1,14 @@
 import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 import {LOD_QUALITY, type LodQualityId} from '@web-geometry/sdk';
-import type {BenchEngineId} from '../../15-virtualized-integration/index.ts';
+import {benchmarkModels, type BenchEngineId} from '../../15-virtualized-integration/index.ts';
 export type EmeraldLayout='single'|'comparison'|'wipe'|'toggle'|'difference';
 export type EmeraldConfig={modelId?:string;cities:1|4|9;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:EmeraldLayout;engine:BenchEngineId;compareEngine:BenchEngineId;poi:'overview'|'street'|'ground'|'foliage'|'detail'|null;wipe:number};
-export const defaultEmeraldConfig:EmeraldConfig={modelId:'emerald-square',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',poi:null,wipe:.5};
+export const defaultEmeraldConfig:EmeraldConfig={modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',poi:null,wipe:.5};
 export const segmentNames=['Vue générale du modèle','Approche de la géométrie','Déplacement au niveau de référence','Matériaux et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et chargement','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;
 export const warmupFrames=30;
 export const pathVersion=4;
-/** Origin plane if the city straddles y=0 (Emerald after Blender); otherwise the AABB floor. */
+/** Origin plane if the geometry straddles y=0; otherwise the AABB floor. */
 export function streetLevel(bounds:{min:{y:number};max:{y:number}}){
  return bounds.min.y<0&&bounds.max.y>0?0:bounds.min.y;
 }
@@ -56,7 +56,7 @@ function poseEqual(a:CameraPose,b:CameraPose){return a.fov===b.fov&&a.near===b.n
 /** Same trajectory for every engine. Never invents a performance verdict. */
 export function comparePathReports(a:EmeraldReport,b:EmeraldReport){
  if(a.pathVersion!==b.pathVersion)return {status:'blocked' as const,reason:'Versions de parcours différentes.'};
- if((a.configuration.modelId??'emerald-square')!==(b.configuration.modelId??'emerald-square'))return {status:'blocked' as const,reason:'Modèles différents.'};
+ if((a.configuration.modelId??(benchmarkModels[0]?.id??''))!==(b.configuration.modelId??(benchmarkModels[0]?.id??'')))return {status:'blocked' as const,reason:'Modèles différents.'};
  if(a.resolution[0]!==b.resolution[0]||a.resolution[1]!==b.resolution[1])return {status:'blocked' as const,reason:'Résolutions différentes.'};
  if(a.configuration.cities!==b.configuration.cities||a.configuration.lodQuality!==b.configuration.lodQuality||a.configuration.detail!==b.configuration.detail)return {status:'blocked' as const,reason:'Configuration de scène différente.'};
  if(a.configuration.engine===b.configuration.engine)return {status:'blocked' as const,reason:'Les deux campagnes utilisent le même moteur.'};
@@ -84,7 +84,7 @@ export function stillFromFrame(input:{
 }
 export function stillsComparable(a:EmeraldReport,b:EmeraldReport){
  if(a.pathVersion!==b.pathVersion)return {status:'blocked' as const,reason:'Versions de parcours différentes.',segments:[] as number[]};
- if((a.configuration.modelId??'emerald-square')!==(b.configuration.modelId??'emerald-square'))return {status:'blocked' as const,reason:'Modèles différents.',segments:[] as number[]};
+ if((a.configuration.modelId??(benchmarkModels[0]?.id??''))!==(b.configuration.modelId??(benchmarkModels[0]?.id??'')))return {status:'blocked' as const,reason:'Modèles différents.',segments:[] as number[]};
  if(a.resolution[0]!==b.resolution[0]||a.resolution[1]!==b.resolution[1])return {status:'blocked' as const,reason:'Résolutions différentes.',segments:[] as number[]};
  if(a.configuration.cities!==b.configuration.cities||a.configuration.lodQuality!==b.configuration.lodQuality||a.configuration.detail!==b.configuration.detail||a.configuration.diagnostic!==b.configuration.diagnostic)return {status:'blocked' as const,reason:'Configuration ou vue de diagnostic différente.',segments:[] as number[]};
  if(a.configuration.engine===b.configuration.engine)return {status:'blocked' as const,reason:'Les deux campagnes utilisent le même moteur.',segments:[] as number[]};

@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {urbanPath,urbanCheckpoints,pathPoses,streetLevel,framesPerSegment,segmentNames,distribution,retainReports,comparePathReports,stillsInReportComparable,stillFromFrame,pathVersion,type EmeraldReport} from '../src/lab/emeraldCampaign.ts';
 test('urban replay is deterministic, has ten named segments and a fast rotation',()=>{const bounds={min:{x:-100,y:0,z:-100},max:{x:100,y:50,z:100}},a=urbanPath(bounds);assert.deepEqual(a,urbanPath(bounds));assert.equal(segmentNames.length,10);assert.equal(a.length,framesPerSegment*segmentNames.length);const rotation=a.filter(p=>p.segment===5);assert.notDeepEqual(rotation[0].pose.position,rotation.at(-1)!.pose.position);assert.deepEqual(a[0].pose.position,a.at(-1)!.pose.position);assert.notDeepEqual(a[0].pose,urbanPath({min:bounds.min,max:{x:400,y:50,z:400}})[0].pose);assert.equal(urbanCheckpoints(bounds).length,10);assert.deepEqual(pathPoses(bounds),a.map(step=>step.pose));});
-test('urban path stays above the street when Emerald straddles y=0 with a basement and a height spike',()=>{
+test('urban path stays above the street when model geometry straddles y=0 with a basement and a height spike',()=>{
  const bounds={min:{x:-115,y:-5,z:-115},max:{x:115,y:108,z:115}};
  const path=urbanPath(bounds);
  for(const step of path){

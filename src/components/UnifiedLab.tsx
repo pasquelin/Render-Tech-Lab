@@ -41,8 +41,8 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
       if (test === '00-baseline') {
         setState(initialSnapshot('00-baseline'));
         setActions({ ...idleActions, openReport: async () => {
-          patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline.md', html: '<p>Chargement du rapport…</p>' } });
-          try { const report = await loadMarkdownReport(fetch, '00-baseline'); patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline.md', raw: report.ok ? report.raw : '', html: report.ok ? parseMarkdownToHtml(report.raw) : `<p>${report.raw}</p>`, feedback: report.feedback } }); } catch { /* visible loading state remains */ }
+          patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline/campaign-…/REPORT.md', html: '<p>Chargement du rapport…</p>' } });
+          try { const report = await loadMarkdownReport(fetch, '00-baseline'); patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: true, title: 'Rapport de référence — Dashboard', path: 'reports/00-baseline/campaign-…/REPORT.md', raw: report.ok ? report.raw : '', html: report.ok ? parseMarkdownToHtml(report.raw) : `<p>${report.raw}</p>`, feedback: report.feedback } }); } catch { /* visible loading state remains */ }
         }, closeReport: () => patch({ reportModal: { ...initialSnapshot('00-baseline').reportModal, open: false } }) });
         return;
       }

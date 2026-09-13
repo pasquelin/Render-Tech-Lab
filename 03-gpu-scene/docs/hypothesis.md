@@ -7,7 +7,7 @@
 
 ## 1. Contexte & Problème
 
-Le banc `01-indirect-draw` compare une scène homogène WebGL/Three.js à un pipeline WebGPU `drawIndexedIndirect`. Les chiffres de gain se lisent dans `reports/01-indirect-draw.md`, pas dans cette hypothèse.
+Le banc `01-indirect-draw` compare une scène homogène WebGL/Three.js à un pipeline WebGPU `drawIndexedIndirect`. Les chiffres issus d'une exécution se lisent dans son paquet `reports/01-indirect-draw/campaign-<id>/`, pas dans cette hypothèse.
 
 Cependant, le prototype `01` reposait sur une hypothèse simplificatrice :
 > **Scène homogène :** 1 seule topologie partagée, 1 seul matériau basique.

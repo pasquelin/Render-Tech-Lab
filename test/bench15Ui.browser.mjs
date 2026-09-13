@@ -15,7 +15,7 @@ try {
   const emeraldSignature = await preparationSignature();
   assert.equal(await page.locator('canvas').count(), 0, 'Emerald ne crée aucun canvas au repos');
   assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['emerald-scene', 'bench15-model', 'emerald-mode', 'emerald-extent', 'emerald-detail', 'emerald-anisotropy']);
-  assert.equal(await page.locator('#bench15-model input[type="radio"]').count(), 8);
+  assert.equal(await page.locator('#bench15-model input[type="radio"]').count(), 7);
   assert.equal(await page.locator('#emerald-mode').count(), 1);
   await page.getByRole('radio', { name: 'Fixture procédurale' }).click();
   await page.getByRole('heading', { name: '15 · Pipeline de géométrie virtualisée' }).waitFor();

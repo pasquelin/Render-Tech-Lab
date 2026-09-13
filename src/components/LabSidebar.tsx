@@ -89,7 +89,7 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
                   {ui.diagnostics.map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
                 </Select>
               ) : null}
-              {ui.sceneChoice ? <p className="text-[10px] text-base-content/55">Scène active : fixture procédurale de validation, indépendante d’Emerald Square.</p> : (
+              {ui.sceneChoice ? <p className="text-[10px] text-base-content/55">Scène active : fixture procédurale de validation, indépendante des modèles préparés.</p> : (
                 <Select
                   id="select-count"
                   label={ui.countLabel}

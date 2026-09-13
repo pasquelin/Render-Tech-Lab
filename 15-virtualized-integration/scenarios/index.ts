@@ -6,8 +6,8 @@ export const scenarios = [
     "disabled": false
   },
   {
-    "id": "emerald-square",
-    "title": "Emerald Square · ville réelle",
+    "id": "models",
+    "title": "Modèles préparés",
     "disabled": false
   }
 ] as const;

@@ -10,7 +10,7 @@ function payload(label: string) {
   return { report: { test: '04-gpu-lod-comparison', timestamp: '2026-09-11T20:00:00.000Z', config: { label }, samples: [1, 2, 3] }, markdown: `# ${label}\n` };
 }
 
-test('preserves two campaigns and updates dedicated latest files without touching historical reports', async () => {
+test('preserves two campaigns in shared report packages without touching bench results', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'lod-comparison-store-'));
   try {
     const results = path.join(root, '04-gpu-lod/results');
@@ -22,16 +22,16 @@ test('preserves two campaigns and updates dedicated latest files without touchin
     assert.notEqual(first.id, second.id);
     assert.deepEqual(JSON.parse(await store.read(first.id)), payload('first').report);
     assert.match(await store.read(first.id, 'markdown'), /Données brutes compressées/);
-    assert.deepEqual(JSON.parse(await readFile(path.join(results, 'comparison-latest.json'), 'utf8')), payload('second').report);
-    assert.match(await readFile(path.join(results, 'COMPARISON.md'), 'utf8'), /Données brutes compressées/);
-    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), /Données brutes compressées/);
+    const latest = JSON.parse(await readFile(path.join(root, 'reports/04-gpu-lod-comparison/latest.json'), 'utf8'));
+    assert.equal(typeof latest.reportPackage, 'string');
+    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison', latest.reportPackage, 'REPORT.md'), 'utf8'), /Données brutes compressées/);
     assert.equal(await readFile(path.join(results, 'latest.json'), 'utf8'), 'historical json');
     assert.equal(await readFile(path.join(results, 'REPORT.md'), 'utf8'), 'historical markdown');
     const history = await store.history();
     assert.equal(history.length, 2);
     assert.deepEqual(new Set(history.map(run => run.id)), new Set([first.id, second.id]));
     assert.equal(history.find(run => run.id === first.id)?.jsonUrl, `/api/lod-comparison?run=${first.id}`);
-    assert.equal((await readdir(path.join(results, 'comparisons'))).length, 6);
+    assert.equal((await readdir(path.join(root, 'reports/04-gpu-lod-comparison'))).filter(name => name.startsWith('campaign-')).length, 2);
     assert.equal((await readdir(results)).some(name => name.endsWith('.tmp')), false);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
@@ -116,25 +116,7 @@ test('archives an unstable 14 campaign without publishing it as latest', async (
     const archive = JSON.parse(await store.read(run.id, 'sources'));
     assert.equal(archive.provenanceVerification, 'unstable-archived');
     assert.equal(JSON.parse(await store.read(run.id)).provenance.sourcesStable, false);
-    await assert.rejects(readFile(path.join(root, '14-open-world/results/comparison-latest.json')));
-    await assert.rejects(readFile(path.join(root, 'reports/14-open-world.md')));
-  } finally { await rm(root, { recursive: true, force: true }); }
-});
-
-test('old archives remain readable without fabricated source snapshots', async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'comparison-legacy-'));
-  try {
-    const directory = path.join(root, '04-gpu-lod/results/comparisons');
-    await mkdir(directory, { recursive: true });
-    const id = '20260911T120000000Z-00000000-0000-4000-8000-000000000000';
-    const original = JSON.stringify(payload('historical').report);
-    await writeFile(path.join(directory, `${id}.json`), original);
-    const store = createLodComparisonStore(root);
-    assert.equal((await store.history())[0].sourcesUrl, null);
-    assert.equal(await store.read(id), original);
-    await assert.rejects(store.read(id, 'sources'),
-      (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 404);
-    assert.deepEqual(await readdir(directory), [`${id}.json`]);
+    await assert.rejects(readFile(path.join(root, 'reports/14-open-world/latest.json')));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -180,7 +162,7 @@ test('metadata hashes actual fixed source bytes and leaves absent provenance una
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
-test('04 and 14 publish independent archives, latest reports and API links', async () => {
+test('04 and 14 publish independent shared report packages and API links', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'comparison-two-modules-'));
   try {
     const lod = createLodComparisonStore(root);
@@ -197,10 +179,10 @@ test('04 and 14 publish independent archives, latest reports and API links', asy
     assert.equal(worldRun.jsonUrl, `/api/world-comparison?run=${worldRun.id}`);
     assert.equal(worldRun.markdownUrl, `/api/world-comparison?run=${worldRun.id}&format=markdown`);
     assert.equal(lodRun.jsonUrl, `/api/lod-comparison?run=${lodRun.id}`);
-    assert.match(await readFile(path.join(root, 'reports/14-open-world.md'), 'utf8'), /Données brutes compressées/);
-    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison.md'), 'utf8'), /Données brutes compressées/);
-    assert.deepEqual(JSON.parse(await readFile(path.join(root, '14-open-world/results/comparison-latest.json'), 'utf8')), worldPayload.report);
-    assert.match(await readFile(path.join(root, '14-open-world/results/COMPARISON.md'), 'utf8'), /Données brutes compressées/);
+    const worldLatest = JSON.parse(await readFile(path.join(root, 'reports/14-open-world/latest.json'), 'utf8'));
+    const lodLatest = JSON.parse(await readFile(path.join(root, 'reports/04-gpu-lod-comparison/latest.json'), 'utf8'));
+    assert.match(await readFile(path.join(root, 'reports/14-open-world', worldLatest.reportPackage, 'REPORT.md'), 'utf8'), /Données brutes compressées/);
+    assert.match(await readFile(path.join(root, 'reports/04-gpu-lod-comparison', lodLatest.reportPackage, 'REPORT.md'), 'utf8'), /Données brutes compressées/);
     await assert.rejects(world.read(lodRun.id), (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 404);
     await assert.rejects(lod.read(worldRun.id), (error: unknown) => error instanceof ComparisonRequestError && error.statusCode === 404);
     await assert.rejects(world.save(payload('wrong-module')), ComparisonRequestError);

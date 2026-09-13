@@ -43,7 +43,7 @@ export function LabViewport({ webglRef, webgpuRef }: LabViewportProps) {
   const fixturePresentation = state.moduleId === '15-virtualized-integration' && state.execution.status === 'idle' ? {
     description: 'Fixture procédurale : trois contrôles ciblés vérifient la résidence complète, le niveau de détail résident et la pression du streaming.',
     question: 'La sélection de clusters et les pages physiques conservent-elles la surface sur les trois scénarios contrôlés ?',
-    protocol: 'Les variantes A et B appartiennent au protocole de la fixture. Ce contrôle ne fournit aucune bascule interactive et ne mesure pas Emerald Square.',
+    protocol: 'Les variantes A et B appartiennent au protocole de la fixture. Ce contrôle ne fournit aucune bascule interactive et ne mesure pas les modèles préparés.',
     steps: ['Préparer', 'Contrôler', 'Échauffer', 'Mesurer les variantes', 'Archiver'],
     metadata: [
       ['Scène', 'Fixture procédurale'],
@@ -117,11 +117,11 @@ export function LabViewport({ webglRef, webgpuRef }: LabViewportProps) {
                 onChange={value => onIntegrationScene?.(value as IntegrationScene)}
                 options={INTEGRATION_SCENE_OPTIONS}
               />
-              <p className="text-xs text-base-content/60">Étendue, détail, textures, exploration et parcours appartiennent à Emerald Square. Ici, les trois contrôles procéduraux imposent la caméra et la charge.</p>
+              <p className="text-xs text-base-content/60">Étendue, détail, textures, exploration et parcours appartiennent aux modèles préparés. Ici, les trois contrôles procéduraux imposent la caméra et la charge.</p>
             </section>
           ) : undefined}
         >
-          {fixturePresentation ? <p className="text-xs text-base-content/60">Le rapport affiché dans « Rapports et suivi » appartient à la fixture active. Les historiques Emerald restent séparés.</p> : null}
+          {fixturePresentation ? <p className="text-xs text-base-content/60">Le rapport affiché dans « Rapports et suivi » appartient à la fixture active. Les historiques des modèles restent séparés.</p> : null}
         </PreparationStation>
       </div>
     </main>

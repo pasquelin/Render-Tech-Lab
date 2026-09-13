@@ -9,7 +9,7 @@ export async function runVirtualizedCampaign(options:IntegratedRunOptions){
  const configurations=[{id:'exact-resident',threshold:0,slots:128},{id:'lod-resident',threshold:2,slots:128},{id:'streaming-pressure',threshold:0,slots:72}];
  const metrics:IntegratedMetric[]=[];
  const archive:{assetPreparationMs:number|null;configuration:Record<string,unknown>;metrics:IntegratedMetric[];schema:number;scope:string;status:string;errors:string[];scenarios:Array<Record<string,unknown>>;certificate:string;provenance:Record<string,string>}= {
-  assetPreparationMs:null,configuration:{fixture:'dyadic-tents-v1',regions:64,width:640,height:360,samples:options.samples??4,warmup:0,order:'ABBA',timingScope:'instrumented smoke; no performance verdict',seed:null},metrics,schema:2,scope:'physical two-level dyadic tent hierarchy, opaque static unlit patches; not Emerald/general meshes',status:'not-run',errors:[],scenarios:[],certificate:'',provenance:{
+  assetPreparationMs:null,configuration:{fixture:'dyadic-tents-v1',regions:64,width:640,height:360,samples:options.samples??4,warmup:0,order:'ABBA',timingScope:'instrumented smoke; no performance verdict',seed:null},metrics,schema:2,scope:'physical two-level dyadic tent hierarchy, opaque static unlit patches; not arbitrary/general meshes',status:'not-run',errors:[],scenarios:[],certificate:'',provenance:{
    gpuMs:'real per-frame timestamp envelope; null without timestamp-query',cpuSubmitMs:'CPU command encoding and queue.submit only',
    frameWallMs:'includes feedback readback, streaming fence wait and real uploads; serialized reference implementation',
    ramBytes:'null; not instrumented',vramBytes:'null; pool allocation bytes are API allocation accounting, not physical VRAM',

@@ -1,12 +1,13 @@
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { gunzipSync } from 'node:zlib';
 import type { Plugin } from 'vite';
-import { atomicWrite, comparisonRetention, writeReportPackage } from '../shared/archive/index.ts';
+import { atomicWrite, directoryRetention, writeReportPackage } from '../shared/archive/index.ts';
 
 const RUN_ID = /^\d{8}T\d{9}Z-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 const COMMON_SOURCE_FILES = ['benchmarks/lodComparisonPlugin.ts', 'package.json', 'pnpm-lock.yaml'] as const;
@@ -69,10 +70,10 @@ function moduleConfiguration(id: ComparisonModuleId) {
   switch (id) {
     case '04-gpu-lod':
       return { id, test: '04-gpu-lod-comparison' as const, apiBase: '/api/lod-comparison',
-        pluginName: 'lod-comparison-reports', reportFile: '04-gpu-lod-comparison.md', sourceFiles: LOD_SOURCE_FILES };
+        pluginName: 'lod-comparison-reports', sourceFiles: LOD_SOURCE_FILES };
     case '14-open-world':
       return { id, test: '14-open-world' as const, apiBase: '/api/world-comparison',
-        pluginName: 'world-comparison-reports', reportFile: '14-open-world.md', sourceFiles: WORLD_SOURCE_FILES };
+        pluginName: 'world-comparison-reports', sourceFiles: WORLD_SOURCE_FILES };
     default:
       throw new ComparisonRequestError('Module de comparaison inconnu.');
   }
@@ -165,12 +166,10 @@ async function captureSources(root: string, moduleId: ComparisonModuleId, report
     sourceSetSha256: createHash('sha256').update(JSON.stringify(files)).digest('hex'), files };
 }
 
-/** Writes only dedicated comparison files. Existing REPORT.md/latest.json are untouched. */
+/** Comparison evidence uses the same isolated report package as every other bench. */
 export function createLodComparisonStore(root: string, moduleId: ComparisonModuleId = '04-gpu-lod') {
   const config = moduleConfiguration(moduleId);
-  const results = path.join(root, config.id, 'results');
-  const archives = path.join(results, 'comparisons');
-  const reports = path.join(root, 'reports');
+  const reportRoot = path.join(root, 'reports', config.test);
   // Serialize latest publication so concurrent requests cannot mix two campaigns.
   let pending: Promise<unknown> = Promise.resolve();
 
@@ -182,21 +181,12 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
       // Hash the exact retained text; compare before any archive/latest publication.
       const sources = await captureSources(root, config.id, snapshot.report);
       const id = `${new Date().toISOString().replace(/[-:.]/g, '')}-${randomUUID()}`;
-      const json = `${JSON.stringify(snapshot.report, null, 2)}\n`;
-      await mkdir(archives, { recursive: true });
-      await mkdir(reports, { recursive: true });
       const { publishLatest, ...archivedSources } = sources;
       const packageReport = await writeReportPackage(root, { testId: config.test, id: `campaign-${id}`, humanMarkdown: snapshot.markdown, result: { report: snapshot.report, sources: archivedSources }, archivedAt: snapshot.report.timestamp });
-      const markdown = await readFile(packageReport.markdownPath, 'utf8');
-      await writeFile(path.join(archives, `${id}.sources.json`), `${JSON.stringify(archivedSources, null, 2)}\n`, { flag: 'wx' });
-      await writeFile(path.join(archives, `${id}.md`), markdown, { flag: 'wx' });
-      await writeFile(path.join(archives, `${id}.json`), json, { flag: 'wx' });
       if (publishLatest) {
-        await atomicWrite(path.join(results, 'comparison-latest.json'), json);
-        await atomicWrite(path.join(results, 'COMPARISON.md'), markdown);
-        await atomicWrite(path.join(reports, config.reportFile), markdown);
+        await atomicWrite(path.join(reportRoot, 'latest.json'), `${JSON.stringify({ archivedAt: snapshot.report.timestamp, reportPackage: path.basename(packageReport.directory) }, null, 2)}\n`);
       }
-      await comparisonRetention(archives, true);
+      await directoryRetention(reportRoot, 'campaign-', true);
       return { ...runInfo(id, snapshot.report, config.apiBase), published: publishLatest };
     });
     pending = operation.catch(() => undefined);
@@ -206,8 +196,10 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
   async function read(id: string, format: 'json' | 'markdown' | 'sources' = 'json') {
     if (!RUN_ID.test(id)) throw new ComparisonRequestError('Identifiant de campagne invalide.');
     try {
-      const extension = format === 'markdown' ? 'md' : format === 'sources' ? 'sources.json' : 'json';
-      return await readFile(path.join(archives, `${id}.${extension}`), 'utf8');
+      const directory = path.join(reportRoot, `campaign-${id}`);
+      if (format === 'markdown') return await readFile(path.join(directory, 'REPORT.md'), 'utf8');
+      const stored = JSON.parse(gunzipSync(await readFile(path.join(directory, 'objects', 'result.json.gz'))).toString('utf8')) as { report?: unknown; sources?: unknown };
+      return `${JSON.stringify(format === 'sources' ? stored.sources : stored.report, null, 2)}\n`;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw new ComparisonRequestError('Campagne introuvable.', 404);
@@ -219,18 +211,19 @@ export function createLodComparisonStore(root: string, moduleId: ComparisonModul
   async function history() {
     await pending;
     let names: string[];
-    try { names = await readdir(archives); }
+    try { names = await readdir(reportRoot); }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
       throw error;
     }
     const runs = [];
     for (const name of names.sort().reverse()) {
-      if (!name.endsWith('.json') || !RUN_ID.test(name.slice(0, -5))) continue;
-      const report: unknown = JSON.parse(await readFile(path.join(archives, name), 'utf8'));
+      if (!name.startsWith('campaign-') || !RUN_ID.test(name.slice('campaign-'.length))) continue;
+      const stored = JSON.parse(gunzipSync(await readFile(path.join(reportRoot, name, 'objects', 'result.json.gz'))).toString('utf8')) as { report?: unknown };
+      const report: unknown = stored.report;
       const validated = validatePayload({ report, markdown: 'archive' }, config.test);
-      const id = name.slice(0, -5);
-      runs.push(runInfo(id, validated.report, config.apiBase, names.includes(`${id}.sources.json`)));
+      const id = name.slice('campaign-'.length);
+      runs.push(runInfo(id, validated.report, config.apiBase));
     }
     return runs;
   }

@@ -93,7 +93,7 @@ Il s'agit d'une scène de stress procédurale rendue par le banc du projet. Elle
 
 La tangente partagée conserve l'expression numérique de la référence. La variante de distances carrées reste expérimentale : sa démonstration est conditionnelle aux hypothèses numériques documentées dans variants.ts ; la réussite de cette scène ne certifie pas tous les moteurs JavaScript.
 
-Les données brutes, les compteurs de géométrie et les résultats au format du laboratoire sont conservés dans le JSON associé. Les campagnes précédentes sont archivées dans results/comparisons/. Aucun résultat de ce rapport ne remplace implicitement les conclusions des autres bancs.
+Les données brutes compressées, les compteurs de géométrie, les journaux et les comparaisons visuelles sont conservés dans le paquet de rapport associé. Les campagnes précédentes sont archivées dans reports/04-gpu-lod-comparison/. Aucun résultat de ce rapport ne remplace implicitement les conclusions des autres bancs.
 
 Limites enregistrées par le moteur de mesure :
 

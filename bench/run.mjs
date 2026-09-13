@@ -1,10 +1,11 @@
 import { chromium } from 'playwright';
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeReportArchive } from '../shared/archive/index.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const require = createRequire(import.meta.url);
@@ -61,25 +62,20 @@ try {
       || result.validSamples < 1 || result.validationErrors?.length) throw new Error(`Campaign failed: ${JSON.stringify({ pageErrors, result })}`);
     runs.push({ test, config, result });
   }
-  const runId = new Date().toISOString().replaceAll(':', '-');
-  const directory = join(root, 'benchmark-runs', smoke ? 'checks' : 'measurements', runId);
-  await mkdir(directory, { recursive: true });
-  await writeFile(join(directory, 'raw.json'), JSON.stringify({ runId, commit, sourceHash, browser: browser.version(), args, system, probe, runs }, null, 2));
-  for (const { test, result } of runs) {
-    await writeFile(join(directory, `${test}.md`), result.report);
-    await writeFile(join(directory, `${test}.svg`), result.chart);
-  }
-  // Smoke checks never overwrite a physical performance campaign.
+  // Smoke checks never publish a physical performance campaign.
   if (!smoke) for (const { test, config, result } of runs) {
     const record = { timestamp: new Date().toISOString(), test, commit, status: 'measured', verdict: 'not-yet-decided',
       environment: { gpu: probe.adapter.description || null, browser: browser.version(), threeVersion: probe.threeRevision, webgpuFeatures: probe.features },
       scene: { objects: null, triangles: null, materials: null, lights: null },
       cpu: { frameMs: null, submitMs: null }, gpu: { frameMs: null }, memory: { gpuBytes: null }, draw: { submitted: null, visible: null },
-      customMetrics: { execution: 'browser-webgpu', sourceHash, protocol: config, rawArtifact: directory,
-        validSamples: result.validSamples, comparisons: result.records } };
-    await writeFile(join(root, test, 'results/latest.json'), JSON.stringify(record, null, 2) + '\n');
+      customMetrics: { execution: 'browser-webgpu', sourceHash, protocol: config,
+        validSamples: result.validSamples, comparisons: result.records,
+        visualComparison: `data:image/svg+xml;base64,${Buffer.from(result.chart).toString('base64')}` },
+      raw: { browser: browser.version(), args, system, probe, result } };
+    await writeReportArchive(root, { testId: test, markdown: result.report, latest: record,
+      engineEvents: [{ timestamp: record.timestamp, level: 'info', phase: 'browser-webgpu', message: 'Campagne physique archivée.', context: { sourceHash, validSamples: result.validSamples } }] });
   }
-  console.log(`WebGPU checks complete: ${directory}`);
+  console.log(`WebGPU checks complete: ${smoke ? 'contrôle non publié' : 'rapports/packages générés'}`);
 } finally {
   clearTimeout(timeout);
   if (browser) await browser.close();

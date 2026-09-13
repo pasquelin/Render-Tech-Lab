@@ -1,10 +1,15 @@
-import { modelById } from '../../15-virtualized-integration/index.ts';
+import { modelById, benchmarkModels } from '../../15-virtualized-integration/index.ts';
+
+export function defaultModelId(): string {
+  return benchmarkModels[0]?.id ?? '';
+}
 
 export function modelManifestUrl(modelId: string) {
-  const model = modelById(modelId);
+  const model = modelById(modelId) ?? (benchmarkModels[0]?.id ? modelById(benchmarkModels[0].id) : undefined);
   if (!model) throw new Error(`Modèle inconnu : ${modelId}`);
   return `/${model.derivedDirectory.replace(/^public\//, '')}/native/full/manifest.json`;
 }
+
 export async function checkModelAvailability(modelId: string, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<number> {
   const read = async (url: string) => {
     const response = await fetcher(url, { signal, cache: 'no-store' });
@@ -24,5 +29,6 @@ export async function checkModelAvailability(modelId: string, fetcher: typeof fe
   if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète. Relancez pnpm prepare:models.');
   return metadata.selectedTriangles;
 }
-export const emeraldManifestUrl = modelManifestUrl('emerald-square');
-export const checkEmeraldAvailability = (fetcher: typeof fetch = fetch, signal?: AbortSignal) => checkModelAvailability('emerald-square', fetcher, signal);
+
+export const emeraldManifestUrl = modelManifestUrl(defaultModelId());
+export const checkEmeraldAvailability = (fetcher: typeof fetch = fetch, signal?: AbortSignal) => checkModelAvailability(defaultModelId(), fetcher, signal);

@@ -88,7 +88,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   text('viewport-telemetry-mode', 'LOD · WebGPU natif');
   text('viewport-telemetry-detail', 'A : calcul CPU de référence · B : calcul WGSL · raster commun');
   text('stat-mode', 'Aperçu arrêté');
-  text('open-report-hint', '04-gpu-lod/results/comparisons/');
+  text('open-report-hint', 'reports/04-gpu-lod-comparison/campaign-…/');
   stop.style.display = 'none';
   onUpdate({ benchLabel: 'Comparer le LOD CPU et GPU', painLabel: 'Arrêter' });
   el('lab-mode-card').children[1].textContent = 'Même rendu natif ; sélection LOD de référence sur CPU ou portée en WGSL.';
@@ -130,7 +130,6 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   const legacy = document.createElement('a'); legacy.href = '/?test=04-gpu-lod&backend=legacy'; legacy.className = 'btn btn-sm btn-lab-secondary w-full'; legacy.textContent = 'Études 04A / 04B archivées';
   el('lab-report-card').append(legacy);
   const history = document.createElement('div'); history.className = 'space-y-2 text-xs'; el('lab-report-card').append(history);
-  const errata = document.createElement('a'); errata.href = '/04-gpu-lod/results/NATIVE-ERRATA.md'; errata.target = '_blank'; errata.rel = 'noopener'; errata.className = 'link text-xs'; errata.textContent = 'Rectifications et échecs des premiers essais natifs'; el('lab-report-card').append(errata);
   const retry = document.createElement('button'); retry.className = 'btn btn-sm btn-lab-secondary w-full hidden'; retry.textContent = 'Réessayer la sauvegarde'; el('lab-report-card').append(retry);
   const options = (order: NativeComparisonOptions['order'] = 'ABBA'): NativeComparisonOptions => {
     const [width,height] = resolution.value.split(',').map(Number);
@@ -198,7 +197,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   retry.onclick = () => { void save().then(()=>status('Rapport sauvegardé.')).catch(error=>status(String(error))); };
   function openReport() {
     text('modal-report-title','04 · Comparaison du calcul LOD en rendu natif');
-    text('modal-report-path','04-gpu-lod/results/comparisons/');
+    text('modal-report-path','reports/04-gpu-lod-comparison/campaign-…/');
     el('modal-report-body').innerHTML = formatMarkdown(markdown || 'Aucune campagne native exécutée.');
     if(archive){
       const links=document.createElement('p');links.className='flex gap-3';

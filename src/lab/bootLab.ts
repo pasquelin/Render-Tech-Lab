@@ -461,7 +461,7 @@ export class LabSession {
     this.patch({
       workbench: {
         ...this.state.workbench,
-        reportPath: `reports/${moduleId}.md & ${moduleId}/results/REPORT.md`,
+        reportPath: `reports/${moduleId}/campaign-…/REPORT.md`,
         reportHtml: '<div class="text-xs text-primary font-mono animate-pulse">⏳ Chargement de l\'analyse technique in-situ...</div>',
       },
     });
@@ -527,7 +527,7 @@ export class LabSession {
         showWebgpu: false,
         showLodComparison: false,
         workbench: { ...this.state.workbench, visible: false },
-        reportHint: `${moduleId}/results/REPORT.md & reports/`,
+        reportHint: `reports/${moduleId}/campaign-…/REPORT.md`,
         ...selector,
         classicActive: true,
         stats: { ...this.state.stats, modeLabel: 'Three.js Baseline' },
@@ -549,7 +549,7 @@ export class LabSession {
         showChart: false,
         showLodComparison: false,
         workbench: { ...this.state.workbench, visible: false },
-        reportHint: `${moduleId}/results/REPORT.md & reports/`,
+        reportHint: `reports/${moduleId}/campaign-…/REPORT.md`,
         ...selector,
         benchStatus: 'Prêt (01-indirect-draw actif).',
         benchTone: 'text-base-content/80',
@@ -566,7 +566,7 @@ export class LabSession {
         mode: this.runner02?.currentMode === 'classic' ? 'classic' : 'gpu-driven',
         showLodComparison: false,
         workbench: { ...this.state.workbench, visible: false },
-        reportHint: `${moduleId}/results/REPORT.md & reports/`,
+        reportHint: `reports/${moduleId}/campaign-…/REPORT.md`,
         ...selector,
         benchStatus: 'Prêt (03-gpu-scene actif).',
         benchTone: 'text-base-content/80',
@@ -593,7 +593,7 @@ export class LabSession {
       showWebgl: false,
       showWebgpu: false,
       showLodComparison: Boolean(moduleUi(moduleId).comparisonHref),
-      reportHint: `${moduleId}/results/REPORT.md & reports/`,
+      reportHint: `reports/${moduleId}/campaign-…/REPORT.md`,
       ...selector,
       workbench: {
         ...this.state.workbench,
@@ -721,7 +721,7 @@ export class LabSession {
         ...emptyModal(),
         open: true,
         title: `Rapport d'analyse R&D — ${testId}`,
-        path: `reports/${testId}.md & ${testId}/results/REPORT.md`,
+        path: `reports/${testId}/campaign-…/REPORT.md`,
         html: '<div class="text-xs text-primary font-mono animate-pulse">⏳ Chargement du rapport depuis le disque...</div>',
       },
     });
@@ -786,7 +786,7 @@ export class LabSession {
         this.setReportHint(`✅ Finder ouvert : ${displayPath}`);
         this.patch({ reportModal: { ...this.state.reportModal, feedback: `✅ Finder ouvert : ${displayPath}` } });
         window.setTimeout(() => {
-          if (!this.disposed) this.setReportHint(`${testId}/results/REPORT.md & reports/`);
+          if (!this.disposed) this.setReportHint(`reports/${testId}/campaign-…/REPORT.md`);
         }, 6000);
       } else {
         this.setReportHint('⚠️ Chemin : ./reports/');

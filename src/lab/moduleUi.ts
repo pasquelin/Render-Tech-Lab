@@ -90,7 +90,7 @@ const MODULE_UI: Record<string, Partial<ModuleUi>> = {
   '15-virtualized-integration': {
     category: 'Géométrie virtualisée', status: 'Intégration', algorithmic: true, sceneChoice: true,
     countLabel: 'Scène :',
-    protocol: 'Fixture procédurale : trois contrôles A/B. Emerald Square est une exploration séparée.',
+    protocol: 'Fixture procédurale : trois contrôles A/B. Les modèles préparés sont une exploration séparée.',
     backend: 'WebGPU · clusters et pages',
     idleNote: 'La fixture vérifie le rendu et les mécanismes de sélection sur trois scènes contrôlées. Ses résultats ne constituent pas une mesure de performance de la ville réelle.',
     diagnostics: [

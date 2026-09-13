@@ -56,7 +56,7 @@ $$\text{pixels} = \frac{D \times H}{2d \tan(\text{FOV} / 2)}$$
 - **04C :** shader et renderer natif présents, mais aucun gain GPU ne doit être annoncé sans timestamps et campagne comparative valide.
 - **Décision :** suspendue jusqu'à une mesure physique traçable et une correctness gate visuelle.
 
-Consultez le rapport complet : [**`results/REPORT.md`**](results/REPORT.md) ou [**`reports/04-gpu-lod.md`**](../reports/04-gpu-lod.md).
+Après une exécution, le rapport complet se trouve dans `reports/04-gpu-lod-comparison/campaign-<id>/REPORT.md` avec ses objets compressés, journaux et comparaisons visuelles.
 
 ## Source layout
 

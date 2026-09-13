@@ -64,9 +64,9 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   text('viewport-telemetry-mode', 'Bistro · WebGL2');
   text('viewport-telemetry-detail', 'A ou B : afficher le décor · Mesurer : comparer');
   text('stat-mode', 'Aperçu arrêté');
-  text('open-report-hint', '14-open-world/results/comparisons/ · COMPARISON.md');
+  text('open-report-hint', 'reports/14-open-world/campaign-…/');
   const reportLocation = el('lab-report-card').children[1];
-  const reportFile = reportLocation.querySelector('code')!; reportFile.textContent = 'comparisons/ · COMPARISON.md';
+  const reportFile = reportLocation.querySelector('code')!; reportFile.textContent = 'reports/14-open-world/campaign-…/';
   reportLocation.replaceChildren('Campagnes archivées : ', reportFile);
   onUpdate({ benchLabel: 'Mesurer et comparer', painLabel: 'Arrêter', showChart: false,
     modeHint: 'Choisir la référence A ou la variante B avant la campagne :', runCardTitle: '3. Campagnes de comparaison' });
@@ -387,7 +387,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
     } catch (error) { if (!controller.signal.aborted) target.textContent = String(error); }
   }
   function openReport() {
-    text('modal-report-title', '14 · Rapports du monde ouvert'); text('modal-report-path', '14-open-world/results/comparisons/');
+    text('modal-report-title', '14 · Rapports du monde ouvert'); text('modal-report-path', 'reports/14-open-world/campaign-…/');
     const target = el('modal-report-body'); target.replaceChildren();
     if (currentReport) {
       const verdict = document.createElement('p'); verdict.className = currentReport.quality.passed ? 'text-success' : 'text-error';

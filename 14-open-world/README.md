@@ -56,7 +56,7 @@ Les bornes des quartiers sont valables pour cette géométrie statique. Un dépl
 
 ## Conservation des preuves
 
-Les campagnes sont écrites dans `results/comparisons/<identifiant>.json` et `.md`, avec le texte des sources du test dans `.sources.json`. Le GLB volumineux est identifié par son empreinte et sa recette, sans être dupliqué dans chaque archive. `results/COMPARISON.md`, `results/comparison-latest.json` et `reports/14-open-world.md` exposent la dernière campagne **publiée** (sources stables). L'historique de la page donne accès aux précédentes, y compris les rejets.
+Chaque campagne est un paquet autonome dans `reports/14-open-world/campaign-<identifiant>/` : `REPORT.md` pour la lecture, données JSON compressées, journaux moteur et sources capturées. Le GLB volumineux est identifié par son empreinte et sa recette, sans être dupliqué. `reports/14-open-world/latest.json` référence seulement la dernière campagne **publiée** (sources stables) ; l'historique donne accès aux précédentes, y compris les rejets.
 
 Les tests d'archivage et de provenance s'exécutent avec `npm run test:comparison` (`npm run test:world` pour les oracles du banc 14). Ils ne remplacent pas les campagnes GPU dans le navigateur. `npm run build` vérifie l'intégration et construit cette page.
 

@@ -13,7 +13,7 @@ Le Lab possède la méthodologie, les protocoles, les recettes et les preuves. L
 
 ## Rapports et provenance
 
-- [Rapports des bancs](../reports/README.md).
+- Les rapports sont créés après exécution dans `reports/<banc>/campaign-<id>/`.
 - [Preuves comparatives d’optimisation](PREUVES_COMPARATIVES_OPTIMISATION.md).
 - [Bilan documentaire historique](VALIDATION_DOCUMENTAIRE.md).
 

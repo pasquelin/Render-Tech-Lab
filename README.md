@@ -11,7 +11,7 @@
 [![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-1e6fbf)](LICENSE)
 
-**[Principes du Lab](docs/PRINCIPES_DU_LAB.md)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)** · **[Rapports](reports/README.md)**
+**[Principes du Lab](docs/PRINCIPES_DU_LAB.md)** · **[Governing rule](#the-governing-rule)** · **[Benchmarks](#the-s0s5-load-curve)**
 
 </div>
 
@@ -88,7 +88,7 @@ Bench 15 has separate public packages and a compiled, executed Rust library/CLI 
 
 All sixteen benches use the canonical layout and public boundaries described in [the laboratory principles](docs/PRINCIPES_DU_LAB.md#structure-des-bancs-0015). Run `npm run test:structure` to verify the layout, metadata and public imports. No legacy forwarding files remain; HTML routes and existing results are retained.
 
-**Cross-cutting:** [`shared/contracts/`](shared/contracts/) holds the shared interfaces and contracts; [`shared/archive/`](shared/archive/) manages report persistence; [`shared/`](shared) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses; [`reports/`](reports/README.md) holds the consolidated arbitration reports.
+**Cross-cutting:** [`shared/contracts/`](shared/contracts/) holds the shared interfaces and contracts; [`shared/archive/`](shared/archive/) manages report persistence; [`shared/`](shared) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses. A real execution creates its self-contained report in `reports/<banc>/campaign-<id>/`.
 
 Product architecture, portable compilation, capabilities and fallback behavior have their canonical specification in [Web Geometry’s product principles](../webGeometry/docs/architecture/PRINCIPES_DU_PRODUIT.md). The Lab owns the evidence required to accept an implementation; its [proof policy](docs/PRINCIPES_DU_LAB.md) governs each campaign.
 
@@ -191,7 +191,7 @@ npm run bench          # campagnes physiques matérielles (01, 02, 09)
 npm run build          # type-check TypeScript strict (tsc) + production build
 ```
 
-The CLI uses installed Chrome with a physical WebGPU adapter; it rejects software adapters and missing samples. Set `RTL_BROWSER_CHANNEL` to another installed Playwright channel if needed. `node bench/run.mjs --smoke --fallback` verifies queue-completion timing after building. Full campaigns write raw data, Markdown and SVG in `benchmark-runs/measurements/` and update `results/latest.json`. Smoke checks use `benchmark-runs/checks/` and never promote a performance result. Other GPU module commands fail explicitly with `not-run` until their physical runner exists. Historical reports and `results/legacy-unverified/` are not performance evidence.
+The CLI uses installed Chrome with a physical WebGPU adapter; it rejects software adapters and missing samples. Set `RTL_BROWSER_CHANNEL` to another installed Playwright channel if needed. `node --experimental-strip-types bench/run.mjs --smoke --fallback` verifies queue-completion timing after building. A full campaign writes one self-contained package per banc in `reports/<banc>/campaign-<id>/`: Markdown, compressed raw objects, engine log and visual SVG. Smoke checks are not published as performance results. Other GPU module commands fail explicitly with `not-run` until their physical runner exists.
 
 ## Status
 

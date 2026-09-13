@@ -1,7 +1,7 @@
 export * from './retention.ts';
 export * from './reportStore.ts';
 export * from './atomic.ts';
-export * from './completeReport.ts';
+export * from './lossless.ts';
 export * from './streamReport.ts';
 export * from './reportPackage.ts';
 

@@ -1,4 +1,4 @@
-import { createEmeraldAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
+import { createModelAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
 import { createIntegrationArchivePlugin } from './shared/archive/integration.ts';
 import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
@@ -90,7 +90,7 @@ function saveReportPlugin(): Plugin {
             res.end(fs.readFileSync(file, 'utf-8'));
           } catch {
             res.statusCode = 404;
-            res.end(JSON.stringify({ error: 'Aucun parcours Emerald archivé.' }));
+            res.end(JSON.stringify({ error: 'Aucun parcours de modèle archivé.' }));
           }
           return;
         }
@@ -105,7 +105,7 @@ function saveReportPlugin(): Plugin {
           try {
             const report = JSON.parse(body);
             if (!report || report.version !== 1 || typeof report.id !== 'string' || !Array.isArray(report.samples)) {
-              throw new Error('Invalid emerald report');
+              throw new Error('Invalid benchmark report');
             }
             const dir = path.resolve(server.config.root, 'benchmark-runs/checks/emerald-path');
             fs.mkdirSync(dir, { recursive: true });

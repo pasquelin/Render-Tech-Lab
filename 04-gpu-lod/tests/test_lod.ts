@@ -2,12 +2,11 @@
  * 04-gpu-lod/tests/test_lod.ts
  *
  * Script CLI d'exécution automatisée pour 04-gpu-lod.
- * Exécute 04A, 04B, 04C, génère latest.json et archive le rapport Markdown.
+ * Exécute 04A, 04B, 04C et archive un paquet de rapport autonome.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { LodBenchmarkRunner } from '../runner/index.ts';
+import { writeReportArchive } from '../../shared/archive/index.ts';
 
 async function main() {
   console.log('🚀 Lancement du banc 04-gpu-lod (04A/B/C)...');
@@ -22,23 +21,8 @@ async function main() {
   console.log(`  - 04C Sélection GPU : ${gpuTimes ? gpuTimes[1].toFixed(2) + ' ms (2k objets)' : 'non instrumenté'}`);
   console.log(`  - Contrôle d'erreur SSE : ${summary.contractualErrorCheck.maxObservedErrorPx.toFixed(2)} px (seuil <= ${summary.contractualErrorCheck.thresholdPx} px) => ${summary.contractualErrorCheck.passed ? 'CONFORME' : 'NON CONFORME'}`);
 
-  const rootDir = process.cwd();
-
-  // 1. Sauvegarde des données brutes latest.json
-  const resultsDir = path.resolve(rootDir, '04-gpu-lod', 'results');
-  fs.mkdirSync(resultsDir, { recursive: true });
-  fs.writeFileSync(path.join(resultsDir, 'latest.json'), JSON.stringify(latestJson, null, 2), 'utf-8');
-  console.log('💾 Sauvegardé : 04-gpu-lod/results/latest.json');
-
-  // 2. Sauvegarde du rapport local
-  fs.writeFileSync(path.join(resultsDir, 'REPORT.md'), markdownReport, 'utf-8');
-  console.log('💾 Sauvegardé : 04-gpu-lod/results/REPORT.md');
-
-  // 3. Miroir dans reports/04-gpu-lod.md
-  const reportsDir = path.resolve(rootDir, 'reports');
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(path.join(reportsDir, '04-gpu-lod.md'), markdownReport, 'utf-8');
-  console.log('💾 Synchronisé : reports/04-gpu-lod.md');
+  const archive = await writeReportArchive(process.cwd(), { testId: '04-gpu-lod', markdown: markdownReport, latest: latestJson });
+  console.log(`💾 Paquet de rapport : ${archive.reportPath}`);
 
   console.log('🏁 Banc 04-gpu-lod complété avec succès !');
 }

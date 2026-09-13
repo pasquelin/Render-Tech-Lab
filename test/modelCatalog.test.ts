@@ -15,15 +15,17 @@ test('the bench 15 model catalogue has stable unique ids and a prepared-cache lo
 });
 
 test('the model catalogue has no per-model preparation ceiling', () => {
-  assert.equal('ramBudgetMb' in modelById('bistro-exterior')!, false);
-  assert.equal('ramBudgetMb' in modelById('emerald-square')!, false);
+  for (const model of benchmarkModels) {
+    assert.equal('ramBudgetMb' in model, false);
+  }
 });
 
-test('the historic Emerald source is an ordinary model catalogue entry', () => {
-  const emerald = modelById('emerald-square');
-  assert.ok(emerald);
-  assert.equal(emerald.label, 'Emerald Square');
-  assert.equal(emerald.runtimeFile, 'emerald-day-smoke.glb');
+test('all model catalogue entries have required attributes', () => {
+  for (const model of benchmarkModels) {
+    assert.ok(model.id);
+    assert.ok(model.label);
+    assert.ok(model.runtimeFile);
+  }
 });
 
 test('one generic command prepares every bench 15 model', () => {
