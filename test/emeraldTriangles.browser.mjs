@@ -20,7 +20,7 @@ try{
  await page.locator('[data-emerald-availability="ready"]').waitFor({timeout:30000});
  await page.getByLabel('Moteur affiché').selectOption('exact-cluster-pages');
  await page.getByLabel('Vue de diagnostic').selectOption('wireframe');
- await page.locator('main').getByRole('button',{name:'Explorer Emerald Square'}).click();
+ await page.locator('main').getByRole('button',{name:/^Explorer /}).click();
  await page.locator('[data-emerald-status="ready"], [data-emerald-status="error"]').waitFor({timeout:180000});
  assert.equal(await page.locator('[data-emerald-status]').getAttribute('data-emerald-status'),'ready',await page.locator('main').innerText());
  assert.equal(await page.locator('[data-rendered-mode]').getAttribute('data-rendered-mode'),'wireframe');

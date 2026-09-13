@@ -14,11 +14,11 @@ try {
  assert.equal(await page.locator('canvas').count(),0);
  assert.ok(assets.every(url=>url.endsWith('.json')));
  await page.getByRole('radio',{name:'Fixture procédurale'}).click();
- await page.getByRole('radio',{name:'Emerald Square'}).click();
+ await page.getByRole('radio',{name:'Modèles préparés'}).click();
  await page.locator('[data-emerald-availability="ready"]').waitFor({timeout:30000});
  assert.equal(await page.locator('canvas').count(),0);
- assert.equal(await page.getByRole('button',{name:'Explorer Emerald Square',exact:true}).count(),2);
- await page.getByRole('button',{name:'Explorer Emerald Square',exact:true}).first().click();
+ assert.equal(await page.getByRole('button',{name:/^Explorer /}).count(),2);
+ await page.getByRole('button',{name:/^Explorer /}).first().click();
  await page.locator('[data-emerald-status="loading"]').waitFor();
  assert.equal(await page.locator('#emerald-scene').count(),0);
  await page.locator('[data-emerald-status="ready"], [data-emerald-status="error"]').waitFor({timeout:180000});
@@ -27,7 +27,7 @@ try {
  await page.getByRole('button',{name:'Arrêter l’exploration',exact:true}).click();
  await page.locator('[data-emerald-status="stopped"]').waitFor();
  assert.equal(await page.locator('canvas').count(),0);
- assert.equal(await page.getByRole('button',{name:'Relancer Emerald Square',exact:true}).count(),2);
+ assert.equal(await page.getByRole('button',{name:/^Relancer /}).count(),2);
  assert.deepEqual(errors,[]);
  console.log('PASS: absent → retry → available → fixture → Emerald idle (no canvas/assets) → explicit launch → loader → real frame → stop.');
 } finally {await browser.close();}
