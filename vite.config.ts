@@ -71,6 +71,18 @@ function saveReportPlugin(): Plugin {
       });
 
       server.middlewares.use('/api/emerald-archive', (req, res) => {
+        if (req.method === 'GET') {
+          try {
+            const file = path.resolve(server.config.root, 'benchmark-runs/checks/emerald-path/latest.json');
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.end(fs.readFileSync(file, 'utf-8'));
+          } catch {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Aucun parcours Emerald archivé.' }));
+          }
+          return;
+        }
         if (req.method !== 'POST') {
           res.statusCode = 405;
           res.end();
