@@ -6,8 +6,8 @@ La matrice vit dans `@web-geometry/sdk` (`COMPARISON_LIBRARIES`) et le registre 
 |---|---|---|
 | `three-webgl-reference` | intégrée | Three.js WebGL2, frustum standard, pas de géométrie virtualisée |
 | `exact-cluster-pages` | intégrée | Clusters, hiérarchie, culling CPU, pages, résidence |
-| `three-lod` | intégrée | `THREE.LOD`, distances dérivées du rayon ; pas les mêmes unités que `pixelError` |
-| `webgpu-page-raster` | compatible, PBR absent | Raster de pages WebGPU (`createGpuPageCache`) ; exclu du verdict texturé |
+| `three-lod` | intégrée | Exploration libre. `THREE.LOD`, distances dérivées du rayon ; hors parcours urbain |
+| `webgpu-page-raster` | compatible, PBR absent | Raster WebGPU (compute, visbuffer, Hi-Z) dans le parcours de mesure ; hors verdict visuel A/A |
 | `meshoptimizer` | non comparable | Bibliothèque de compilation, pas un renderer |
 | `3d-tiles-renderer` / CesiumJS | non comparable | Format 3D Tiles, pas le glTF Emerald |
 | `babylon-lod` / PlayCanvas | non comparable | Autre moteur, autres matériaux |

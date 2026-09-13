@@ -14,5 +14,6 @@ export async function checkEmeraldAvailability(fetcher: typeof fetch = fetch, si
   const metadata = await read(target.pathname);
   if (metadata.status !== 'ready' || metadata.scope !== 'full' || metadata.schema !== 1 || !Array.isArray(metadata.primitives) || !Array.isArray(metadata.selectedNodes) || !Number.isFinite(metadata.selectedTriangles) || metadata.selectedTriangles <= 0) throw new Error('Cache Emerald invalide. Préparez Emerald puis réessayez.');
   if (metadata.simplification !== true) throw new Error('Cache sans pages QEM. Relancez npm run prepare:emerald.');
+  if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète (modèle d’erreur manquant). Relancez npm run prepare:emerald.');
   return metadata.selectedTriangles;
 }

@@ -7,7 +7,7 @@ export const defaultEmeraldConfig:EmeraldConfig={cities:1,detail:'source',lodQua
 export const segmentNames=['Vue générale de la ville','Entrée dans une rue dense','Déplacement au niveau du sol','Végétation et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et streaming','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;
 export const warmupFrames=30;
-export const pathVersion=3;
+export const pathVersion=4;
 /** Origin plane if the city straddles y=0 (Emerald after Blender); otherwise the AABB floor. */
 export function streetLevel(bounds:{min:{y:number};max:{y:number}}){
  return bounds.min.y<0&&bounds.max.y>0?0:bounds.min.y;

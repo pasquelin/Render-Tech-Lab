@@ -1,4 +1,3 @@
-import { EmeraldReportBody } from './EmeraldReportBody.tsx';
 import { EmeraldRunBody } from './EmeraldRunBody.tsx';
 import { EmeraldMetricsBody } from './EmeraldMetricsBody.tsx';
 import { EmeraldLiveFields } from './EmeraldLiveFields.tsx';
@@ -164,8 +163,7 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
         </LabSection>
 
         <LabSection id="lab-report-card" number={4} title="Rapports et suivi">
-          {emerald ? <EmeraldReportBody /> : (
-            <>
+          <>
               <div className="text-xs text-base-content/60 leading-tight">
                 Résultats archivés dans le fichier unique :{' '}
                 <code className="text-[11px] bg-base-100 px-1.5 py-0.5 rounded font-mono text-primary border border-base-content/10">REPORT.md</code>
@@ -182,8 +180,7 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
                 </Button>
               </div>
               <div id="open-report-hint" className={`${HINT_BASE} text-base-content/40`}>{state.reportHint}</div>
-            </>
-          )}
+          </>
         </LabSection>
       </aside>
   );

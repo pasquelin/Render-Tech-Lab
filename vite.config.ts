@@ -70,6 +70,37 @@ function saveReportPlugin(): Plugin {
         }
       });
 
+      server.middlewares.use('/api/emerald-archive', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            const report = JSON.parse(body);
+            if (!report || report.version !== 1 || typeof report.id !== 'string' || !Array.isArray(report.samples)) {
+              throw new Error('Invalid emerald report');
+            }
+            const dir = path.resolve(server.config.root, 'benchmark-runs/checks/emerald-path');
+            fs.mkdirSync(dir, { recursive: true });
+            const stamp = String(report.timestamp ?? new Date().toISOString()).replace(/[:.]/g, '');
+            const file = path.join(dir, `${stamp}-${report.id}.json`);
+            const json = `${JSON.stringify(report)}\n`;
+            fs.writeFileSync(file, json);
+            fs.writeFileSync(path.join(dir, 'latest.json'), json);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, file }));
+          } catch (err: unknown) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+          }
+        });
+      });
+
       // 2. Lecture du rapport pour affichage dans l'application
       const handleGetReport = (req: any, res: any) => {
         try {
@@ -210,6 +241,7 @@ function saveReportPlugin(): Plugin {
 export default defineConfig({
   plugins: [createEmeraldAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
+  optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps

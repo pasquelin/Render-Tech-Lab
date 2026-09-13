@@ -3,11 +3,12 @@ import { Copy, FileText, Folder, RefreshCw, X } from 'lucide-react';
 import { useLab } from './LabContext.tsx';
 import { Button } from './ui/Button.tsx';
 import { MarkdownReport } from './ui/MarkdownReport.tsx';
+import { EmeraldReportView } from './EmeraldReportView.tsx';
 
 const plain = (value: string) => value.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
 export function ReportModal() {
-  const { state, actions } = useLab();
+  const { state, actions, emerald } = useLab();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   const { reportModal } = state;
@@ -46,7 +47,7 @@ export function ReportModal() {
         </div>
 
         <div id="modal-report-body" className="p-6 overflow-y-auto flex-1 space-y-4 text-xs sm:text-sm font-sans text-base-content/90 leading-relaxed bg-base-100">
-          {reportModal.raw ? <MarkdownReport source={reportModal.raw} /> : <p>{plain(reportModal.html) || 'Chargement du rapport…'}</p>}
+          {emerald?.report && state.moduleId === '15-virtualized-integration' ? <EmeraldReportView report={emerald.report} history={emerald.history} /> : reportModal.raw ? <MarkdownReport source={reportModal.raw} /> : <p>{plain(reportModal.html) || 'Chargement du rapport…'}</p>}
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 bg-base-300 border-t border-base-content/10">

@@ -20,7 +20,8 @@ test('bench engines expose a stable comparison contract without simulating missi
  assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference','webgpu-page-raster']),'webgpu-page-raster');
  assert.equal(selectableBackend('webgpu-page-raster','beauty',['three-webgl-reference']),'three-webgl-reference');
  assert.equal(selectableBackend('webgpu-page-raster','pages',['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']),'webgpu-page-raster');
- assert.deepEqual([...PATH_CAMPAIGN_ENGINES],['three-webgl-reference','exact-cluster-pages','three-lod']);
+ assert.deepEqual([...PATH_CAMPAIGN_ENGINES],['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']);
+ assert.ok(!PATH_CAMPAIGN_ENGINES.includes('three-lod'));
  assert.equal(pathCampaignFactories().length,3);
  assert.equal(needsResidentPages('three-lod','three-lod'),true);
  assert.equal(needsResidentPages('three-webgl-reference','three-webgl-reference'),false);

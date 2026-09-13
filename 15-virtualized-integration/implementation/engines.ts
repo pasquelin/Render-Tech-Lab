@@ -14,10 +14,11 @@ export interface BenchEngine {
 export const BENCH_ENGINES:readonly BenchEngine[]=[
  {id:'three-webgl-reference',label:'Three.js',factory:referenceBackend,comparable:true,note:'Référence sans géométrie virtualisée.'},
  {id:'exact-cluster-pages',label:'WebGeometry',factory:exactPagesBackend,comparable:true,note:'Clusters, hiérarchie, culling CPU, pages et résidence.'},
- {id:'three-lod',label:'THREE.LOD',factory:threeLodBackend,comparable:true,note:'Niveaux de détail Three.js, distances dérivées du rayon ; unités différentes du pixelError WebGeometry.'},
- {id:'webgpu-page-raster',label:'WebGPU',factory:webgpuPagesBackend,comparable:false,note:'Raster de pages WebGPU ; PBR texturé non équivalent, exclu du verdict visuel.'},
+ {id:'three-lod',label:'THREE.LOD',factory:threeLodBackend,comparable:true,note:'Exploration libre seulement. Distances dérivées du rayon ; pas un témoin de virtualisation.'},
+ {id:'webgpu-page-raster',label:'WebGPU',factory:webgpuPagesBackend,comparable:false,note:'Raster de pages WebGPU (sélection compute, visbuffer, Hi-Z). PBR non équivalent : hors verdict visuel, dans le parcours de mesure.'},
 ];
-export const PATH_CAMPAIGN_ENGINES:readonly BenchEngineId[]=BENCH_ENGINES.filter(engine=>engine.comparable).map(engine=>engine.id);
+/** Parcours urbain : référence, pages WebGL2, raster WebGPU. THREE.LOD reste un moteur d’exploration. */
+export const PATH_CAMPAIGN_ENGINES:readonly BenchEngineId[]=['three-webgl-reference','exact-cluster-pages','webgpu-page-raster'];
 export function pathCampaignFactories(){return PATH_CAMPAIGN_ENGINES.map(id=>benchEngine(id).factory);}
 
 export function benchEngine(id:string){

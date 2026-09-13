@@ -19,9 +19,9 @@ try{
  await page.getByRole('button',{name:'Arrêter l’exploration'}).click();
  await page.locator('[data-emerald-report]').waitFor();
  const report=await page.evaluate(()=>JSON.parse(localStorage.getItem('render-tech-lab:emerald-runs:v1'))[0]);
- assert.deepEqual(report.pathEngines,['three-webgl-reference','exact-cluster-pages','three-lod']);
+ assert.deepEqual(report.pathEngines,['three-webgl-reference','exact-cluster-pages','webgpu-page-raster']);
  assert.equal(report.configuration.mode,'path');
- assert.equal(report.pathVersion,3);
+ assert.equal(report.pathVersion,4);
  assert.ok(report.captures.length>=1,'at least one still');
  const still=report.captures[0];
  assert.equal(still.engine,'three-webgl-reference');

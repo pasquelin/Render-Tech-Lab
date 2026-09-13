@@ -2,7 +2,7 @@
 
 Le runner 15 exécute désormais par défaut **une véritable hiérarchie procédurale à deux niveaux avec sélection GPU et pages physiques**. Ce n'est plus seulement le contrôle résident du premier jalon. Le domaine prouvé reste volontairement petit : 64 régions statiques opaques, matériau constant par région, caméra perspective frontale. Aucun résultat de performance sur Emerald Square ni sur une hiérarchie générale de meshes arbitraires.
 
-L’explorateur Emerald Square (scène séparée, WebGL2 via `@web-geometry/sdk/browser`) charge la ville complète préparée, stream les pages visibles, propose Three.js standard, WebGeometry (clusters/pages) et `THREE.LOD`. Le switch de moteur reste le comparateur fonctionnel (un moteur à l’écran). Le parcours urbain v2 impose dix segments et les mêmes poses à chaque moteur ; une campagne par moteur, puis `comparePathReports`. Le contrôle A/A de la ville complète reste instable : aucune campagne n’est marquée mesurée. GPU et VRAM restent non mesurés. La vue « Triangles soumis » colore chaque triangle rasterisé ; ce n’est pas un filaire GL_LINES.
+L’explorateur Emerald Square charge la ville préparée via `@web-geometry/sdk/browser`. L’exploration libre propose Three.js, pages WebGL2, `THREE.LOD` et le raster WebGPU. Le parcours urbain v4 enchaîne Three.js, pages WebGL2 et raster WebGPU sur les mêmes poses (hors `THREE.LOD`). Une campagne par moteur, puis `comparePathReports`. Le contrôle A/A de la ville complète reste instable : aucune campagne n’est marquée mesurée. GPU et VRAM restent non mesurés. La vue « Triangles soumis » colore chaque triangle rasterisé ; ce n’est pas un filaire GL_LINES.
 
 ## Ce qui fonctionne ensemble
 

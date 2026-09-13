@@ -57,6 +57,6 @@ La télémétrie distingue CPU rendu, intervalle rAF, dessins/triangles soumis e
 
 La vue triangles soumet les triangles réellement sélectionnés par le moteur affiché, une couleur unique par triangle.
 
-Le parcours urbain (`pathVersion` 2, dix segments) est un test automatique : un lancement enchaîne Three.js, WebGeometry et `THREE.LOD` sur les mêmes poses, en rendu texturé. Une photo réelle et ses infos techniques (pose, FOV, moteur, backend, triangles, pages, CPU, résolution) sont prises au début de chaque segment. Le sélecteur de moteur reste un bonus d’exploration libre. Pas de verdict de performance tant que le contrôle A/A de la ville complète est instable.
+Le parcours urbain (`pathVersion` 4, dix segments) est un test automatique : un lancement enchaîne Three.js, les pages WebGL2 et le raster WebGPU sur les mêmes poses, en rendu texturé. `THREE.LOD` reste un moteur d’exploration libre. Une photo réelle et ses infos techniques sont prises au début de chaque segment. Le sélecteur de moteur sert à l’exploration libre. Pas de verdict de performance tant que le contrôle A/A de la ville complète est instable. Les JSON de parcours sont archivés sous `benchmark-runs/checks/emerald-path/`.
 
 Recette Chrome : `node test/emeraldExploration.browser.mjs`. Elle vérifie erreur HTML/Réessayer, chargement sans cache réseau, orbit/free, arrêt/reprise, changement de scène/banc, retour, rechargement direct et resize. Les captures et réponses réseau sont archivées sous `benchmark-runs/checks/emerald-ui`, sans verdict de performance.

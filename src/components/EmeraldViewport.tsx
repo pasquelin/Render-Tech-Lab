@@ -40,10 +40,10 @@ export function EmeraldViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasEl
         <PreparationStation
           controls={<EmeraldLaunchFields />}
           presentation={{
-            description: `Emerald Square : ${view.config.mode === 'path' ? 'un parcours urbain reproductible. Un lancement enchaîne Three.js, WebGeometry et THREE.LOD.' : 'une exploration libre de la ville réelle. Caméra, diagnostic et moteur se règlent à droite pendant le rendu.'}`,
+            description: `Emerald Square : ${view.config.mode === 'path' ? 'un parcours urbain reproductible. Un lancement enchaîne Three.js, les pages WebGL2 et le raster WebGPU.' : 'une exploration libre de la ville réelle. Caméra, diagnostic et moteur se règlent à droite pendant le rendu.'}`,
             question: 'Comment la navigation se comporte-t-elle à cette étendue et à ce niveau de détail ?',
             protocol: view.config.mode === 'path' ? 'Test automatique : mêmes poses pour chaque moteur, une photo technique par segment. Pas un verdict de performance.' : 'Exploration manuelle. Un seul moteur à l’écran, changeable pendant la navigation. Le verdict de performance reste bloqué.',
-            steps: view.config.mode === 'path' ? ['Configurer', 'Lancer le parcours', 'Three.js', 'WebGeometry', 'THREE.LOD', 'Rapport'] : ['Configurer', 'Explorer', 'Ajuster à droite', 'Arrêter', 'Rapport'],
+            steps: view.config.mode === 'path' ? ['Configurer', 'Lancer le parcours', 'Three.js', 'Pages WebGL2', 'Raster WebGPU', 'Rapport'] : ['Configurer', 'Explorer', 'Ajuster à droite', 'Arrêter', 'Rapport'],
             metadata: [],
           }}
           footer={(

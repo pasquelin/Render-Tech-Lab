@@ -28,7 +28,7 @@ export function EmeraldLaunchFields() {
         onChange={value => set('mode', value)}
         options={[
           { value: 'explore', title: 'Exploration libre', detail: 'Marcher dans la ville. Caméra, diagnostic et moteur à droite.' },
-          { value: 'path', title: 'Parcours urbain reproductible', detail: 'Test auto : Three.js, WebGeometry et THREE.LOD, une photo par segment.' },
+          { value: 'path', title: 'Parcours urbain reproductible', detail: 'Test auto : Three.js, pages WebGL2 et raster WebGPU, une photo par segment.' },
         ]}
       />
       <RadioBoard

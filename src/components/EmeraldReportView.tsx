@@ -13,6 +13,7 @@ export function EmeraldReportView({ report, history = [] }: { report: EmeraldRep
   return (
     <div className="space-y-4" data-emerald-report={report.id}>
       <ReportSummary title="Résumé de navigation">
+        {report.error ? <p role="alert" className="text-sm text-error">{report.error}</p> : null}
         <p className="text-xs">{new Date(report.timestamp).toLocaleString('fr-FR')} · {report.configuration.cities} ville(s) · géométrie partagée · instances ×{report.multipliedInstances ?? report.configuration.cities} · {report.configuration.lodQuality ?? report.configuration.detail} · {(engines.length?engines: [report.configuration.engine]).map(engineLabel).join(' · ')} · {report.configuration.diagnostic} · {report.resolution.join(' × ')} px</p>
         <MetricGrid items={[
           { label: 'Première image depuis le clic', value: number(report.firstImageMs, 1), unit: 'ms' },

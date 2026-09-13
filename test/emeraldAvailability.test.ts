@@ -4,7 +4,7 @@ import { checkEmeraldAvailability } from '../src/lab/emeraldAvailability.ts';
 const json = (value: unknown) => new Response(JSON.stringify(value), {headers:{'content-type':'application/json'}});
 test('availability reads only pointer and metadata, without loading scene assets', async () => {
  const urls:string[]=[];
- const fetcher=(async (url: string) => { urls.push(url);return json(url.endsWith('manifest.json') ? {status:'ready',scope:'full',url:'key/clusters.json'} : {status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:10046405,simplification:true}); }) as typeof fetch;
+ const fetcher=(async (url: string) => { urls.push(url);return json(url.endsWith('manifest.json') ? {status:'ready',scope:'full',url:'key/clusters.json'} : {status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:10046405,simplification:true,errorModel:'qem-local-plus-child-max'}); }) as typeof fetch;
  assert.equal(await checkEmeraldAvailability(fetcher),10046405);
  assert.equal(urls.length,2);assert.ok(urls.every(url=>url.endsWith('.json')));
 });
@@ -15,4 +15,5 @@ test('HTML and invalid metadata are rejected', async()=>{
  await assert.rejects(checkEmeraldAvailability((async()=>new Response('<html>')) as typeof fetch),/JSON/);
  await assert.rejects(checkEmeraldAvailability((async()=>json({status:'ready',scope:'full',url:'key/clusters.json'})) as typeof fetch),/Cache Emerald invalide/);
  await assert.rejects(checkEmeraldAvailability((async(url:string)=>json(String(url).endsWith('manifest.json')?{status:'ready',scope:'full',url:'key/clusters.json'}:{status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:1,simplification:false})) as typeof fetch),/pages QEM/);
+ await assert.rejects(checkEmeraldAvailability((async(url:string)=>json(String(url).endsWith('manifest.json')?{status:'ready',scope:'full',url:'key/clusters.json'}:{status:'ready',scope:'full',schema:1,primitives:[],selectedNodes:[],selectedTriangles:1,simplification:true})) as typeof fetch),/obsolète/);
 });
