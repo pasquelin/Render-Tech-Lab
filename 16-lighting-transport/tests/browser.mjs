@@ -13,7 +13,7 @@ try{
   const page=await context.newPage();
   page.on('pageerror',error=>{errors.push(String(error));console.log('PAGE_ERROR',String(error));});
   page.on('console',message=>{if(message.type()==='error'){
-    const expectedMissingArchive=message.text().includes('404')&&/\/api\/(get-latest|get-report)/.test(message.location().url);
+    const expectedMissingArchive=message.text().includes('404')&&(/\/api\/(get-latest|get-report)/.test(message.location().url)||message.location().url.endsWith('/favicon.ico'));
     if(!expectedMissingArchive){errors.push(message.text());console.log('CONSOLE_ERROR',message.text(),message.location().url);}
   }});
   await page.goto(origin);await page.locator('[data-bench-access="16-lighting-transport"]').click();

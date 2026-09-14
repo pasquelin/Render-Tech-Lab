@@ -109,11 +109,12 @@ export async function createLightingBench(canvas:HTMLCanvasElement,options:Light
 }
 
 export async function runLightingComparison(canvas:HTMLCanvasElement,options:LightingBenchOptions):Promise<LightingReport>{
-  const runtime=await createRuntime(canvas,options),{controller,signal}=runtime;
-  const config=controller.getConfig(),lights=config.lights;
+  const config=defaults(),lights=config.lights;
+  let runtime:Awaited<ReturnType<typeof createRuntime>>|undefined;
   const report:LightingReport={formatVersion:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'rejected',protocol:LIGHTING_PROTOCOL,config,
-    environment:runtime.environment,provenance:{...runtime.prepared.provenance,preparationMs:runtime.prepared.preparationMs,fixtureKey:runtime.prepared.fixtureKey,geometry:runtime.geometry,
-      labBenchmarkRunner:true,publicPrepare:true,publicExplorer:true,preparedClusterGeometryRendered:false,productionRenderer:false},
+    environment:{renderer:null,vendor:null,webglVersion:null,gpuTimerAvailable:null},
+    provenance:{initialization:'pending',sdkCommit:null,labCommit:null,sourceHashes:null,preparationMs:null,fixtureKey:null,geometry:null,
+      labBenchmarkRunner:true,publicPrepare:null,publicExplorer:null,preparedClusterGeometryRendered:false,productionRenderer:false},
     quality:{passed:null,captures:[]},blocks:[],artifacts:[],observedRafCeilingHz:null,
     limitations:['Rendu expérimental WebGL2 des maillages source ; intégration au rendu habituel du moteur non réalisée.',
       'Équivalence entre algorithmes uniquement : la qualité physique et la fluidité cible restent à valider.',
@@ -132,6 +133,11 @@ export async function runLightingComparison(canvas:HTMLCanvasElement,options:Lig
     {id:'moved-lights',patch:{doorAngle:Math.PI/3,lights:lights.map(source=>({...source,position:[source.position[0],source.position[1],-source.position[2]+.3] as [number,number,number]}))}},
   ];
   try{
+    runtime=await createRuntime(canvas,options);
+    const {controller,signal}=runtime;
+    report.config=controller.getConfig();report.environment=runtime.environment;
+    report.provenance={...report.provenance,...runtime.prepared.provenance,initialization:'ready',
+      preparationMs:runtime.prepared.preparationMs,fixtureKey:runtime.prepared.fixtureKey,geometry:runtime.geometry,publicPrepare:true,publicExplorer:true};
     for(const [index,stage] of stages.entries()){
       options.onProgress?.(`Images identiques · ${index+1}/${stages.length} · ${stage.id}`);await nextFrame(signal);
       runtime.setConfig({...stage.patch,variant:'brute'});controller.render();
@@ -175,9 +181,11 @@ export async function runLightingComparison(canvas:HTMLCanvasElement,options:Lig
       report.status='measured';
     }
   }catch(error){
-    report.status=signal.aborted?'stopped':'error';
-    report.error=signal.aborted?'Campagne arrêtée à la demande.':error instanceof Error?error.message:String(error);
-  }finally{controller.dispose();}
+    const stopped=options.signal?.aborted||runtime?.signal.aborted;
+    report.status=stopped?'stopped':'error';
+    report.error=stopped?'Campagne arrêtée à la demande.':error instanceof Error?error.message:String(error);
+    if(!runtime)report.provenance.initialization=stopped?'stopped':'failed';
+  }finally{runtime?.controller.dispose();}
   options.onProgress?.('Archivage des images, des mesures et des sources…');
   // An aborted rendering job must still save its partial evidence; use a separate bounded request.
   try{
