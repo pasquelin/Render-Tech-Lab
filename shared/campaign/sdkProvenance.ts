@@ -4,6 +4,10 @@
  *
  * `dist/sdk-browser/buildProvenance.js` ne porte qu'un hash de contenu : ni commit, ni état du
  * dépôt. Le commit est donc relevé ici, côté Lab, par `git rev-parse HEAD` sur le checkout.
+ *
+ * « dirty » veut dire : des fichiers suivis par git sont modifiés, donc le commit consigné ne
+ * décrit plus la source mesurée. Les fichiers non suivis ne comptent pas : un checkout du moteur
+ * porte des dossiers de travail (orchestration/, sorties de build) qui ne changent pas une mesure.
  */
 
 import { execFile } from 'node:child_process';
@@ -37,7 +41,7 @@ export function sdkDistPath(env: Record<string, string | undefined>, linkedCheck
 async function gitCommit(checkout: string) {
   try {
     const head = await run('git', ['-C', checkout, 'rev-parse', 'HEAD']);
-    const status = await run('git', ['-C', checkout, 'status', '--porcelain']);
+    const status = await run('git', ['-C', checkout, 'status', '--porcelain', '--untracked-files=no']);
     return { commit: head.stdout.trim() || null, dirty: status.stdout.trim().length > 0 };
   } catch {
     return { commit: null, dirty: null };

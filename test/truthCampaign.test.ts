@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { readSdkProvenance } from '../shared/campaign/sdkProvenance.ts';
 import {
   DEFAULT_SLOW_FRAME_MS, TRUTH_REPORT_SCHEMA, abbaAggregates, abbaOrder, buildTruthReport, campaignFolderName,
   campaignPackageId, canvasResolution, frameDistribution, parseCampaignOptions, refreshCeiling,
@@ -130,4 +135,29 @@ test('les options de campagne ont les défauts documentés et refusent une valeu
   assert.throws(() => parseCampaignOptions({ REPLICAS: '4' }, { scenes: ['x'], engines: ['a'] }), /Étendues du protocole/);
   assert.throws(() => parseCampaignOptions({ DETAIL: 'verbose' }, { scenes: ['x'], engines: ['a'] }), /DETAIL invalide/);
   assert.throws(() => parseCampaignOptions({ DPR: '0' }, { scenes: ['x'], engines: ['a'] }), /DPR invalide/);
+});
+
+test('« dirty » compte les fichiers suivis modifiés, pas les fichiers non suivis', async () => {
+  const checkout = await mkdtemp(join(tmpdir(), 'sdk-provenance-'));
+  const dist = join(checkout, 'dist');
+  await mkdir(dist);
+  const git = (...args: string[]) => execFileSync('git', ['-C', checkout, ...args], { encoding: 'utf8' });
+  git('init', '--quiet');
+  git('config', 'user.email', 'banc@local');
+  git('config', 'user.name', 'Banc 15');
+  await writeFile(join(checkout, 'source.ts'), 'export const a = 1;\n');
+  git('add', 'source.ts');
+  git('commit', '--quiet', '-m', 'source');
+
+  // Un dossier de travail non suivi — orchestration/ du moteur en est un — ne salit pas la mesure.
+  await mkdir(join(checkout, 'orchestration'));
+  await writeFile(join(checkout, 'orchestration/notes.md'), 'notes\n');
+  const clean = await readSdkProvenance(dist);
+  assert.equal(clean.commit, git('rev-parse', 'HEAD').trim());
+  assert.equal(clean.dirty, false);
+  assert.equal(clean.checkout, checkout);
+
+  // Un fichier suivi modifié fait mentir le commit consigné : là, dirty.
+  await writeFile(join(checkout, 'source.ts'), 'export const a = 2;\n');
+  assert.equal((await readSdkProvenance(dist)).dirty, true);
 });
