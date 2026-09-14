@@ -43,7 +43,7 @@ export type ModelStill={
  fov:number;near:number;far:number;
  cpuFrameMs:number|null;cpuSubmitMs:number|null;rafIntervalMs:number|null;drawCalls:number|null;
  triangles:number|null;selectedTriangles:number|null;clusters:number|null;residentPages:number|null;
- pageEvictions:number|null;frustumRejected:number|null;pagesRequested:number|null;pageLoads:number|null;
+ cacheEvictions:number|null;frustumRejected:number|null;pagesRequested:number|null;pageLoads:number|null;
  gpuMs:null;vramBytes:null;
 };
 export type ModelEngineEvent={timestamp:string;level:'debug'|'info'|'warn'|'error';phase:string;message:string;context:Record<string,unknown>};
@@ -131,7 +131,7 @@ export function stillFromFrame(input:{
   fov:pose.fov,near:pose.near,far:pose.far,
   cpuFrameMs:metrics.cpuFrameMs,cpuSubmitMs:metrics.cpuSubmitMs??null,rafIntervalMs:metrics.rafIntervalMs,drawCalls:metrics.drawCalls,
   triangles:metrics.triangles,selectedTriangles:metrics.selectedTriangles??null,clusters:metrics.clusters,residentPages:metrics.residentPages??null,
-  pageEvictions:metrics.pageEvictions??null,frustumRejected:metrics.frustumRejected??null,pagesRequested:metrics.pagesRequested??null,pageLoads:metrics.pageLoads,
+  cacheEvictions:metrics.cacheEvictions??null,frustumRejected:metrics.frustumRejected??null,pagesRequested:metrics.pagesRequested??null,pageLoads:metrics.pageLoads,
   gpuMs:null,vramBytes:null,
  };
 }

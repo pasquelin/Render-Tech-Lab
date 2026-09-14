@@ -24,7 +24,7 @@ export function stillFacts(still:ModelStill){
   {label:'Triangles sélectionnés',value:number(still.selectedTriangles)},
   {label:'Clusters',value:number(still.clusters)},
   {label:'Pages résidentes',value:number(still.residentPages)},
-  {label:'Évictions',value:number(still.pageEvictions)},
+  {label:'Évictions',value:number(still.cacheEvictions)},
   {label:'Frustum rejeté',value:number(still.frustumRejected)},
   {label:'GPU / VRAM',value:'Non mesuré'},
   {label:'Prise',value:new Date(still.takenAt).toLocaleString('fr-FR')},
