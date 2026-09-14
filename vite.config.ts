@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { writeReportArchive, writeStreamedReportArchive } from './shared/archive/index.ts';
+import { reportPackagePath, writeReportArchive, writeStreamedReportArchive } from './shared/archive/index.ts';
 import { readSdkProvenance, sdkCheckoutFromLink, sdkDistPath } from './shared/campaign/sdkProvenance.ts';
 import { readMachineLoad, machineLoadForReport } from './shared/campaign/machineLoad.ts';
 
@@ -203,7 +203,8 @@ function saveReportPlugin(): Plugin {
           const url = new URL(req.url || '', 'http://localhost');
           const packagePath = String(url.searchParams.get('package') || '');
           const file = String(url.searchParams.get('file') || '');
-          if (!/^\d\d-[a-z0-9-]+\/campaign-[a-z0-9-]+$/.test(packagePath) || !/^(objects|logs|media)\/[a-zA-Z0-9._-]+$/.test(file)) throw new Error('Chemin de rapport invalide');
+          reportPackagePath(packagePath);
+          if (!/^(objects|logs|media)\/[a-zA-Z0-9._-]+$/.test(file)) throw new Error('Chemin de rapport invalide');
           const base = path.resolve(server.config.root, 'reports', packagePath);
           const target = path.resolve(base, file);
           if (!target.startsWith(`${base}${path.sep}`) || !fs.statSync(target).isFile()) throw new Error('Artefact absent');

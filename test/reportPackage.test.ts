@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { writeReportPackage } from '../shared/archive/index.ts';
+import { reportPackagePath, writeReportPackage } from '../shared/archive/index.ts';
 
 test('report package separates readable summary, compressed objects, engine logs and visual evidence', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'rtl-report-package-'));
@@ -50,4 +50,14 @@ test('a report package groups capture images by viewpoint and its actual engines
   assert.match(markdown, /### Vue générale · 2 moteurs/);
   assert.match(markdown, /\| engine-a \| engine-b \|/);
   assert.match(markdown, /### Approche · 1 moteur/);
+});
+
+test('les images de tout paquet archivé restent servies, quel que soit le nom du dossier', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'rtl-report-served-'));
+  for (const id of ['campaign-01e24921-5931-4d0d-8d9a-4c1752fdd164', 'verite-944d0df9']) {
+    const saved = await writeReportPackage(root, { testId: '15-virtualized-integration', humanMarkdown: '# Rapport', result: { captures: [{ segment: 0, name: 'Vue', engine: 'engine-a', image: 'data:image/png;base64,iVBORw0KGgo=' }] }, id });
+    const packagePath = `${path.basename(path.dirname(saved.directory))}/${path.basename(saved.directory)}`;
+    assert.deepEqual(reportPackagePath(packagePath), { testId: '15-virtualized-integration', id });
+  }
+  assert.throws(() => reportPackagePath('15-virtualized-integration/../secrets'), /Chemin de rapport invalide|Identifiant de rapport invalide/);
 });
