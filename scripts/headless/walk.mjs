@@ -10,9 +10,8 @@ const frames = process.argv[4] === undefined ? options.frames : Number(process.a
 const scene = options.scenes[0];
 const sequence = abbaOrder(engines);
 
-const { browser } = await launch();
+const { browser } = await launch({ headless: true });
 const passes = [];
-const ceilingIntervalsMs = [];
 for (const [index, step] of sequence.entries()) {
   const load = machineLoad();
   const page = await measurePage(browser, options);
@@ -74,7 +73,6 @@ for (const [index, step] of sequence.entries()) {
     maxResidentPages: options.maxResidentPages,
   });
   await page.close();
-  if (result.series?.rafIntervalMs) ceilingIntervalsMs.push(...result.series.rafIntervalMs);
   passes.push(passFromSeries({
     engine: step.engine, order: step.order, index, load,
     series: result.series ?? {}, metrics: result.metrics,
@@ -84,5 +82,5 @@ for (const [index, step] of sequence.entries()) {
 }
 await browser.close();
 
-const report = await truthReport({ scene, engines, engineOrder: 'abba', passes, pixelError, ceilingIntervalsMs, id: `walk-${scene}-${randomUUID().slice(0, 8)}` });
+const report = await truthReport({ scene, engines, engineOrder: 'abba', passes, pixelError, id: `walk-${scene}-${randomUUID().slice(0, 8)}` });
 console.log(JSON.stringify({ report: await writeTruthReport(report), refreshCeiling: report.refreshCeiling, aggregates: report.aggregates }, null, 1));

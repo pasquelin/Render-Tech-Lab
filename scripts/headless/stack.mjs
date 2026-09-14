@@ -3,7 +3,7 @@
 import { launch, measurePage, sdkUrl, manifestUrlFor, options } from './lib.mjs';
 
 const engines = process.argv.slice(2).length ? process.argv.slice(2) : options.engines;
-const { browser } = await launch({ extra: ['--enable-features=Vulkan,WebGPU'] });
+const { browser } = await launch({ headless: true, extra: ['--enable-features=Vulkan,WebGPU'] });
 for (const engineId of engines) {
   const page = await measurePage(browser, options);
   const logs = [];

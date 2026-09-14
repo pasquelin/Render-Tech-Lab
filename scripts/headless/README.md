@@ -13,12 +13,8 @@ redémarré avec l'autre `SDK_DIST` entre les deux campagnes.
 Les scripts sont exécutés par Node directement : ils importent des modules TypeScript de
 `shared/campaign/`, dont Node retire les types.
 
-Tous les scripts lancent Chrome avec les mêmes `BASE_FLAGS` (dont `--disable-gpu-vsync`, inoffensif
-seul). Chrome **headless** plafonne vers 59,9 Hz quels que soient les drapeaux GPU posés : aucun
-drapeau ne lève ce plafond, et `--disable-frame-rate-limit` le dégrade encore (54,6 Hz mesurés) —
-il n'est donc jamais posé. Au-delà de 60 Hz, seul le **mode visible** (`HEADLESS=0`, voir plus bas)
-mesure le rythme réel de l'écran ; sans ce drapeau il tient le plafond de l'écran (120 Hz sur un
-MacBook Pro M2 Max 120 Hz), avec lui il retombe à 18,3 ms/image.
+Tous les scripts lancent Chrome avec les mêmes `BASE_FLAGS`, dont `--disable-frame-rate-limit` et
+`--disable-gpu-vsync` : sans ces deux drapeaux, aucun FPS mesuré ne peut dépasser 60.
 
 | Script | Usage | Ce qu'il donne |
 |---|---|---|
@@ -36,7 +32,6 @@ Les arguments positionnels de `walk.mjs` et `shots.mjs` prennent le pas sur `PIX
 
 | Variable | Défaut | Effet |
 |---|---|---|
-| `HEADLESS` | `1` (headless) | `0` bascule tous les scripts en Chrome stable **visible** (voir « Mode visible » plus bas) |
 | `CAMPAIGN` | `verite` | nom du dossier de campagne sous `reports/15-virtualized-integration/`. Lettres, chiffres, tirets ; le préfixe `campaign-` est refusé (il est balayé par la rétention à deux campagnes) |
 | `SCENE` / `SCENES` | `emerald-square` | scène, ou liste de scènes séparées par des virgules (`shots.mjs` les parcourt toutes) |
 | `ENGINES` | les quatre moteurs du protocole | liste de moteurs séparés par des virgules |
@@ -55,24 +50,6 @@ Les arguments positionnels de `walk.mjs` et `shots.mjs` prennent le pas sur `PIX
 | `OUT_DIR` | `/tmp/wg-headless` | sortie de `save()` et de `captureSink()` |
 
 Une valeur illisible fait échouer le script plutôt que dégrader silencieusement la mesure.
-
-## Mode visible (`HEADLESS=0`)
-
-`HEADLESS=0` ouvre Chrome stable en fenêtre visible, sur l'écran principal, à la résolution de
-mesure (`WIDTH` × `HEIGHT`, 1280 × 720 par défaut) : c'est le seul mode où le rafraîchissement
-mesuré peut dépasser 60 Hz (120 Hz sur un écran 120 Hz). Le rapport consigne le mode joué dans son
-champ `environment` (`headless` ou `visible`).
-
-```
-HEADLESS=0 CAMPAIGN=verite-visible SCENE=low-poly-city node walk.mjs
-```
-
-Prérequis pendant toute la campagne visible :
-- une session macOS ouverte, avec un utilisateur connecté à l'écran ;
-- la fenêtre Chrome au premier plan (le focus lui revient à l'ouverture ; ne pas cliquer ailleurs) ;
-- veille et économiseur d'écran désactivés (`pmset` ou Réglages Système) ;
-- ne pas utiliser la machine pendant la mesure : toute interaction (clic, changement de fenêtre,
-  redimensionnement) perturbe le rythme rAF réel que ce mode cherche justement à observer.
 
 ## Rapport de campagne
 
@@ -108,8 +85,7 @@ et imprime par pose `selected`, `tri`, `draws`, `resident` et `trous` (`selected
 
 `launch()`, `measurePage()`, `gpuInfo()`, `machineLoad()`, `waitForQuiet()`, `pngFromRgba()`,
 `captureSink()`, `save()`, et `fingerprints(scènes)` — empreinte SHA-256 du SDK et du cache de
-clusters, qui lit le fichier de clusters entier : coûteux sur les grosses scènes. `HEADLESS` et
-`MODE` exposent le commutateur de mode lu depuis l'environnement (`modeFromEnv()`, testable seule).
+clusters, qui lit le fichier de clusters entier : coûteux sur les grosses scènes.
 
 Moteurs : `three-webgl-reference` (THREE.js basic), `three-lod` (THREE.js LOD),
 `exact-cluster-pages` (WebGeometry WebGL), `webgpu-page-raster` (WebGeometry WebGPU), dans cet

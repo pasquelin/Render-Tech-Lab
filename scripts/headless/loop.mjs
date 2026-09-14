@@ -3,7 +3,7 @@
 import { launch, measurePage, sdkUrl, manifestUrlFor, options } from './lib.mjs';
 
 const engineId = process.argv[2] ?? options.engines[0];
-const { browser } = await launch();
+const { browser } = await launch({ headless: true });
 const page = await measurePage(browser, options);
 const result = await page.evaluate(async o => {
   const { benchEngine } = await import('/15-virtualized-integration/implementation/engines.ts');

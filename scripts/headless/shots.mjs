@@ -10,7 +10,7 @@ const pixelErrors = process.argv[4] === undefined ? [options.pixelError] : proce
 const out = new URL('./shots/', import.meta.url).pathname;
 await mkdir(out, { recursive: true });
 
-const { browser } = await launch();
+const { browser } = await launch({ headless: true });
 const passes = [];
 for (const [index, scene] of options.scenes.entries()) {
   const load = machineLoad();

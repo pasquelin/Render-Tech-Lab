@@ -5,8 +5,6 @@ import { writeFile } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import http from 'node:http';
 import zlib from 'node:zlib';
 import { buildTruthReport, canvasResolution, parseCampaignOptions, frameDistribution } from '../../shared/campaign/truthReport.ts';
@@ -21,29 +19,20 @@ export const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chr
 export const OUT = process.env.OUT_DIR ?? '/tmp/wg-headless';
 export const { chromium } = createRequire(resolve(LAB, 'package.json'))('playwright');
 
-/** `HEADLESS=0` bascule en Chrome stable visible ; toute autre valeur (ou son absence) garde le headless par défaut. */
-export function modeFromEnv(env = process.env) {
-  return env.HEADLESS === '0' ? 'visible' : 'headless';
-}
-export const MODE = modeFromEnv();
-export const HEADLESS = MODE === 'headless';
-
 /** Ordre figé du protocole : A référence Three.js, B LOD Three.js, C WebGeometry WebGL, D WebGeometry WebGPU. */
 export const ALL_ENGINES = ['three-webgl-reference', 'three-lod', 'exact-cluster-pages', 'webgpu-page-raster'];
 export const ALL_SCENES = ['emerald-square', 'drive-for-speed-map', 'bistro-exterior', 'low-poly-city', 'new-york', 'new-york-manhattan', 'skibidi-toilet-77-map', 'accucities-london'];
 
 /**
- * Drapeaux Chrome de toutes les mesures. Chrome headless plafonne vers 59,9 Hz quels que soient
- * les drapeaux GPU : aucun drapeau ne lève ce plafond, seul le mode visible (`HEADLESS=0`) atteint
- * le rafraîchissement réel de l'écran. `--disable-frame-rate-limit` dégrade encore le headless
- * (54,6 Hz mesurés) et désynchronise le rendu visible du vsync réel (18,3 ms/image contre 8,3 ms
- * sans lui) : il n'est donc jamais posé. `--disable-gpu-vsync` seul reste inoffensif.
+ * Drapeaux Chrome de toutes les mesures. `--disable-frame-rate-limit` et `--disable-gpu-vsync`
+ * lèvent le plafond 60 Hz : sans eux aucun FPS mesuré ne peut dépasser 60.
  */
 export const BASE_FLAGS = [
   '--disable-backgrounding-occluded-windows',
   '--disable-renderer-backgrounding',
   '--disable-background-timer-throttling',
   '--enable-gpu-benchmarking',
+  '--disable-frame-rate-limit',
   '--disable-gpu-vsync',
   '--enable-unsafe-webgpu',
 ];
@@ -139,17 +128,9 @@ export async function captureSink(port = 5199) {
 }
 
 // ---------------------------------------------------------------- Chrome
-/**
- * Lance Chrome stable. Headless par défaut (`HEADLESS` de `lib.mjs`) ; en mode visible, la
- * fenêtre s'ouvre sur l'écran principal à la résolution de mesure demandée (`WIDTH` × `HEIGHT`) et
- * repasse au premier plan : une fenêtre occultée peut manquer des vsync et rattraper par des
- * images anormalement rapides, ce qui fausse le plafond calibré.
- */
-export async function launch({ headless = HEADLESS, extra = [] } = {}) {
-  const windowFlags = headless ? [] : [`--window-position=0,0`, `--window-size=${options.cssWidth},${options.cssHeight}`];
-  const args = [...BASE_FLAGS, ...windowFlags, ...extra];
+export async function launch({ headless = true, extra = [] } = {}) {
+  const args = [...BASE_FLAGS, ...extra];
   const browser = await chromium.launch({ executablePath: CHROME, headless, args });
-  if (!headless) await promisify(execFile)('osascript', ['-e', 'tell application "Google Chrome" to activate']).catch(() => {});
   return { browser, args };
 }
 /** Page dimensionnée en pixels CSS avec le DPR demandé : le canvas physique vaut CSS × DPR. */
@@ -197,13 +178,8 @@ export function passFromSeries({ engine, order, index, load, series, metrics, sh
   };
 }
 
-/**
- * Assemble le rapport de campagne headless : même schéma que celui de l'interface. `environment`
- * consigne le mode (`headless`/`visible`) sauf mesure explicite. `ceilingIntervalsMs`, à défaut,
- * calibre le plafond sur le seul minimum de chaque passe (`buildTruthReport`) : un script qui
- * dispose des séries rAF complètes doit les fournir pour un 5e centile représentatif.
- */
-export async function truthReport({ scene, engines, engineOrder, passes, id, environment = MODE, pixelError = options.pixelError, ceilingIntervalsMs }) {
+/** Assemble le rapport de campagne headless : même schéma que celui de l'interface. */
+export async function truthReport({ scene, engines, engineOrder, passes, id, environment = null, pixelError = options.pixelError }) {
   return buildTruthReport({
     source: 'headless',
     campaign: options.campaign,
@@ -220,7 +196,6 @@ export async function truthReport({ scene, engines, engineOrder, passes, id, env
     slowFrameThresholdMs: options.slowFrameThresholdMs,
     passes,
     environment,
-    ceilingIntervalsMs,
   });
 }
 
