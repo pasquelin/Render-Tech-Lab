@@ -97,69 +97,17 @@ export type MachineLoad = {
   viteProcesses: number | null;
 };
 
-export type Holes = {
-  /** Triangles sélectionnés non retrouvés une fois dans le cut opaque effectivement soumis.
-   *  `null` dès qu'une métrique requise manque pour ce moteur : jamais un chiffre trompeur. */
-  value: number | null;
-  /** Définition retenue pour `value`, propre à la portée de `submittedTriangles` du moteur. */
-  method: string;
-};
-
-/**
- * `submittedTriangles` n'a pas la même portée selon le moteur : pour les autres moteurs, il ne
- * compte que le cut opaque paginé, déjà comparable à `selectedTriangles` (les deux viennent de la
- * même sélection résidente, `selectVisiblePages`). Pour `webgpu-page-raster` seul, il inclut déjà
- * la passe transparente (doublée pour le double face pré-scindé) ; on la retire via
- * `transparentSubmittedTriangles` pour isoler le même cut opaque avant comparaison.
- *
- * Limite mesurée (pas seulement théorique) sur ce moteur : son `selectedTriangles` public compte
- * le cut idéal avant repli vers un ancêtre résident (`pageIds` côté sélection GPU), alors que le
- * cut opaque isolé ci-dessus vient du cut après repli (`drawablePageIds`) — le seul que le moteur
- * dessine réellement. L'écart mesure alors autant le repli LOD ordinaire pendant le chargement que
- * d'éventuels trous réels, et reste positif même à résidence non plafonnée (mesuré : Emerald
- * Square, `MAX_PAGES` par défaut, `coverageBudgetLimited` à `false`) : un `trous` positif sur ce
- * moteur ne prouve donc pas à lui seul un défaut de résidence saturée. Aucune métrique publique
- * n'isole aujourd'hui le repli complet (l'équivalent du `wanted`/`complete` interne à la sélection
- * WebGL) pour ce moteur — besoin SDK à combler pour comparer les deux moteurs à égalité.
- */
-const HOLES_METHOD_OPAQUE_ONLY =
-  'selectedTriangles - submittedTriangles (submittedTriangles de ce moteur ne compte que le cut opaque paginé, résident, sans passe transparente : même sélection que selectedTriangles)';
-const HOLES_METHOD_STRIP_TRANSPARENT =
-  'selectedTriangles - (submittedTriangles - transparentSubmittedTriangles) ; approximation, pas une mesure pure de trou : selectedTriangles de webgpu-page-raster est le cut idéal avant repli vers un ancêtre résident, alors que le cut opaque isolé ici (submittedTriangles moins la passe transparente, doublée pour le double face pré-scindé) est le cut après repli réellement dessiné — l\'écart mélange repli LOD ordinaire et trou réel, reste positif même à résidence non plafonnée, et aucune métrique publique n\'isole le repli complet pour ce moteur (besoin SDK)';
-
-/**
- * Trous = triangles sélectionnés (le cut opaque virtualisé) non retrouvés une fois dans le cut
- * opaque effectivement soumis, tous moteurs confondus. Ni les passes transparentes ni un
- * doublement de soumission n'y entrent : selon le moteur, elles sont déjà absentes de
- * `submittedTriangles` ou en sont retirées ici. `null` — jamais un chiffre trompeur — dès qu'une
- * métrique publique requise manque pour ce moteur. Sur `webgpu-page-raster`, la valeur rendue est
- * documentée comme une approximation (voir `HOLES_METHOD_STRIP_TRANSPARENT`), pas une mesure pure.
- */
-export function computeHoles(engine: string, metrics: { selectedTriangles: number | null; submittedTriangles: number | null; transparentSubmittedTriangles: number | null }): Holes {
-  if (engine === 'webgpu-page-raster') {
-    const method = HOLES_METHOD_STRIP_TRANSPARENT;
-    if (metrics.selectedTriangles === null || metrics.submittedTriangles === null || metrics.transparentSubmittedTriangles === null) return { value: null, method };
-    return { value: metrics.selectedTriangles - (metrics.submittedTriangles - metrics.transparentSubmittedTriangles), method };
-  }
-  const method = HOLES_METHOD_OPAQUE_ONLY;
-  if (metrics.selectedTriangles === null || metrics.submittedTriangles === null) return { value: null, method };
-  return { value: metrics.selectedTriangles - metrics.submittedTriangles, method };
-}
-
 export type TruthShot = {
   scene: string;
   frame: number;
   pixelError: number;
   file: string;
   selectedTriangles: number | null;
-  /** Triangles soumis dans le cut opaque paginé de ce moteur — jamais les passes transparentes. */
-  submittedTriangles: number | null;
-  /** Triangles soumis en passe transparente, doublés sur `webgpu-page-raster` pour le double face
-   *  pré-scindé. `null` sur un moteur qui n'a pas de passe transparente distincte. */
-  transparentSubmittedTriangles: number | null;
+  triangles: number | null;
   drawCalls: number | null;
   residentPages: number | null;
-  holes: Holes;
+  /** Géométrie sélectionnée mais non dessinée : `triangles` doit égaler `selectedTriangles`. */
+  holes: number | null;
 };
 
 export type TruthPass = {

@@ -23,7 +23,7 @@ MacBook Pro M2 Max 120 Hz), avec lui il retombe à 18,3 ms/image.
 | Script | Usage | Ce qu'il donne |
 |---|---|---|
 | `walk.mjs [moteurs] [pixelError] [images]` | `CAMPAIGN=verite-emerald-1i-dpr1 SCENE=emerald-square PRELOAD=all node walk.mjs` | parcours urbain complet en séquence ABBA, deux passes par moteur, rapport de campagne JSON |
-| `shots.mjs [moteur] [images] [pixelErrors]` | `SCENES=emerald-square,new-york MAX_PAGES=4096 TAG=ref- node shots.mjs three-webgl-reference 0,150,300,450 0` | captures PNG sans perte par pose et par scène, `selectedTriangles` contre le cut opaque soumis (trous, § Fidélité), rapport de campagne JSON |
+| `shots.mjs [moteur] [images] [pixelErrors]` | `SCENES=emerald-square,new-york MAX_PAGES=4096 TAG=ref- node shots.mjs three-webgl-reference 0,150,300,450 0` | captures PNG sans perte par pose et par scène, `triangles` contre `selectedTriangles` (trous), rapport de campagne JSON |
 | `loop.mjs [moteur]` | `REPLICAS=9 node loop.mjs webgpu-page-raster` | rendu statique de 240 images, diagnostics d'erreur |
 | `stack.mjs [moteur…]` | `node stack.mjs webgpu-page-raster exact-cluster-pages` | chargement et première image par moteur, trace d'exception |
 | `ui.mjs` | `node ui.mjs` | pilotage de l'interface réelle du Lab (lancement, bascule de moteur) |
@@ -100,22 +100,8 @@ concaténant les passes des rapports aller et retour.
 ## Fidélité
 
 `shots.mjs` écrit ses PNG dans `scripts/headless/shots/<TAG><scène>-<moteur>-e<pixelError>-f<image>.png`
-et imprime par pose `selected`, `submitted`, `transparent`, `draws`, `resident` et `trous`
-(`computeHoles`, `shared/campaign/truthReport.ts` — `holes.value` avec sa définition en
-`holes.method`, `null` quand une métrique requise manque pour le moteur, jamais un chiffre
-trompeur) : géométrie sélectionnée (`selectedTriangles`) non retrouvée une fois dans le cut opaque
-effectivement soumis, par moteur —
-- `exact-cluster-pages`, `three-lod`, `three-webgl-reference` : `selected - submitted`, une mesure
-  exacte (`selectedTriangles` et `submittedTriangles` de ces moteurs viennent de la même sélection
-  résidente, sans passe transparente) ;
-- `webgpu-page-raster` : `selected - (submitted - transparent)`, une approximation seulement
-  (`submittedTriangles` de ce moteur inclut déjà la passe transparente, doublée pour le double face
-  pré-scindé, retirée ici pour isoler le cut opaque réellement dessiné — mais `selectedTriangles` de
-  ce moteur reste le cut idéal *avant* repli vers un ancêtre résident, alors que le cut opaque isolé
-  est *après* repli : l'écart mélange repli LOD ordinaire et trou réel, et reste positif même à
-  résidence non plafonnée, mesuré sur Emerald Square. Aucune métrique publique n'isole le repli
-  complet pour ce moteur — besoin SDK, voir `HOLES_METHOD_STRIP_TRANSPARENT`).
-
+et imprime par pose `selected`, `tri`, `draws`, `resident` et `trous` (`selectedTriangles` moins
+`triangles` : une valeur non nulle signale de la géométrie sélectionnée mais non dessinée).
 `pngdiff.mjs` rend `{pixels, differing, pct, maxChannelError, buckets, rowsTouched, worstRow}`.
 
 ## Outils de `lib.mjs`

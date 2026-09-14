@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { readSdkProvenance } from '../shared/campaign/sdkProvenance.ts';
 import {
   DEFAULT_SLOW_FRAME_MS, TRUTH_REPORT_SCHEMA, abbaAggregates, abbaOrder, buildTruthReport, campaignFolderName,
-  campaignPackageId, canvasResolution, computeHoles, frameDistribution, parseCampaignOptions, refreshCeiling,
+  campaignPackageId, canvasResolution, frameDistribution, parseCampaignOptions, refreshCeiling,
   type SdkProvenance, type TruthPass,
 } from '../shared/campaign/truthReport.ts';
 
@@ -134,22 +134,6 @@ test('le rapport de campagne consigne conditions, provenance SDK et charge machi
   assert.equal(report.passes[0].vramBytes, null);
   assert.equal(report.aggregates.length, 1);
   assert.equal(report.environment, null);
-});
-
-test('les trous comparent le cut opaque soumis à la sélection, en retirant la passe transparente seulement là où submittedTriangles la contient déjà', () => {
-  // WebGL (et LOD, référence) : submittedTriangles ne compte déjà que le cut opaque.
-  const webgl = computeHoles('exact-cluster-pages', { selectedTriangles: 100, submittedTriangles: 100, transparentSubmittedTriangles: 40 });
-  assert.equal(webgl.value, 0);
-  assert.match(webgl.method, /submittedTriangles.*sans passe transparente/);
-  // WebGPU : submittedTriangles inclut déjà la passe transparente (doublée sur le double face
-  // pré-scindé) ; elle est retirée pour isoler le même cut opaque avant de comparer à la sélection.
-  const webgpuNoHole = computeHoles('webgpu-page-raster', { selectedTriangles: 100, submittedTriangles: 140, transparentSubmittedTriangles: 40 });
-  assert.equal(webgpuNoHole.value, 0);
-  const webgpuHole = computeHoles('webgpu-page-raster', { selectedTriangles: 100, submittedTriangles: 130, transparentSubmittedTriangles: 40 });
-  assert.equal(webgpuHole.value, 10);
-  // Une métrique manquante pour le moteur donné rend le trou incalculable : jamais un chiffre trompeur.
-  assert.equal(computeHoles('exact-cluster-pages', { selectedTriangles: 100, submittedTriangles: null, transparentSubmittedTriangles: null }).value, null);
-  assert.equal(computeHoles('webgpu-page-raster', { selectedTriangles: 100, submittedTriangles: 140, transparentSubmittedTriangles: null }).value, null);
 });
 
 test('le nom de campagne refuse le préfixe balayé par la rétention et compose un dossier unique', () => {

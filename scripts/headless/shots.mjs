@@ -2,7 +2,7 @@
 // Usage : node shots.mjs [moteur] [images séparées par des virgules] [pixelErrors séparés par des virgules]
 import { randomUUID } from 'node:crypto';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { launch, measurePage, sdkUrl, manifestUrlFor, pngFromRgba, options, machineLoad, passFromSeries, truthReport, writeTruthReport, computeHoles } from './lib.mjs';
+import { launch, measurePage, sdkUrl, manifestUrlFor, pngFromRgba, options, machineLoad, passFromSeries, truthReport, writeTruthReport } from './lib.mjs';
 
 const engineId = process.argv[2] ?? options.engines[0];
 const frames = (process.argv[3] ?? '0,150,300,450').split(',').map(Number);
@@ -49,8 +49,7 @@ for (const [index, scene] of options.scenes.entries()) {
         results.push({
           frame, base64: btoa(encoded),
           width: pixels.width ?? canvas.width, height: pixels.height ?? canvas.height,
-          selectedTriangles: metrics.selectedTriangles ?? null, submittedTriangles: metrics.submittedTriangles ?? null,
-          transparentSubmittedTriangles: metrics.transparentSubmittedTriangles ?? null,
+          selectedTriangles: metrics.selectedTriangles ?? null, triangles: metrics.triangles ?? null,
           drawCalls: metrics.drawCalls ?? null, residentPages: metrics.residentPages ?? null,
         });
       }
@@ -68,14 +67,10 @@ for (const [index, scene] of options.scenes.entries()) {
     for (const shot of captured.results) {
       const file = `${options.tag}${scene}-${engineId}-e${pixelError}-f${shot.frame}.png`;
       await writeFile(out + file, pngFromRgba(Uint8Array.from(Buffer.from(shot.base64, 'base64')), shot.width, shot.height));
-      const holes = computeHoles(engineId, shot);
-      shots.push({
-        scene, frame: shot.frame, pixelError, file, selectedTriangles: shot.selectedTriangles,
-        submittedTriangles: shot.submittedTriangles, transparentSubmittedTriangles: shot.transparentSubmittedTriangles,
-        drawCalls: shot.drawCalls, residentPages: shot.residentPages, holes,
-      });
+      const holes = shot.selectedTriangles === null || shot.triangles === null ? null : shot.selectedTriangles - shot.triangles;
+      shots.push({ scene, frame: shot.frame, pixelError, file, selectedTriangles: shot.selectedTriangles, triangles: shot.triangles, drawCalls: shot.drawCalls, residentPages: shot.residentPages, holes });
       lastMetrics = shot;
-      console.log(`${scene} e=${pixelError} frame=${shot.frame} selected=${shot.selectedTriangles} submitted=${shot.submittedTriangles} transparent=${shot.transparentSubmittedTriangles} draws=${shot.drawCalls} resident=${shot.residentPages} trous=${holes.value} ${shot.width}x${shot.height}`);
+      console.log(`${scene} e=${pixelError} frame=${shot.frame} selected=${shot.selectedTriangles} tri=${shot.triangles} draws=${shot.drawCalls} resident=${shot.residentPages} trous=${holes} ${shot.width}x${shot.height}`);
     }
   }
   passes.push(passFromSeries({ engine: engineId, order: 'direct', index, load, series: {}, metrics: lastMetrics, shots, error: failure }));
