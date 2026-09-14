@@ -41,13 +41,42 @@ test('les métriques dérivées donnent le FPS médian, p50/p95/p99 et le compte
   assert.equal(frameDistribution([0, 0])!.fps, null);
 });
 
-test('le plafond rAF s’accroche à 60 ou 120 Hz et vaut null hors de ces plafonds', () => {
-  assert.equal(refreshCeiling([8.33, 8.34, 8.35]).hz, 120);
-  assert.equal(refreshCeiling([16.6, 16.7, 16.8]).hz, 60);
-  const uncapped = refreshCeiling([2, 2, 2]);
-  assert.equal(uncapped.hz, null);
-  assert.equal(uncapped.fastestSustainedHz, 500);
-  assert.deepEqual(refreshCeiling([]), { hz: null, fastestSustainedHz: null, supportedHz: [60, 120] });
+test('le plafond rAF reconnaît 120 Hz à la médiane malgré des images de rattrapage', () => {
+  // 110 images à 8,33 ms, 6 rattrapages francs (< 50 % de la médiane, ignorés de la calibration)
+  // et 4 images proches du bug réel (~6,3 ms, hors grappe mais pas assez rapides pour être exclues) :
+  // rien n'est filtré de la série brute, seule la calibration les traite différemment.
+  const values = [
+    ...Array.from({ length: 110 }, () => 8.33),
+    ...Array.from({ length: 6 }, () => 3),
+    ...Array.from({ length: 4 }, () => 6.3),
+  ];
+  const ceiling = refreshCeiling(values);
+  assert.equal(ceiling.hz, 120);
+  assert.ok(Math.abs(ceiling.medianMs! - 8.33) < 0.01);
+  assert.ok(ceiling.dominantClusterShare! >= 0.6);
+  assert.ok(ceiling.method.length > 0);
+});
+
+test('le plafond rAF reconnaît 60 Hz au même schéma', () => {
+  const values = [...Array.from({ length: 55 }, () => 16.67), ...Array.from({ length: 5 }, () => 7)];
+  const ceiling = refreshCeiling(values);
+  assert.equal(ceiling.hz, 60);
+  assert.ok(Math.abs(ceiling.medianMs! - 16.67) < 0.01);
+  assert.ok(ceiling.dominantClusterShare! >= 0.6);
+});
+
+test('le plafond rAF vaut null quand la médiane dérive hors des deux plafonds connus', () => {
+  // 18,4 ms ≈ 54 Hz : grappe parfaitement dominante, mais hors de la tolérance des deux plafonds.
+  const ceiling = refreshCeiling(Array.from({ length: 20 }, () => 18.4));
+  assert.equal(ceiling.hz, null);
+  assert.equal(ceiling.dominantClusterShare, 1);
+});
+
+test('le plafond rAF vaut null quand trop peu d’intervalles utiles subsistent pour calibrer', () => {
+  const ceiling = refreshCeiling([8.33, 8.33, 8.33, 8.33, 8.33]);
+  assert.equal(ceiling.hz, null);
+  assert.equal(ceiling.dominantClusterShare, null);
+  assert.deepEqual(refreshCeiling([]), { hz: null, method: ceiling.method, medianMs: null, dominantClusterShare: null, supportedHz: [60, 120] });
 });
 
 test('la séquence ABBA joue l’ordre direct puis l’ordre inverse', () => {
@@ -84,6 +113,9 @@ test('le rapport de campagne consigne conditions, provenance SDK et charge machi
     scene: 'emerald-square', engines: ['c', 'd'], engineOrder: 'abba', replicaCount: 9, pixelError: 0,
     measurementMode: 'summary', resolution: canvasResolution({ cssWidth: 1280, cssHeight: 720, devicePixelRatio: 2 }),
     sdk, passes: [pass('c', 'direct', [8.33, 8.33, 8.33]), pass('c', 'reverse', [8.33, 8.33, 8.33], 1)],
+    // Un script disposant de la série complète la fournit : les minimums des passes seules
+    // (repli documenté de `buildTruthReport`) sont trop peu nombreux pour calibrer un plafond.
+    ceilingIntervalsMs: Array.from({ length: 12 }, () => 8.33),
   });
   assert.equal(report.schema, TRUTH_REPORT_SCHEMA);
   assert.equal(report.campaign, 'verite-emerald');

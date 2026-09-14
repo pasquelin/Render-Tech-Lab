@@ -46,7 +46,7 @@ function campaignSection(truth: TruthReport | null) {
     `- Campagne : \`${truth.campaign}\` ; scène : \`${truth.scene}\` ; instances : ${truth.replicaCount ?? 'null'} ; ordre des moteurs : ${truth.engineOrder}.`,
     `- Mode de mesure : ${truth.measurementMode} ; seuil d’image lente : ${truth.slowFrameThresholdMs.toFixed(3)} ms ; pixelError : ${truth.pixelError ?? 'null'}.`,
     `- Résolution CSS : ${box.cssWidth ?? 'null'} × ${box.cssHeight ?? 'null'} ; pixels physiques : ${box.deviceWidth ?? 'null'} × ${box.deviceHeight ?? 'null'} ; DPR : ${box.devicePixelRatio ?? 'null'}.`,
-    `- Plafond rAF calibré : ${ceiling.hz ?? 'null'} Hz ; fréquence soutenue la plus rapide : ${ceiling.fastestSustainedHz === null ? 'null' : `${ceiling.fastestSustainedHz.toFixed(1)} Hz`}.`,
+    `- Plafond rAF calibré : ${ceiling.hz ?? 'null'} Hz ; médiane calibrée : ${ceiling.medianMs === null ? 'null' : `${ceiling.medianMs.toFixed(2)} ms`} ; grappe dominante : ${ceiling.dominantClusterShare === null ? 'null' : `${(ceiling.dominantClusterShare * 100).toFixed(1)} %`} ; méthode : ${ceiling.method}.`,
     `- SDK : commit \`${sdk.commit ?? 'null'}\`${sdk.dirty === null ? '' : sdk.dirty ? ' (dépôt sale)' : ' (dépôt propre)'} ; hash de contenu \`${sdk.contentHash ?? 'null'}\` ; dist \`${sdk.distPath ?? 'null'}\`.`,
     `- Charge machine avant le bloc : load1 ${load?.load1 ?? 'null'} / load5 ${load?.load5 ?? 'null'} / load15 ${load?.load15 ?? 'null'} ; thermique : ${load?.thermal ? load.thermal.replace(/\s+/g, ' ') : 'null'}.`,
     `- Durée GPU par image et VRAM physique : \`null\`. CPU et GPU ne sont jamais additionnés.`,
