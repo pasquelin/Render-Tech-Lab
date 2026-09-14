@@ -3,7 +3,7 @@ import { ModelMetricsBody } from './ModelMetricsBody.tsx';
 import { ModelLiveFields } from './ModelLiveFields.tsx';
 import { ModelPreparationFields } from './ModelLaunchFields.tsx';
 import { CampaignSidebar } from './CampaignSidebar.tsx';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { Flame, Play } from 'lucide-react';
 import { MODULE_NAV } from '../lab/catalog.ts';
 import { useLab } from './LabContext.tsx';
@@ -25,6 +25,10 @@ type LabSidebarProps = {
   chartRef: RefObject<HTMLCanvasElement | null>;
 };
 
+export function LabSidebarLayout({ children }: { children: ReactNode }) {
+  return <aside id="sidebar" className="min-w-0 h-full min-h-0 bg-base-200 p-3.5 pr-0.5 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col border-l border-base-content/10">{children}</aside>;
+}
+
 export function LabSidebar({ chartRef }: LabSidebarProps) {
   const { state, actions, model } = useLab();
   const ui = moduleUi(state.moduleId);
@@ -39,13 +43,13 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
   const reportNumber = model ? 2 + Number(showModelPreparation) + Number(showModelLiveControls) + Number(showModelMetrics) : 4;
 
   if (baseline) return (
-      <aside id="sidebar" className="min-w-0 h-full min-h-0 bg-base-200 p-3.5 pr-0.5 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col border-l border-base-content/10">
+      <LabSidebarLayout>
         <LabSection id="dashboard-intro-card" number={1} title="Bienvenue">
           <p className="text-sm leading-relaxed">Choisissez un banc pour explorer une technique, lancer son protocole et consulter ses résultats.</p>
-          <p className="text-xs leading-relaxed text-base-content/60">Les mesures sont produites uniquement dans les bancs 01 à 15.</p>
+          <p className="text-xs leading-relaxed text-base-content/60">Les mesures sont produites uniquement dans les bancs 01 à 16.</p>
         </LabSection>
         <LabSection id="dashboard-benches-card" number={2} title="Bancs d’essai">
-          <ul className="grid grid-cols-2 gap-2" aria-label="Accès aux bancs 01 à 15">
+          <ul className="grid grid-cols-2 gap-2" aria-label="Accès aux bancs 01 à 16">
             {MODULE_NAV.filter(module => module.id !== '00-baseline').map(module => {
               const [number, ...titleParts] = module.label.split(' · ');
               const title = titleParts.join(' · ');
@@ -64,11 +68,11 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
             })}
           </ul>
         </LabSection>
-      </aside>
+      </LabSidebarLayout>
   );
 
   return (
-    <aside id="sidebar" className="min-w-0 h-full min-h-0 bg-base-200 p-3.5 pr-0.5 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col border-l border-base-content/10">
+    <LabSidebarLayout>
         <LabSection id="lab-run-card" number={1} title="Campagne / comparaison">
           {model ? <ModelRunBody /> : (
             <>
@@ -175,6 +179,6 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
         </LabSection> : null}
 
         <ReportSection testId={state.moduleId} refreshKey={state.execution.status} running={state.running} number={reportNumber} hint={state.reportHint} onOpen={() => actions.openReport()} onReveal={actions.openFinder} />
-      </aside>
+    </LabSidebarLayout>
   );
 }

@@ -5,10 +5,10 @@ import test from 'node:test';
 import { checkImports } from './benchStructure.ts';
 import { LAB_MANIFESTS } from '../src/lab/manifests.ts';
 
-test('workspace contains exactly one numbered directory for every bench 00 through 15', async () => {
+test('workspace contains exactly one numbered directory for every bench 00 through 16', async () => {
   const actual = (await readdir('.')).filter(name => /^\d\d-/.test(name)).sort();
-  assert.deepEqual(actual.map(name => name.slice(0, 2)), Array.from({ length: 16 }, (_, i) => String(i).padStart(2, '0')));
-  assert.equal(new Set(actual.map(name => name.slice(0, 2))).size, 16);
+  assert.deepEqual(actual.map(name => name.slice(0, 2)), Array.from({ length: 17 }, (_, i) => String(i).padStart(2, '0')));
+  assert.equal(new Set(actual.map(name => name.slice(0, 2))).size, 17);
 });
 
 async function filesBelow(root: string): Promise<string[]> {
@@ -39,8 +39,8 @@ test('Rust asset cores live in root packages and packages stay UI and bench inde
 });
 
 test('all manifests are versioned and src/lab uses only public bench entries', async () => {
-  assert.equal(LAB_MANIFESTS.length, 16);
-  assert.deepEqual(LAB_MANIFESTS.map(item => item.number), Array.from({ length: 16 }, (_, i) => String(i).padStart(2, '0')));
+  assert.equal(LAB_MANIFESTS.length, 17);
+  assert.deepEqual(LAB_MANIFESTS.map(item => item.number), Array.from({ length: 17 }, (_, i) => String(i).padStart(2, '0')));
   assert.ok(LAB_MANIFESTS.every(item => item.contractVersion === 1));
   checkImports('src/lab');
 });

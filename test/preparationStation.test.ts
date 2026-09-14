@@ -58,7 +58,7 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
     assert.match(baseline, /id="dashboard-reports"/);
     assert.match(baseline, /Derniers rapports vérifiés/);
     assert.match(baseline, /grid grid-cols-1 sm:grid-cols-2 gap-2/);
-    assert.equal((baseline.match(/data-dashboard-report=/g) ?? []).length, 15);
+    assert.equal((baseline.match(/data-dashboard-report=/g) ?? []).length, 16);
     assert.doesNotMatch(baseline, /data-bench-access/);
     assert.doesNotMatch(sidebar, /dashboard-reports|Derniers rapports vérifiés/);
     assert.doesNotMatch(baseline, /3\.35 ms|54 FPS|Coude|Chute/);
@@ -70,9 +70,10 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
       state.moduleId = module.id;
       const html = render(LabSidebar);
       if (module.id === '00-baseline') {
-        assert.equal((html.match(/data-bench-access=/g) ?? []).length, 15);
+        assert.equal((html.match(/data-bench-access=/g) ?? []).length, 16);
         assert.match(html, /data-bench-access="14-open-world"/);
         assert.match(html, /data-bench-access="15-virtualized-integration"/);
+        assert.match(html, /data-bench-access="16-lighting-transport"/);
       }
       assert.doesNotMatch(html, /href="\/\?test=/);
       if (module.id !== '04-gpu-lod') assert.doesNotMatch(html, /href="\/04-gpu-lod\/comparison.html"/);

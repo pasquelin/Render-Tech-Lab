@@ -1,6 +1,6 @@
 # Instructions du Render Tech Lab
 
-Ces règles s’appliquent à tout le dépôt, notamment à `src/components`, `src/components/ui`, `src/lab` et aux bancs `00-*` à `15-*`.
+Ces règles s’appliquent à tout le dépôt, notamment à `src/components`, `src/components/ui`, `src/lab` et aux bancs `00-*` à `16-*`.
 
 ## Architecture React canonique
 
@@ -13,7 +13,7 @@ Ces règles s’appliquent à tout le dépôt, notamment à `src/components`, `s
 ## Cycle de vie commun
 
 - Le Dashboard 00 est une consultation sans moteur ni métriques simulées.
-- Chaque banc 01–15 suit `idle → loading → running → completed | stopped | error`. À l’état initial, afficher la fiche et un seul CTA ; ne créer aucun canvas, moteur, animation, mesure ou chargement lourd avant ce clic.
+- Chaque banc 01–16 suit `idle → loading → running → completed | stopped | error`. À l’état initial, afficher la fiche et un seul CTA ; ne créer aucun canvas, moteur, animation, mesure ou chargement lourd avant ce clic.
 - Après le clic, afficher immédiatement le chargement, puis le canvas ou la visualisation et la progression. Ne laisser aucun écran vide.
 - Après succès, arrêt ou erreur, remplacer l’exécution par un résumé lisible avec l’action cohérente de relance/reprise et l’accès au rapport. Le CTA central et celui de la colonne droite utilisent le même libellé et la même action.
 - Pendant l’exécution, désactiver les réglages et actions incompatibles ; seule l’action Arrêter reste disponible lorsqu’elle est réellement prise en charge.
@@ -21,6 +21,6 @@ Ces règles s’appliquent à tout le dépôt, notamment à `src/components`, `s
 ## Vérification obligatoire
 
 - Exécuter les tests de composants, le contrat des seize routes et `npm run validate` après toute modification de la coque ou de son modèle.
-- Vérifier les routes 00–15 dans Chrome aux largeurs de référence et réduite. Contrôler les états du cycle de vie, l’absence de canvas avant lancement, l’ordre des sections et métriques, l’association label/contrôle, le responsive et l’absence de contenu provenant d’un autre banc.
+- Vérifier les routes 00–16 dans Chrome aux largeurs de référence et réduite. Contrôler les états du cycle de vie, l’absence de canvas avant lancement, l’ordre des sections et métriques, l’association label/contrôle, le responsive et l’absence de contenu provenant d’un autre banc.
 - Toute nouvelle route ou tout nouveau contrôle étend ces recettes ; une simple vérification de présence ne suffit pas, les assertions négatives d’isolation métier sont obligatoires.
 

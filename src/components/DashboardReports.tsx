@@ -38,7 +38,7 @@ export function DashboardReports({ onOpenReport }: { onOpenReport: (moduleId: st
 
   return <div className="w-full max-w-none"><ReportSummary title="Derniers rapports vérifiés">
     <p className="text-[10px] text-base-content/55">Le dernier résultat reconnu par banc. Les cinq dernières campagnes restent consultables dans chaque banc.</p>
-    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-busy={!loaded} aria-label="Dernier rapport des bancs 01 à 15">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-busy={!loaded} aria-label="Dernier rapport des bancs 01 à 16">
       {reports.map(({ moduleId, label, summary }) => {
         const measure = summary ? primaryMeasure(summary) : null;
         const stateLabel = summary ? <><time dateTime={summary.timestamp}>{new Date(summary.timestamp).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</time> · {summary.status}</> : loaded ? 'Aucun rapport vérifié' : 'Lecture du rapport…';

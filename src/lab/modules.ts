@@ -1,4 +1,5 @@
 import { VIRTUALIZED_MODULE } from '../../15-virtualized-integration/index.ts';
+import { LIGHTING_MODULE } from '../../16-lighting-transport/index.ts';
 import type { SceneStressConfig } from '../../03-gpu-scene/index.ts';
 import type { ModuleDescriptor } from '../../shared/contracts/presentation.ts';
 
@@ -110,6 +111,7 @@ export const BASELINE_00_SCENARIOS: Record<
 };
 
 export const MODULE_DESCRIPTORS: Record<string, ModuleDescriptor> = {
+  '16-lighting-transport': LIGHTING_MODULE,
   '15-virtualized-integration': VIRTUALIZED_MODULE,
   '00-baseline': {
     id: '00-baseline',

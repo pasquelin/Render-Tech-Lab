@@ -24,7 +24,7 @@ for (const [index, model] of selected.entries()) {
     ramBudgetMb,
     resourceBaseUrl: `/${model.sourceDirectory.replace(/^public\//, '')}/`,
     simplification: 'qem-endpoints',
-    onProgress: event => progress.event(event),
+    onProgress: (event: Parameters<ReturnType<typeof createTerminalProgress>['event']>[0]) => progress.event(event),
   }).catch(error => { progress.fail(String(error.message ?? error)); throw error; });
   if (result.status !== 'ready') { progress.fail(`préparation incomplète (${result.status})`); throw new Error(`${model.id} : préparation incomplète (${result.status})`); }
 }

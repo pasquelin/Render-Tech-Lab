@@ -14,8 +14,9 @@ import { manifest as module12 } from '../../12-visibility-buffer/manifest.ts';
 import { manifest as module13 } from '../../13-full-gpu-driven/manifest.ts';
 import { manifest as module14 } from '../../14-open-world/manifest.ts';
 import { manifest as module15 } from '../../15-virtualized-integration/manifest.ts';
+import { manifest as module16 } from '../../16-lighting-transport/manifest.ts';
 import type { LabManifest } from '../../shared/contracts/index.ts';
 
 export const LAB_MANIFESTS: readonly LabManifest[] = [
-  module00, module01, module02, module03, module04, module05, module06, module07, module08, module09, module10, module11, module12, module13, module14, module15
+  module00, module01, module02, module03, module04, module05, module06, module07, module08, module09, module10, module11, module12, module13, module14, module15, module16
 ];
