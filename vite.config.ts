@@ -37,26 +37,14 @@ async function streamedReportRequest(req: NodeJS.ReadableStream) {
  * Provenance du SDK injectée au démarrage dans `__SDK_PROVENANCE__` : commit du checkout dont
  * vient `dist/` (ou `SDK_DIST`), drapeau dirty et hash de contenu du SDK. La charge machine du
  * bloc est servie à l'interface, qui n'y a pas accès depuis le navigateur.
- *
- * Quand `SDK_DIST` est posé, ce même `dist/` est aussi celui que le serveur sert à l'import
- * `@web-geometry/sdk` (et `@web-geometry/sdk/browser`) : sans cet alias, la provenance rapportée
- * décrirait un `dist/` différent de celui réellement chargé par le navigateur. Sans `SDK_DIST`,
- * aucun alias n'est ajouté et la résolution reste celle de `node_modules` (comportement inchangé).
  */
 function campaignProvenancePlugin(): Plugin {
   return {
     name: 'campaign-provenance',
     async config(config) {
       const root = config.root ?? process.cwd();
-      const dist = sdkDistPath(process.env, sdkCheckoutFromLink(root));
-      const provenance = await readSdkProvenance(dist);
-      const alias = process.env.SDK_DIST
-        ? [
-            { find: /^@web-geometry\/sdk\/browser$/, replacement: path.join(dist, 'sdk-browser', 'index.js') },
-            { find: /^@web-geometry\/sdk$/, replacement: path.join(dist, 'sdk-core', 'index.js') },
-          ]
-        : [];
-      return { define: { __SDK_PROVENANCE__: JSON.stringify(provenance) }, resolve: { alias } };
+      const provenance = await readSdkProvenance(sdkDistPath(process.env, sdkCheckoutFromLink(root)));
+      return { define: { __SDK_PROVENANCE__: JSON.stringify(provenance) } };
     },
     configureServer(server) {
       server.middlewares.use('/api/machine-load', (_req, res) => {
