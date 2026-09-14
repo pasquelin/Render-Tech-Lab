@@ -8,14 +8,14 @@ import { Button } from './ui/Button.tsx';
 export function CampaignSidebar() {
   const { state, actions } = useLab();
   const execution = state.execution;
-  if (state.moduleId === '00-baseline' || execution.status === 'idle') return null;
-  const labels = { running: 'Test en cours', completed: 'Campagne terminée', stopped: 'Arrêt manuel', error: 'Exécution interrompue' };
+  if (state.moduleId === '00-baseline' || execution.status === 'idle' || execution.kind === 'exploration') return null;
+  const labels = { running: 'Test en cours', completed: 'Test terminé', stopped: 'Arrêt manuel', error: 'Exécution interrompue' };
   const step = executionStep(execution);
   const nativeStop = moduleUi(state.moduleId).holdSurfaces;
   return (
     <section data-campaign-sidebar={execution.status} className="min-w-0 space-y-3 break-words [overflow-wrap:anywhere]">
       <h2 className="text-xs font-mono text-primary">{labels[execution.status]}</h2>
-      <ol className="flex flex-wrap gap-2 text-[11px]" aria-label="Étapes de la campagne">
+      <ol className="flex flex-wrap gap-2 text-[11px]" aria-label="Étapes du test">
         {executionSteps.map((label, index) => (
           <li key={label} aria-current={step === index ? 'step' : undefined} className={step === index ? 'text-primary font-bold' : 'text-base-content/60'}>{label}</li>
         ))}
@@ -29,7 +29,7 @@ export function CampaignSidebar() {
         ) : null
       ) : (
         <>
-          {execution.status === 'stopped' ? <p className="text-xs">Les dernières mesures complètes sont conservées. La campagne interrompue n’est pas une comparaison complète.</p> : null}
+          {execution.status === 'stopped' ? <p className="text-xs">Les dernières mesures complètes sont conservées. Le test interrompu n’est pas une comparaison complète.</p> : null}
           <CampaignResult summary={execution.lastCampaign} />
           {state.workbench.visible ? <details className="text-xs"><summary>Journal du banc</summary><pre className="whitespace-pre-wrap break-words py-3">{state.workbench.terminal}</pre></details> : null}
         </>

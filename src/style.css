@@ -1,4 +1,8 @@
-@import "tailwindcss";
+/* La détection automatique de Tailwind parcourt toute la racine, y compris
+   public/benchmark-assets et dist (plus d'un million de fichiers), et bloque le
+   serveur ~30 s au démarrage. On limite la recherche de classes aux fichiers qui en portent. */
+@import "tailwindcss" source(none);
+@source "../**/*.{ts,tsx,html}";
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {

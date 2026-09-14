@@ -1,6 +1,6 @@
 # Scripts headless du banc 15 (Chrome + Playwright, sans UI)
 
-Pré-requis : `npx vite --port 5175 --strictPort --host 127.0.0.1` lancé dans le Lab (ou `LAB_URL=http://127.0.0.1:<port>`), caches présents dans `public/benchmark-assets/<scene>-derived`. Le SDK est lu depuis `/Users/pasquelin/Applications/webGeometry/dist` (variable `SDK_DIST` pour un autre `dist/`).
+Pré-requis : `npx vite --port 5175 --strictPort --host 127.0.0.1` lancé dans le Lab (ou `LAB_URL=http://127.0.0.1:<port>`), caches présents dans `public/benchmark-assets/<scene>-derived`. Le SDK est lu depuis le `dist/` du paquet `@web-geometry/sdk` installé (variable `SDK_DIST` pour un autre `dist/`) ; les sorties vont dans `OUT_DIR` (défaut `/tmp/wg-headless`).
 
 | Script | Usage | Ce qu'il donne |
 |---|---|---|

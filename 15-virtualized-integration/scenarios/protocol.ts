@@ -1,3 +1,5 @@
+import { nextFrame } from '../../shared/benchmark/frame.ts';
+
 /** A physical control is not evidence that the virtualized architecture exists. */
 export const TEST_ID = '15-virtualized-integration' as const;
 export const SCENARIOS = [
@@ -65,14 +67,7 @@ export function compareImages(a: Uint8Array, b: Uint8Array) {
 
 /** The pending operation must support abort through its owner (RAF, readback, etc.). */
 export function active(signal: AbortSignal): void { signal.throwIfAborted(); }
-export function nextFrame(signal: AbortSignal): Promise<number> {
-  active(signal);
-  return new Promise((resolve, reject) => {
-    const abort = () => { cancelAnimationFrame(id); signal.removeEventListener('abort', abort); reject(signal.reason); };
-    const id = requestAnimationFrame(time => { signal.removeEventListener('abort', abort); resolve(time); });
-    signal.addEventListener('abort', abort, { once: true });
-  });
-}
+export { nextFrame };
 export async function bounded<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   active(signal);
   let abort: () => void = () => {};

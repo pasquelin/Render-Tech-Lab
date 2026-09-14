@@ -12,6 +12,11 @@ test('the shell has a single presentation catalog and no per-bench UI copies', a
   const navbar = await readFile('src/components/LabNavbar.tsx', 'utf8');
   const campaign = await readFile('src/components/CampaignSidebar.tsx', 'utf8');
   const modal = await readFile('src/components/ReportModal.tsx', 'utf8');
+  const shell = await readFile('src/components/LabShell.tsx', 'utf8');
+  assert.match(station, /<BenchStart/);
+  assert.match(station, /<BenchEnd/);
+  assert.doesNotMatch(station, /data-execution-view=/);
+  assert.doesNotMatch(shell, /viewport\?:|sidebar\?:/);
   assert.doesNotMatch(sidebar, /ModelPanels/);
   assert.doesNotMatch(viewport, /ModelPanels/);
   assert.doesNotMatch(modal, /dangerouslySetInnerHTML/);

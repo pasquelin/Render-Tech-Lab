@@ -1,15 +1,12 @@
-import { chromium, BASE_FLAGS, sdkUrl, manifestUrlFor, URL_BASE } from './lib.mjs';
+import { openLabPage, explorerOptions, sdkUrl, manifestUrlFor } from './lib.mjs';
 const engineId = process.argv[2] ?? 'exact-cluster-pages'; const pixelError = Number(process.argv[3] ?? 1); const frames = Number(process.argv[4] ?? 600);
-const browser = await chromium.launch({ headless: true, executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', args: [...BASE_FLAGS, '--enable-unsafe-webgpu'] });
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-page.on('pageerror', e => console.log('PAGEERROR', e.message));
-await page.goto(URL_BASE + '/', { waitUntil: 'load' });
+const { browser, page } = await openLabPage();
 const r = await page.evaluate(async (o) => {
   const { benchEngine } = await import('/15-virtualized-integration/implementation/engines.ts');
   const { urbanPath } = await import('/src/lab/modelCampaign.ts');
   const { createExplorer } = await import(o.sdkUrl);
   const canvas = document.createElement('canvas'); document.body.append(canvas);
-  let explorer; try { explorer = await createExplorer(canvas, { manifestUrl: o.manifestUrl, scope: 'full', width: 1280, height: 720, pixelRatio: 1, replicaCount: 1, detail: 'source', pixelError: o.pixelError, lodAdaptive: false, maxResidentPages: 100000, preload: o.preload, backends: [benchEngine(o.engineId).factory], comparisonLayout: 'single', clearColor: 0x2a303c, diagnosticDetail: o.detail, onDiagnostic: d => { if (!globalThis.__d) globalThis.__d = []; if (globalThis.__d.length < 40 && /fail|error|capacity|coverage|budget|incomplete/i.test(d.phase + ' ' + d.message)) globalThis.__d.push(d.phase + ' | ' + d.message + ' | ' + JSON.stringify(d.context ?? {}).slice(0, 260)); } }); } catch (e) { return { createError: String(e?.message ?? e), stack: String(e?.stack ?? '').slice(0, 1200), diags: globalThis.__d ?? [] }; }
+  let explorer; try { explorer = await createExplorer(canvas, { ...o.options, backends: [benchEngine(o.engineId).factory], onDiagnostic: d => { if (!globalThis.__d) globalThis.__d = []; if (globalThis.__d.length < 40 && /fail|error|capacity|coverage|budget|incomplete/i.test(d.phase + ' ' + d.message)) globalThis.__d.push(d.phase + ' | ' + d.message + ' | ' + JSON.stringify(d.context ?? {}).slice(0, 260)); } }); } catch (e) { return { createError: String(e?.message ?? e), stack: String(e?.stack ?? '').slice(0, 1200), diags: globalThis.__d ?? [] }; }
   const path = urbanPath(explorer.bounds); let firstError = null; const raf = [];
   let last = performance.now();
   for (let i = 0; i < o.frames && !firstError; i++) {
@@ -21,6 +18,6 @@ const r = await page.evaluate(async (o) => {
   const m = { ...explorer.render() }; const out = {}; for (const k of Object.keys(m)) if (typeof m[k] === 'number' || typeof m[k] === 'boolean') out[k] = m[k];
   raf.sort((a, b) => a - b); out.rafP50 = raf[Math.floor(raf.length / 2)]; out.rafP95 = raf[Math.floor(raf.length * 0.95)]; out.over50ms = raf.filter(x => x > 50).length;
   return { firstError, metrics: out };
-}, { sdkUrl, manifestUrl: manifestUrlFor(process.env.SCENE ?? 'emerald-square'), engineId, pixelError, frames, preload: process.env.PRELOAD ?? 'visible', detail: process.env.DETAIL ?? 'summary' });
+}, { sdkUrl, engineId, frames, options: explorerOptions(manifestUrlFor(process.env.SCENE ?? 'emerald-square'), { pixelError, preload: process.env.PRELOAD ?? 'visible', diagnosticDetail: process.env.DETAIL ?? 'summary' }) });
 console.log(JSON.stringify(r));
 await browser.close();

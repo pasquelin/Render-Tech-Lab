@@ -16,31 +16,50 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
     const { LabSidebar } = await server.ssrLoadModule('/src/components/LabSidebar.tsx');
     const { MODULE_DESCRIPTORS } = await server.ssrLoadModule('/src/lab/modules.ts');
     const state = initialSnapshot('01-indirect-draw');
-    const actions = { runBenchmark() {}, openReport() {} };
+    const actions = { runBenchmark() {}, stopBenchmark() {}, openReport() {} };
     const render = (component = PreparationStation) => renderToStaticMarkup(createElement(LabContext.Provider,
       { value: { state, actions } }, createElement(component)));
     for (const moduleId of Object.keys(MODULE_DESCRIPTORS).filter(moduleId => moduleId !== '00-baseline')) {
       state.moduleId = moduleId; state.execution.status = 'idle'; state.running = false;
       const idleHtml = render();
       assert.match(idleHtml, /data-execution-view="idle"/);
+      assert.match(idleHtml, /data-bench-screen="start"/);
       assert.match(idleHtml, /Aucun test en cours/);
-      assert.match(idleHtml, /Étapes attendues de la campagne/);
-      assert.match(idleHtml, /Aucune campagne mesurée disponible/);
+      assert.match(idleHtml, /Étapes du test/);
+      assert.match(idleHtml, /Aucun résultat de test disponible/);
       assert.doesNotMatch(idleHtml, /canvas-webgpu|canvas-webgl/);
     }
     state.moduleId = '01-indirect-draw';
-    for (const [status, text] of [['idle', 'Aucun test en cours'], ['running', 'Test en cours'], ['completed', 'Campagne terminée'], ['stopped', 'Arrêt manuel'], ['error', 'Exécution interrompue']]) {
+    for (const [status, text] of [['idle', 'Aucun test en cours'], ['running', 'Test en cours'], ['completed', 'Test terminé'], ['stopped', 'Arrêt manuel'], ['error', 'Exécution interrompue']]) {
       state.execution.status = status;
       state.running = status === 'running';
       state.execution.phase = status === 'error' ? 'WebGPU indisponible' : 'Mesure 12/128';
       const html = status === 'idle' ? render() : render(CampaignSidebar);
       if (status === 'running') assert.equal(render(), '');
-      else assert.match(render(), new RegExp(`data-execution-view="${status}"`));
+      else { assert.match(render(), new RegExp(`data-execution-view="${status}"`)); assert.match(render(), new RegExp(`data-bench-screen="${status === 'idle' ? 'start' : 'end'}"`)); }
       assert.ok(html.includes(text));
       if (status === 'running') { assert.ok(!html.includes('Relancer')); assert.match(html, /Mesure 12\/128/); }
-      else assert.match(html, /Aucune campagne mesurée disponible/);
+      else assert.match(html, /Aucun résultat de test disponible/);
       if (status === 'error') assert.match(html, /WebGPU indisponible/);
     }
+    // Exploring a scene must not acquire comparison stages or a fictitious campaign result.
+    state.moduleId = '16-lighting-transport'; state.showPain = false;
+    state.execution.kind = 'exploration';
+    for (const status of ['idle', 'running', 'stopped', 'error']) {
+      state.execution.status = status; state.running = status === 'running';
+      state.execution.phase = status === 'error' ? 'Rendu indisponible' : 'Exploration arrêtée.';
+      assert.equal(render(CampaignSidebar), '');
+      const exploration = render();
+      assert.doesNotMatch(exploration, /Aucun résultat de test|Mesurer A\/B|Test arrêté/);
+      const panel = render(LabSidebar);
+      if (state.running) {
+        assert.match(panel, /Arrêter l’exploration/);
+        assert.doesNotMatch(panel, /id="btn-stop-campaign"|id="btn-benchmark"[^>]*disabled=""/);
+      } else assert.doesNotMatch(panel, /Arrêter l’exploration/);
+      if (status === 'stopped') assert.match(exploration, /Exploration arrêtée/);
+      if (status === 'error') assert.match(exploration, /Rendu indisponible/);
+    }
+    delete state.execution.kind;
     state.moduleId = '00-baseline'; state.execution.status = 'idle'; state.running = false;
     const baseline = render();
     const sidebar = render(LabSidebar);
@@ -50,6 +69,7 @@ test('preparation station renders explicit lifecycle states and keeps baseline c
     assert.match(sidebar, /id="dashboard-benches-card"/);
     assert.match(sidebar, /grid grid-cols-2 gap-2/);
     assert.doesNotMatch(sidebar, /id="lab-metrics-card"|CPU submit|CPU frame|Draw calls/);
+    assert.doesNotMatch(baseline, /data-bench-screen=/, 'Dashboard stays outside the shared execution screens');
     assert.match(baseline, /Laboratoire de rendu temps réel/);
     assert.match(baseline, />Dashboard</);
     assert.match(baseline, /Choisir un banc/);

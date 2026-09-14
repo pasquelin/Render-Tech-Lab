@@ -4,7 +4,7 @@ import { ModelLiveFields } from './ModelLiveFields.tsx';
 import { ModelPreparationFields } from './ModelLaunchFields.tsx';
 import { CampaignSidebar } from './CampaignSidebar.tsx';
 import type { ReactNode, RefObject } from 'react';
-import { Flame, Play } from 'lucide-react';
+import { Flame, Play, Square } from 'lucide-react';
 import { MODULE_NAV } from '../lab/catalog.ts';
 import { useLab } from './LabContext.tsx';
 import { isIntegratedRunnerId } from '../../bench/runners.ts';
@@ -30,8 +30,9 @@ export function LabSidebarLayout({ children }: { children: ReactNode }) {
 }
 
 export function LabSidebar({ chartRef }: LabSidebarProps) {
-  const { state, actions, model } = useLab();
+  const { state, actions, model, panels } = useLab();
   const ui = moduleUi(state.moduleId);
+  const stopExploration = state.running && state.execution.kind === 'exploration' && Boolean(actions.stopBenchmark);
   const baseline = state.moduleId === '00-baseline';
   const integrationFixture = state.moduleId === '15-virtualized-integration' && !model;
   const integrationPending = ui.sceneChoice && !isIntegratedRunnerId(state.moduleId);
@@ -73,11 +74,11 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
 
   return (
     <LabSidebarLayout>
-        <LabSection id="lab-run-card" number={1} title="Campagne / comparaison">
+        <LabSection id="lab-run-card" number={1} title="Exécution">
           {model ? <ModelRunBody /> : (
             <>
               {showChart ? (
-                <ChartPanel label="Graphe de campagne">
+                <ChartPanel label="Graphe du test">
                   {chartUnavailable ? <ErrorState message={state.execution.phase || 'WebGPU indisponible : aucune mesure ni courbe produite.'} /> : <canvas id="canvas-chart" ref={chartRef} className="w-full h-full block rounded-box" />}
                 </ChartPanel>
               ) : null}
@@ -91,9 +92,9 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
                 >
                   {ui.comparisonLabel ?? 'Comparer les calculs sur une scène détaillée'}
                 </Button>
-                <Button id="btn-benchmark" className="w-full shadow-xs gap-2" disabled={state.running || integrationPending} onClick={actions.runBenchmark}>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>{['completed', 'stopped', 'error'].includes(state.execution.status) ? 'Relancer' : state.benchLabel}</span>
+                <Button id="btn-benchmark" className="w-full shadow-xs gap-2" disabled={(state.running && !stopExploration) || integrationPending} onClick={stopExploration ? actions.stopBenchmark : actions.runBenchmark}>
+                  {stopExploration ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                  <span>{stopExploration ? 'Arrêter l’exploration' : ['completed', 'stopped', 'error'].includes(state.execution.status) ? 'Relancer' : state.benchLabel}</span>
                 </Button>
                 <Button
                   id="btn-pain-benchmark"
@@ -128,7 +129,7 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
           badge={model || integrationFixture ? undefined : ui.hasModeChoice ? 'Bascule' : 'Mode unique'}
           help={model ? 'Pendant le rendu, seuls les réglages encore actifs restent ici.' : integrationFixture ? 'La scène se choisit dans le panneau principal. Pendant la fixture, étendue et caméra sont imposées.' : ui.modeHint}
         >
-          {model ? <ModelLiveFields /> : integrationFixture ? (
+          {panels ? panels.configuration : model ? <ModelLiveFields /> : integrationFixture ? (
             <>
               <Select id="select-diagnostic-view" label="Vue de diagnostic" help="Le coût des diagnostics est exclu des mesures officielles." defaultValue="beauty" disabled={state.running}>
                 {(ui.diagnostics ?? []).map(option => <option key={option.value} value={option.value} disabled={option.disabled}>{option.disabled ? `${option.label} · backend indisponible` : option.label}</option>)}
@@ -170,10 +171,10 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
           {model ? <ModelMetricsBody /> : (
             <>
               <LabStats stats={state.stats} />
-              <MetricGrid label="Contexte de soumission" items={[
+              {panels?.metrics ?? <MetricGrid label="Contexte de soumission" items={[
                 { id: 'stat-mode', label: 'Pipeline', value: state.stats.modeLabel },
                 { id: 'stat-objects', label: 'Objets', value: state.stats.objects },
-              ]} />
+              ]} />}
             </>
           )}
         </LabSection> : null}

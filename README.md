@@ -175,6 +175,8 @@ idle → loading → running → completed | stopped | error
 ```
 À l’état `idle`, afficher uniquement la fiche et le CTA central de lancement : aucun canvas, moteur, animation ou chargement lourd n’est instancié avant ce clic.
 
+Les bancs 01–16 utilisent `BenchStart` au début et `BenchEnd` après succès, arrêt ou erreur, via `PreparationStation`. Ces deux composants possèdent la mise en page ; les adapters fournissent leurs textes, réglages, résultats et actions. Les actions restent en bas. Une exploration arrêtée n’affiche pas un bilan de test comparatif. Le Dashboard 00 conserve son affichage propre et ne passe pas par ces composants.
+
 `test/labStatsContract.test.ts` vérifie les seize routes et tous les états de la machine. `test/uiPrimitives.test.ts` verrouille les classes DaisyUI et les associations label/contrôle. `test/labArchitecture.test.ts` garantit l'arborescence canonique et l'isolation des imports.
 
 ## Running it

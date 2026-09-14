@@ -1,31 +1,38 @@
 import * as THREE from 'three';
 
 type Bounds = THREE.Box3;
-type Cities = 1 | 4 | 9 | 12;
+export type Cities = 1 | 4 | 9 | 12;
 
-export function walkDirection(yaw: number, forward: number, right: number): THREE.Vector3 {
-  const direction = new THREE.Vector3(
+/** Player height shared by the runtime world and the offline mesh preparation (weld and simplify tolerances). */
+export function playerHeightFor(footprint: number): number {
+  return Math.max(1.8, Math.max(1, footprint) * 0.008);
+}
+
+/** Writes the horizontal walk direction for a yaw and key axes into `target`. */
+export function walkDirection(target: THREE.Vector3, yaw: number, forward: number, right: number): THREE.Vector3 {
+  target.set(
     -Math.sin(yaw) * forward + Math.cos(yaw) * right,
     0,
     -Math.cos(yaw) * forward - Math.sin(yaw) * right,
   );
-  return direction.lengthSq() > 1 ? direction.normalize() : direction;
+  return target.lengthSq() > 1 ? target.normalize() : target;
 }
 
 // Exact distance between a vertical player axis and one edge of a source triangle.
+// The edge is split where it crosses the axis' low and high ends (at most two interior breaks, kept sorted).
 function axisEdgeDistanceSq(x: number, z: number, low: number, high: number, a: THREE.Vector3, b: THREE.Vector3) {
   const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
-  const breaks = [0, 1];
+  let break1 = 1, break2 = 1;
   if (Math.abs(dy) > 1e-12) {
-    for (const y of [low, high]) {
-      const t = (y - a.y) / dy;
-      if (t > 0 && t < 1) breaks.push(t);
-    }
+    const tLow = (b.y > a.y ? low - a.y : high - a.y) / dy;
+    const tHigh = (b.y > a.y ? high - a.y : low - a.y) / dy;
+    if (tLow > 0 && tLow < 1) break1 = tLow;
+    if (tHigh > 0 && tHigh < 1) {if (break1 === 1) break1 = tHigh; else break2 = tHigh;}
   }
-  breaks.sort((left, right) => left - right);
   let best = Infinity;
-  for (let i = 0; i + 1 < breaks.length; i++) {
-    const start = breaks[i], end = breaks[i + 1];
+  for (let segment = 0, start = 0; segment < 3 && start < 1; segment++) {
+    const end = segment === 0 ? break1 : segment === 1 ? break2 : 1;
+    if (end <= start) continue;
     const midpointY = a.y + dy * (start + end) / 2;
     const targetY = midpointY < low ? low : midpointY > high ? high : null;
     const denominator = dx * dx + dz * dz + (targetY === null ? 0 : dy * dy);
@@ -34,6 +41,7 @@ function axisEdgeDistanceSq(x: number, z: number, low: number, high: number, a: 
     const px = a.x + dx * t, pz = a.z + dz * t, py = a.y + dy * t;
     const gapY = py < low ? low - py : py > high ? py - high : 0;
     best = Math.min(best, (px - x) ** 2 + (pz - z) ** 2 + gapY ** 2);
+    start = end;
   }
   return best;
 }
@@ -46,7 +54,7 @@ export function buildTriangleWorld(triangles: Float32Array, sourceBounds: Bounds
   const size = bounds.getSize(new THREE.Vector3());
   const cityWidth = size.x / columns, cityDepth = size.z / rows;
   const scale = Math.max(1, Math.min(cityWidth, cityDepth));
-  const height = Math.max(1.8, scale * 0.008);
+  const height = playerHeightFor(scale);
   const radius = Math.max(0.1, height * 0.18);
   const ground = bounds.min.y < 0 && bounds.max.y > 0 ? 0 : bounds.min.y;
   const stepHeight = height * 0.22;
@@ -78,6 +86,11 @@ export function buildTriangleWorld(triangles: Float32Array, sourceBounds: Bounds
   const offsets: Array<[number, number]> = [];
   for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++)
     offsets.push([(col - (columns - 1) / 2) * cityWidth, (row - (rows - 1) / 2) * cityDepth]);
+  const center = bounds.getCenter(new THREE.Vector3());
+  const cityCenter = (cityIndex: number): [number, number] => {
+    if (!Number.isInteger(cityIndex) || cityIndex < 0 || cityIndex >= offsets.length) throw new Error('Indice de ville invalide');
+    return [center.x + offsets[cityIndex][0], center.z + offsets[cityIndex][1]];
+  };
   const seen = new Uint32Array(count);
   let epoch = 0;
   const nearby = (x: number, z: number, reach: number, visit: (index: number, localX: number, localZ: number) => boolean) => {
@@ -152,8 +165,9 @@ export function buildTriangleWorld(triangles: Float32Array, sourceBounds: Bounds
     const dx = delta.x / steps, dz = delta.z / steps;
     const candidate = new THREE.Vector3();
     for (let i = 0; i < steps; i++) {
-      for (const [x, z] of [[dx, 0], [0, dz]]) {
-        candidate.copy(result); candidate.x += x; candidate.z += z;
+      for (let axis = 0; axis < 2; axis++) {
+        candidate.copy(result);
+        if (axis === 0) candidate.x += dx; else candidate.z += dz;
         const support = floorAt(candidate.x, candidate.z, result.y - height);
         if (support !== null && support > result.y - height && support - (result.y - height) <= stepHeight)
           candidate.y = support + height;
@@ -197,28 +211,10 @@ export function buildTriangleWorld(triangles: Float32Array, sourceBounds: Bounds
     }
     return null;
   };
-  return {radius, height, ground, cityWidth, cityDepth, floorAt, collides, move, moveVertical, startOnGeometry, stats: {triangles: count, gridCells: grid.size}};
+  return {radius, height, ground, cityWidth, cityDepth, cityCenter, floorAt, collides, move, moveVertical, startOnGeometry, stats: {triangles: count, gridCells: grid.size}};
 }
 
 export type NavigationWorld = ReturnType<typeof buildTriangleWorld>;
-
-/** Useful for procedural geometry; the bench uses a prepared triangle stream for real models. */
-export function buildNavigationWorld(source: THREE.Object3D, bounds: Bounds, cities: Cities) {
-  source.updateMatrixWorld(true);
-  const positions: number[] = [];
-  source.traverse(object => {
-    const mesh = object as THREE.Mesh;
-    if (!mesh.isMesh) return;
-    const attribute = mesh.geometry.getAttribute('position'), indices = mesh.geometry.getIndex();
-    if (!attribute) return;
-    const point = new THREE.Vector3();
-    for (let i = 0; i + 2 < (indices?.count ?? attribute.count); i += 3) for (let j = 0; j < 3; j++) {
-      point.fromBufferAttribute(attribute, indices ? indices.getX(i + j) : i + j).applyMatrix4(mesh.matrixWorld);
-      positions.push(point.x, point.y, point.z);
-    }
-  });
-  return buildTriangleWorld(new Float32Array(positions), new THREE.Box3().setFromObject(source), bounds, cities);
-}
 
 export function advancePlayer(world: NavigationWorld, position: THREE.Vector3, velocityY: number, horizontalVelocity: THREE.Vector3, seconds: number, jump: boolean) {
   const footY = position.y - world.height;
@@ -233,16 +229,12 @@ export function advancePlayer(world: NavigationWorld, position: THREE.Vector3, v
   const nextFoot = next.y - world.height;
   const nextSupport = world.floorAt(next.x, next.z, Math.max(footY, nextFoot));
   if (nextSupport !== null && nextFoot <= nextSupport + world.radius * 0.5 && nextVelocityY <= 0)
-    return {position: next.setY(nextSupport + world.height), velocityY: 0, jumped};
-  return {position: next, velocityY: vertical.blocked ? 0 : nextVelocityY - gravity * seconds, jumped};
+    return {position: next.setY(nextSupport + world.height), velocityY: 0, jumped, support: nextSupport};
+  return {position: next, velocityY: vertical.blocked ? 0 : nextVelocityY - gravity * seconds, jumped, support: nextSupport};
 }
 
-export function startPosition(world: NavigationWorld, bounds: Bounds, cities: Cities, cityIndex: number): THREE.Vector3 {
-  if (!Number.isInteger(cityIndex) || cityIndex < 0 || cityIndex >= cities) throw new Error('Indice de ville invalide');
-  const columns = cities === 12 ? 4 : Math.sqrt(cities);
-  const col = cityIndex % columns, row = Math.floor(cityIndex / columns);
-  const centerX = bounds.min.x + (col + 0.5) * world.cityWidth;
-  const centerZ = bounds.min.z + (row + 0.5) * world.cityDepth;
+export function startPosition(world: NavigationWorld, cityIndex: number): THREE.Vector3 {
+  const [centerX, centerZ] = world.cityCenter(cityIndex);
   for (const distance of [0, 0.15, 0.3, 0.45]) for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]]) {
     const x = centerX + dx * distance * world.cityWidth, z = centerZ + dz * distance * world.cityDepth;
     const floor = world.floorAt(x, z, world.ground);

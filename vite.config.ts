@@ -303,7 +303,6 @@ export default defineConfig({
   plugins: [createLightingAssetsPlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
-  cacheDir: '.vite',
   server: {
     port: 5174, // Port explicite pour éviter tout conflit avec d'autres apps
     open: false,

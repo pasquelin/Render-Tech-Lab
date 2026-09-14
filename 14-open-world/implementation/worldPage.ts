@@ -43,7 +43,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   const countSelect = el<HTMLSelectElement>('select-count');
   const moduleSelect = el<HTMLSelectElement>('select-module');
   const reportModal = el<HTMLDialogElement>('report-modal');
-  let canvas = el<HTMLCanvasElement>('canvas-webgl');
+  let canvas: HTMLCanvasElement;
   let active: AbortController | null = null;
   let stopSystemPolling: (() => void) | null = null;
   let pending: { report: SavedWorldReport; markdown: string } | null = null;
@@ -58,21 +58,14 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   document.title = '14 · Monde ouvert — Render Tech Lab';
   el('view-baseline').classList.add('hidden');
   el('viewport-workbench').classList.add('hidden');
-  el('canvas-webgpu').style.display = 'none';
-  canvas.style.display = '';
-  canvas.style.objectFit = 'cover';
   text('viewport-telemetry-mode', 'Bistro · WebGL2');
   text('viewport-telemetry-detail', 'A ou B : afficher le décor · Mesurer : comparer');
   text('stat-mode', 'Aperçu arrêté');
   text('open-report-hint', 'reports/14-open-world/campaign-…/');
-  const reportLocation = el('lab-report-card').children[1];
-  const reportFile = reportLocation.querySelector('code')!; reportFile.textContent = 'reports/14-open-world/campaign-…/';
-  reportLocation.replaceChildren('Campagnes archivées : ', reportFile);
-  onUpdate({ benchLabel: 'Mesurer et comparer', painLabel: 'Arrêter', showChart: false,
+  onUpdate({ benchLabel: 'Mesurer et comparer', painLabel: 'Arrêter', showChart: false, reportHint: 'reports/14-open-world/campaign-…/',
     modeHint: 'Choisir la référence A ou la variante B avant la campagne :', runCardTitle: '3. Campagnes de comparaison' });
   stopButton.style.display = 'none';
   el('btn-lod-comparison').classList.add('hidden');
-  el('lab-run-card').firstElementChild!.textContent = '3. Campagnes de comparaison';
   el('lab-mode-card').children[1].textContent = 'Aperçu de la référence ou de la variante, sur le même décor :';
   const countLabel = el('lab-mode-card').querySelector<HTMLLabelElement>('label[for="select-count"]');
   if (countLabel) countLabel.textContent = 'Étendue du décor :';
@@ -266,7 +259,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   };
   const comparisonBox = document.createElement('div'); comparisonBox.className = 'space-y-2 border-t border-base-content/10 pt-2';
   const comparisonTitle = document.createElement('p'); comparisonTitle.className = 'text-xs font-semibold'; comparisonTitle.textContent = 'Comparer deux rapports, y compris les rejets';
-  comparisonBox.append(comparisonTitle); el('lab-report-card').append(comparisonBox);
+  comparisonBox.append(comparisonTitle);
   function comparisonSlot(id: string, label: string) {
     const control = field(id, label, [['', 'Choisir un rapport']], ''); comparisonBox.append(control);
     return { select: control.querySelector('select')!, archive: null as Archive | null, report: null as SavedWorldReport | null,
@@ -276,6 +269,11 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   const comparisonStatus = document.createElement('p'); comparisonStatus.className = 'text-[10px] text-base-content/60'; comparisonStatus.setAttribute('role', 'status');
   const comparisonTable = document.createElement('div'); comparisonTable.className = 'overflow-x-auto';
   comparisonBox.append(comparisonStatus, comparisonTable);
+  const mountReports = () => {
+    const card = document.getElementById('lab-report-card');
+    if (!disposed && card && comparisonBox.parentElement !== card) card.append(comparisonBox);
+  };
+  mountReports();
   let archiveEntries: Archive[] = [];
   const comparisonSides = ['a', 'b'] as const;
   function updateComparisonChoices(runs: Archive[]) {
@@ -467,9 +465,7 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   on(controls, 'change', updatePlan); on(modeControls, 'change', updatePlan); on(countSelect, 'change', updatePlan);
   on(runButton, 'click', () => { void run(); }); on(stopButton, 'click', () => { stop(); status('Arrêt demandé.'); });
   on(retryButton, 'click', async () => { retryButton.disabled = true; try { await save(); status('Rapport sauvegardé.'); busy(false); } catch (error) { status(String(error)); } finally { retryButton.disabled = false; } });
-  on(el('btn-view-report'), 'click', openReport); on(el('btn-refresh-report'), 'click', openReport);
-  on(el('btn-open-reports'), 'click', () => { void openFolder(); }); on(el('btn-modal-open-finder'), 'click', () => { void openFolder(); });
-  on(el('btn-copy-report'), 'click', async () => { try { if (!currentMarkdown) { text('modal-feedback', 'Choisir un rapport archivé pour lire son contenu.'); return; } await navigator.clipboard.writeText(currentMarkdown); text('modal-feedback', 'Rapport copié.'); } catch (error) { text('modal-feedback', String(error)); } });
+  const copyReport = async () => { try { if (!currentMarkdown) { text('modal-feedback', 'Choisir un rapport archivé pour lire son contenu.'); return; } await navigator.clipboard.writeText(currentMarkdown); text('modal-feedback', 'Rapport copié.'); } catch (error) { text('modal-feedback', String(error)); } };
   on(reportModal, 'close', () => { historyRequest?.abort(); });
   on(window, 'pagehide', () => { stop(); historyRequest?.abort(); for (const side of comparisonSides) compared[side].request?.abort(); listen.abort(); });
   on(window, 'pageshow', event => { if ((event as PageTransitionEvent).persisted) window.location.reload(); });
@@ -482,5 +478,5 @@ export function mountWorldWorkbench(onUpdate: (patch: Partial<LabSnapshot>) => v
   };
   status('Prêt. A ou B affiche le décor ; « Mesurer et comparer » lance la campagne.');
   updatePlan();
-  return { run: () => { void run(); }, setMode: (mode: 'classic' | 'gpu-driven') => selectMode(mode === 'gpu-driven'), setScenario: setDistricts, report: openReport, stop, dispose };
+  return { run: () => { void run(); }, setMode: (mode: 'classic' | 'gpu-driven') => selectMode(mode === 'gpu-driven'), setScenario: setDistricts, report: openReport, openFinder: openFolder, copyReport, closeReport: () => reportModal.close(), mountReports, stop, dispose };
 }

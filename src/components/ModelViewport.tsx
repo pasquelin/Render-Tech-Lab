@@ -7,20 +7,23 @@ import { Button } from './ui/Button.tsx';
 import { LoadingState } from './ui/LoadingState.tsx';
 import { ProgressPanel } from './ui/ProgressPanel.tsx';
 import { benchEngine } from '../../15-virtualized-integration/implementation/engines.ts';
+import type { ModelConfig } from '../lab/modelCampaign.ts';
+
+const DIAGNOSTIC_LABELS: Record<ModelConfig['diagnostic'], string> = {
+  beauty: 'Rendu texturé',
+  wireframe: 'Couleur stable par triangle soumis, sans éclairage',
+  clusters: 'Couleur stable par cluster ; gris : géométrie transparente non clusterisée',
+  lod: 'Bleu : détail exact ; orange : réduction LOD',
+  pages: 'Vert : pages d’indices attachées ; les pages absentes ne sont pas dessinées',
+  visibility: 'Vert : pages visibles après sélection ; rejets dans les métriques',
+  'screen-error': 'Erreur projetée : vert à 0 px, rouge au seuil de sélection',
+};
 
 export function ModelViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElement | null> }) {
   const { model: view, state, actions } = useLab();
   if (!view) return null;
   const runAction = <Button disabled={view.availability.status !== 'ready'} onClick={actions.runBenchmark}>{state.benchLabel}</Button>;
-  const diagnostic = {
-    beauty: 'Rendu texturé',
-    wireframe: 'Couleur stable par triangle soumis, sans éclairage',
-    clusters: 'Couleur stable par cluster ; gris : géométrie transparente non clusterisée',
-    lod: 'Bleu : détail exact ; orange : réduction LOD',
-    pages: 'Vert : pages d’indices attachées ; les pages absentes ne sont pas dessinées',
-    visibility: 'Vert : pages visibles après sélection ; rejets dans les métriques',
-    'screen-error': 'Erreur projetée : vert à 0 px, rouge au seuil de sélection',
-  }[view.config.diagnostic];
+  const diagnostic = DIAGNOSTIC_LABELS[view.config.diagnostic];
   return (
     <main className="relative flex-1 min-w-0 min-h-0 overflow-hidden bg-base-100 flex flex-col" data-model-status={view.status} data-rendered-mode={view.config.diagnostic}>
       {state.running ? (

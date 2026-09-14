@@ -72,7 +72,7 @@ try {
     const terminalCanvases = await page.locator('canvas').evaluateAll(nodes => nodes.map(node => ({ id: node.id, scene: node.dataset.benchScene, display: getComputedStyle(node).display })));
     assert.deepEqual(terminalCanvases, [], `02 conserve un canvas après le terminal: ${JSON.stringify(terminalCanvases)}`);
     if (await page.locator('[data-execution-view="error"]').count()) {
-      const chartText = await page.getByRole('region', { name: 'Graphe de campagne' }).innerText();
+      const chartText = await page.getByRole('region', { name: 'Graphe du test' }).innerText();
       assert.match(chartText, /WebGPU|indisponible|absent/i, '02 masque l’indisponibilité du benchmark réel dans le graphe');
       assert.equal(await page.locator('[data-campaign-sidebar="completed"]').count(), 0, '02 présente une campagne indisponible comme terminée');
       console.log('02: WebGPU indisponible, erreur explicite et aucune campagne mesurée');
