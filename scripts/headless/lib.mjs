@@ -9,7 +9,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import http from 'node:http';
 import zlib from 'node:zlib';
-import { buildTruthReport, canvasResolution, parseCampaignOptions, frameDistribution } from '../../shared/campaign/truthReport.ts';
+import { buildTruthReport, canvasResolution, parseCampaignOptions, frameDistribution, computeHoles } from '../../shared/campaign/truthReport.ts';
 import { readSdkProvenance, sdkCheckoutFromLink, sdkDistPath } from '../../shared/campaign/sdkProvenance.ts';
 import { readMachineLoad, machineLoadForReport } from '../../shared/campaign/machineLoad.ts';
 
@@ -76,7 +76,7 @@ export function fingerprints(scenes = ['low-poly-city']) {
 }
 
 // ---------------------------------------------------------------- interférence
-export { readMachineLoad as machineLoad, machineLoadForReport };
+export { readMachineLoad as machineLoad, machineLoadForReport, computeHoles };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 /** Attend jusqu'à `maxMs` que le load 1-min passe sous `target`. Renvoie le relevé retenu. */
 export async function waitForQuiet(target = 8, maxMs = 180000) {
