@@ -1,196 +1,220 @@
-import {createLightingScene,createDefaultLightingSceneLights,createTransport,compareImages} from '@web-geometry/sdk';
-import {createExplorer,createLightingExperimentBackend,type LightingExperimentRenderState} from '@web-geometry/sdk/browser';
-import {LIGHTING_PROTOCOL,type LightingConfig,type LightingFrame,type LightingController,type LightingReport,type LightingBenchOptions,type LightingVariant} from '../contracts.ts';
+import * as THREE from 'three';
+import { createExplorer, exactPagesBackend, webgpuPagesBackend, detectCapabilities } from '@web-geometry/sdk/browser';
+import type { Explorer, BackendFactory } from '@web-geometry/sdk/browser';
+import {
+  MAX_SHADOWED_LIGHTS_PER_FRAME, defaultConfig,
+  type LightingBenchConfig, type LightingController, type LightingBenchOptions, type LightingFrameStats,
+  type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
+} from '../contracts.ts';
+import { detectEngineCapabilities } from '../implementation/engineCapabilities.ts';
+import { createHouseAnimatedNodes, createCarAnimatedNode, carHeadlightPoses, buildAutoLights, type AnimatedNode } from '../implementation/sceneAnimations.ts';
 
-const copyConfig=(config:LightingConfig):LightingConfig=>({...config,lights:config.lights.map(light=>({...light,color:[...light.color],position:[...light.position]}))});
-const defaults=():LightingConfig=>({variant:'brute',lights:createDefaultLightingSceneLights(),doorAngle:Math.PI/2,roughness:.25,cameraT:0,lightIntensity:1});
-const pose=(t:number)=>({position:[2.8+.15*Math.sin(t*Math.PI*2),1.5,2.5-.3*Math.sin(t*Math.PI)] as [number,number,number],target:[-1,1.2,-1] as [number,number,number],fov:66,near:.025,far:50});
-const nextFrame=(signal:AbortSignal)=>new Promise<number>((resolve,reject)=>{
-  signal.throwIfAborted();
-  const cancelled=()=>{cancelAnimationFrame(id);reject(signal.reason);};
-  const id=requestAnimationFrame(time=>{signal.removeEventListener('abort',cancelled);resolve(time);});
-  signal.addEventListener('abort',cancelled,{once:true});
+const noopControls: LightingControlsHandle = { update() {}, dispose() {} };
+
+const MANIFEST_URLS: Record<SceneId, string> = {
+  house: '/16-lighting-cache/house/native/full/manifest.json',
+  'emerald-night': '/emerald-night-cache/native/full/manifest.json',
+};
+const CAR_MANIFEST_URL = '/16-lighting-cache/car/native/full/manifest.json';
+
+const emptyStats = (): LightingFrameStats => ({
+  fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null,
+  gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null,
 });
 
-function png(pixels:Uint8Array,width:number,height:number){
-  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
-  const context=canvas.getContext('2d');if(!context)throw Error('PNG capture unavailable');
-  const image=context.createImageData(width,height),stride=width*4;
-  for(let y=0;y<height;y++)image.data.set(pixels.subarray((height-y-1)*stride,(height-y)*stride),y*stride);
-  context.putImageData(image,0,0);return canvas.toDataURL('image/png');
+/** Compose un THREE.Matrix4 dans un tampon Float32Array(16) réutilisé (aucune allocation par image). */
+function writeWorldMatrix(node: AnimatedNode, matrix: THREE.Matrix4, buffer: Float32Array, unitScale: THREE.Vector3): Float32Array {
+  matrix.compose(node.position, node.quaternion, unitScale);
+  matrix.toArray(buffer);
+  return buffer;
 }
 
-async function createRuntime(canvas:HTMLCanvasElement,options:LightingBenchOptions){
-  const abort=new AbortController(),signal=abort.signal;
-  const relay=()=>abort.abort(options.signal?.reason);
-  options.signal?.addEventListener('abort',relay,{once:true});
-  if(options.signal?.aborted)relay();
-  let owned:Awaited<ReturnType<typeof createExplorer>>|undefined;
-  const drop=()=>{options.signal?.removeEventListener('abort',relay);abort.abort();owned?.dispose();owned=undefined;};
-  try{
-    signal.throwIfAborted();options.onProgress?.('Préparation de la scène avec le SDK…');
-    const response=await fetch('/api/lighting-prepare',{method:'POST',signal});
-    if(!response.ok)throw Error(`Préparation indisponible : ${await response.text()}`);
-    const prepared=await response.json() as {manifestUrl:string;preparationMs:number;provenance:Record<string,unknown>;fixtureKey:string};
-    let config=defaults();
-    const makeScene=()=>createLightingScene({...config,patchSize:LIGHTING_PROTOCOL.patchSize});
-    const initial=makeScene();
-    const transport=createTransport(initial,{raysPerPatch:LIGHTING_PROTOCOL.raysPerPatch,maxIterations:LIGHTING_PROTOCOL.maxIterations,tolerance:LIGHTING_PROTOCOL.tolerance,warmStart:false,cancelled:()=>signal.aborted});
-    let last=transport.update(initial,'reuse');
-    const state:LightingExperimentRenderState={scene:initial,indirectIrradiance:last.indirectIrradiance,radiance:last.radiance,exposure:1,
-      reflectionSamples:LIGHTING_PROTOCOL.reflectionSamples,directLightSamples:LIGHTING_PROTOCOL.directLightSamples,rayTraversal:config.variant};
-    options.onProgress?.('Création du rendu expérimental…');
-    owned=await createExplorer(canvas,{manifestUrl:prepared.manifestUrl,scope:'full',width:LIGHTING_PROTOCOL.width,height:LIGHTING_PROTOCOL.height,pixelRatio:1,pixelError:0,preload:'all',backends:[createLightingExperimentBackend(state)],clearColor:0x080c12,signal,diagnosticDetail:'summary'});
-    await owned.awaitPages();signal.throwIfAborted();
-    const explorer=owned,gl=canvas.getContext('webgl2');if(!gl)throw Error('WebGL2 indisponible');
-    const timer=gl.getExtension('EXT_disjoint_timer_query_webgl2');
-    const debug=gl.getExtension('WEBGL_debug_renderer_info');
-    const check=()=>{signal.throwIfAborted();if(gl.isContextLost())throw Error('Contexte graphique perdu');};
-    const render=():LightingFrame=>{
-      check();state.rayTraversal=config.variant;
-      const start=performance.now(),metrics=explorer.render(pose(config.cameraT)),end=performance.now();
-      if(metrics.triangles!==metrics.selectedTriangles)throw Error('Couverture géométrique incomplète');
-      if(metrics.triangles!==LIGHTING_PROTOCOL.sourceTriangles)throw Error('La fixture a changé');
-      return {variant:config.variant,cpuTransportMs:0,cpuSubmitMs:end-start,cpuFrameMs:end-start,gpuMs:null,rafDeltaMs:null,fps:null,
-        drawCalls:metrics.drawCalls,triangles:metrics.triangles,raysReused:last.raysReused,totalRays:last.totalRays,
-        bvhRefitMs:state.rayDiagnostics?.bvhRefitMs??null,bvhNodeCount:state.rayDiagnostics?.bvhNodeCount??null,bvhNodeBytes:state.rayDiagnostics?.bvhNodeBytes??null};
-    };
-    const setConfig=(patch:Partial<LightingConfig>)=>{
-      check();const start=performance.now();
-      const previous=config;
-      config=copyConfig({...config,...patch});
-      if(previous.doorAngle!==config.doorAngle||previous.roughness!==config.roughness||previous.lightIntensity!==config.lightIntensity||JSON.stringify(previous.lights)!==JSON.stringify(config.lights)){
-        const scene=makeScene();last=transport.update(scene,'reuse');
-        if(!last.converged)throw Error('Le transport diffus ne converge pas');
-        state.scene=scene;state.radiance=last.radiance;state.indirectIrradiance=last.indirectIrradiance;
+function applyLightSet(explorer: Explorer, capabilities: EngineCapabilities, activeIds: Set<string>, desired: SceneLight[]) {
+  const desiredIds = new Set(desired.map(light => light.id));
+  if (capabilities.removeLight) for (const id of [...activeIds]) if (!desiredIds.has(id)) {
+    explorer.removeLight(id);
+    activeIds.delete(id);
+  }
+  for (const light of desired) {
+    if (activeIds.has(light.id)) { if (capabilities.setLight) explorer.setLight(light.id, light); }
+    else if (capabilities.addLight) { explorer.addLight(light); activeIds.add(light.id); }
+  }
+}
+
+/** Au plus MAX_SHADOWED_LIGHTS_PER_FRAME lampes gardent leur ombre ; les autres la perdent pour cette image. */
+function capShadows(lights: SceneLight[], shadowsEnabled: boolean): SceneLight[] {
+  if (!shadowsEnabled) return lights.map(light => (light.castsShadow ? { ...light, castsShadow: false } : light));
+  let remaining = MAX_SHADOWED_LIGHTS_PER_FRAME;
+  return lights.map(light => {
+    if (!light.castsShadow) return light;
+    if (remaining > 0) { remaining--; return light; }
+    return { ...light, castsShadow: false };
+  });
+}
+
+/** Comme ModelLab.tsx (banc 15) : l'Explorer occupe exactement le cadre CSS du canvas, plein cadre,
+ * jamais une résolution fixe par défaut — sinon object-contain le réduirait avec des marges. */
+function boxSize(canvas: HTMLCanvasElement): { width: number; height: number } {
+  const box = canvas.getBoundingClientRect();
+  return { width: Math.max(1, Math.round(box.width)), height: Math.max(1, Math.round(box.height)) };
+}
+
+/** Le contrat de lampes (addLight/setLight/removeLight/setEnvironment/setTransform) n'est rendu
+ * visible que par le backend WebGPU (webgpuPagesBackend) ; exact-cluster-pages (WebGL2) reste la
+ * valeur sûre partout ailleurs. On préfère WebGPU dès qu'un adaptateur existe, sans jamais l'exiger. */
+async function pickBackend(): Promise<BackendFactory> {
+  try {
+    const probe = document.createElement('canvas');
+    const detected = await detectCapabilities('webgpu', probe);
+    if (detected.adapter) return webgpuPagesBackend;
+  } catch { /* WebGPU indisponible sur ce navigateur ou cet appareil : repli WebGL2 silencieux. */ }
+  return exactPagesBackend;
+}
+
+export async function createLightingBench(
+  canvas: HTMLCanvasElement, carCanvas: HTMLCanvasElement | null, scene: SceneId, options: LightingBenchOptions = {},
+): Promise<LightingController> {
+  const { signal, onProgress } = options;
+  onProgress?.('Préparation de la scène avec le SDK…');
+  const { width, height } = boxSize(canvas);
+  const backend = await pickBackend();
+  const explorer = await createExplorer(canvas, {
+    manifestUrl: MANIFEST_URLS[scene], scope: 'full', signal, preload: 'all', width, height,
+    backends: [backend], onPreparation: event => onProgress?.(event.message),
+  });
+  const capabilities = detectEngineCapabilities(explorer);
+  let carExplorer: Explorer | null = null;
+  if (scene === 'emerald-night' && carCanvas) {
+    try {
+      const carSize = boxSize(carCanvas);
+      carExplorer = await createExplorer(carCanvas, { manifestUrl: CAR_MANIFEST_URL, scope: 'full', signal, preload: 'all', backends: [backend], width: carSize.width, height: carSize.height });
+      carExplorer.camera.position.set(3, 2.2, 5);
+      carExplorer.camera.lookAt(0, 0.4, 0);
+      carExplorer.camera.updateMatrixWorld();
+    } catch { carExplorer = null; }
+  }
+
+  const resize = new ResizeObserver(() => {
+    const size = canvas.getBoundingClientRect();
+    if (size.width > 0 && size.height > 0) explorer.resize(Math.round(size.width), Math.round(size.height));
+  });
+  resize.observe(canvas);
+  const carResize = carCanvas && carExplorer ? new ResizeObserver(() => {
+    const size = carCanvas.getBoundingClientRect();
+    if (size.width > 0 && size.height > 0) carExplorer!.resize(Math.round(size.width), Math.round(size.height));
+  }) : null;
+  if (carResize && carCanvas) carResize.observe(carCanvas);
+
+  // La caméra à la première personne (WASD, souris, collisions) est le composant existant du banc 15 ;
+  // ce fichier ne construit rien lui-même — options.createControls (fourni par LightingLab.tsx, la
+  // seule couche autorisée à importer un autre banc) choisit navigationControls ou l'orbite de repli.
+  const controls: LightingControlsHandle = options.createControls ? await options.createControls({
+    canvas, camera: explorer.camera, bounds: explorer.bounds, manifestUrl: MANIFEST_URLS[scene],
+    sourceKey: explorer.metadata.key, orbitControls: () => explorer.controls(),
+  }) : noopControls;
+
+  const houseNodes = scene === 'house' ? createHouseAnimatedNodes() : [];
+  const carNode = carExplorer ? createCarAnimatedNode() : null;
+  const nodeBuffers = new Map<string, { matrix: THREE.Matrix4; buffer: Float32Array }>();
+  for (const nodeEntry of [...houseNodes, ...(carNode ? [carNode] : [])]) nodeBuffers.set(nodeEntry.name, { matrix: new THREE.Matrix4(), buffer: new Float32Array(16) });
+  const unitScale = new THREE.Vector3(1, 1, 1);
+  const failedNodes = new Set<string>();
+
+  let config: LightingBenchConfig = defaultConfig(scene);
+  const activeLightIds = new Set<string>();
+  let autoLights: SceneLight[] = buildAutoLights(scene, config.autoLightCount, [1, 0.85, 0.6], 5, config.shadows);
+  let stats = emptyStats();
+  const start0 = performance.now();
+  let previousRafTime: number | null = null;
+  let rafHandle = 0;
+  let disposed = false;
+
+  const applyEnvironment = () => {
+    if (!capabilities.setEnvironment) return;
+    const skyColor: [number, number, number] = config.night ? [0.02, 0.03, 0.06] : [0.55, 0.68, 0.85];
+    explorer.setEnvironment({ skyColor, exposure: config.night ? 0.6 : 1 });
+  };
+  applyEnvironment();
+
+  const tick = (time: number) => {
+    if (disposed) return;
+    const interval = previousRafTime === null ? null : time - previousRafTime;
+    previousRafTime = time;
+    const dt = interval === null ? 0 : Math.min(interval / 1000, 0.05);
+    const elapsed = (performance.now() - start0) / 1000;
+    const animSpeed = config.animationPaused ? 0 : config.animationSpeed;
+
+    controls.update(dt);
+
+    if (capabilities.setTransform) {
+      for (const nodeEntry of houseNodes) {
+        if (failedNodes.has(nodeEntry.name)) continue;
+        nodeEntry.advance(elapsed, animSpeed);
+        const target = nodeBuffers.get(nodeEntry.name)!;
+        // setTransform refuse un nœud précisément absent de la scène préparée par un EngineError
+        // nommé (UNKNOWN_SCENE_NODE) : ce refus est propre à ce nœud, pas au contrat — les autres
+        // nœuds animés continuent, sans désactiver la capacité affichée dans le panneau.
+        try { explorer.setTransform(nodeEntry.name, writeWorldMatrix(nodeEntry, target.matrix, target.buffer, unitScale)); }
+        catch { failedNodes.add(nodeEntry.name); }
       }
-      return performance.now()-start;
-    };
-    const update=async(patch:Partial<LightingConfig>):Promise<LightingFrame>=>{
-      const start=performance.now(),cpuTransportMs=setConfig(patch),frame=render();
-      return {...frame,cpuTransportMs,cpuFrameMs:performance.now()-start};
-    };
-    const capturePixels=()=>{check();explorer.setPose(pose(config.cameraT));state.rayTraversal=config.variant;return explorer.capture().slice();};
-    const capture=()=>({width:canvas.width,height:canvas.height,dataUrl:png(capturePixels(),canvas.width,canvas.height)});
-    const waitGpu=async()=>{
-      check();const fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);if(!fence)throw Error('GPU fence unavailable');gl.flush();
-      const start=performance.now();
-      try{for(;;){check();const status=gl.clientWaitSync(fence,0,0);if(status===gl.ALREADY_SIGNALED||status===gl.CONDITION_SATISFIED)return;
-        if(status===gl.WAIT_FAILED||performance.now()-start>30_000)throw Error('GPU fence timeout');await nextFrame(signal);}}
-      finally{gl.deleteSync(fence);}
-    };
-    const isolatedFrame=async()=>{
-      await waitGpu();check();
-      if(!timer)return {...render(),gpuMs:null};
-      if(gl.getParameter(timer.GPU_DISJOINT_EXT))throw Error('Horloge GPU invalide');
-      const query=gl.createQuery();if(!query)throw Error('GPU query unavailable');
-      try{
-        gl.beginQuery(timer.TIME_ELAPSED_EXT,query);let frame:LightingFrame;
-        try{frame=render();}finally{gl.endQuery(timer.TIME_ELAPSED_EXT);}
-        await waitGpu();
-        const start=performance.now();
-        while(!gl.getQueryParameter(query,gl.QUERY_RESULT_AVAILABLE)){
-          check();if(performance.now()-start>30_000)throw Error('GPU query timeout');await nextFrame(signal);
-        }
-        if(gl.getParameter(timer.GPU_DISJOINT_EXT))throw Error('Horloge GPU invalide');
-        return {...frame,gpuMs:Number(gl.getQueryParameter(query,gl.QUERY_RESULT))/1e6};
-      }finally{gl.deleteQuery(query);}
-    };
-    const controller:LightingController={update,render,capture,getConfig:()=>copyConfig(config),dispose:drop};
-    return {controller,signal,setConfig,capturePixels,isolatedFrame,waitGpu,prepared,
-      environment:{userAgent:navigator.userAgent,devicePixelRatio:devicePixelRatio,logicalCpus:navigator.hardwareConcurrency,renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):null,vendor:debug?gl.getParameter(debug.UNMASKED_VENDOR_WEBGL):null,gpuTimerAvailable:!!timer,webglVersion:gl.getParameter(gl.VERSION),visibility:document.visibilityState},
-      geometry:{surfaces:initial.surfaces.length,patches:initial.patches.length,triangles:explorer.metadata.selectedTriangles}};
-  }catch(error){drop();throw error;}
-}
-
-export async function createLightingBench(canvas:HTMLCanvasElement,options:LightingBenchOptions):Promise<LightingController>{
-  const runtime=await createRuntime(canvas,options);
-  try{runtime.controller.render();return runtime.controller;}catch(error){runtime.controller.dispose();throw error;}
-}
-
-export async function runLightingComparison(canvas:HTMLCanvasElement,options:LightingBenchOptions):Promise<LightingReport>{
-  const config=defaults(),lights=config.lights;
-  let runtime:Awaited<ReturnType<typeof createRuntime>>|undefined;
-  const report:LightingReport={formatVersion:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'rejected',protocol:LIGHTING_PROTOCOL,config,
-    environment:{renderer:null,vendor:null,webglVersion:null,gpuTimerAvailable:null},
-    provenance:{initialization:'pending',sdkCommit:null,labCommit:null,sourceHashes:null,preparationMs:null,fixtureKey:null,geometry:null,
-      labBenchmarkRunner:true,publicPrepare:null,publicExplorer:null,preparedClusterGeometryRendered:false,productionRenderer:false},
-    quality:{passed:null,captures:[]},blocks:[],artifacts:[],observedRafCeilingHz:null,
-    limitations:['Rendu expérimental WebGL2 des maillages source ; intégration au rendu habituel du moteur non réalisée.',
-      'Équivalence entre algorithmes uniquement : la qualité physique et la fluidité cible restent à valider.',
-      'Transport diffus calculé sur CPU ; aucune accélération Worker ou WebAssembly dans ce test.',
-      'Ce test ne compare pas les cartes d’ombres et ne choisit pas l’architecture du moteur. Un essai dans le pipeline réel reste nécessaire.',
-      'GPU isolé et cadence rAF mesurés dans des passes séparées. La fréquence physique de l’écran reste non mesurée.',
-      'Une seule machine et un seul navigateur ; les autres systèmes et GPU restent non testés.']};
-  const stages:Array<{id:string;patch:Partial<LightingConfig>}>= [
-    {id:'closed',patch:{doorAngle:0}},{id:'open',patch:{doorAngle:Math.PI/2}},
-    {id:'partial',patch:{doorAngle:Math.PI/4,cameraT:.15}},
-    {id:'off',patch:{lightIntensity:0}},{id:'relit',patch:{lightIntensity:1}},
-    {id:'closed-again',patch:{doorAngle:0}},{id:'mirror-camera',patch:{doorAngle:Math.PI/2,cameraT:.8}},
-    {id:'smooth',patch:{roughness:.03,cameraT:0}},{id:'rough',patch:{roughness:.7}},
-    ...lights.map((light,index)=>({id:`light-${light.id}`,patch:{roughness:.25,lights:lights.map((source,i)=>({...source,intensity:i===index?source.intensity:0}))}})),
-    {id:'recolored',patch:{lights:lights.map((source,i)=>({...source,color:lights[(i+1)%lights.length].color}))}},
-    {id:'moved-lights',patch:{doorAngle:Math.PI/3,lights:lights.map(source=>({...source,position:[source.position[0],source.position[1],-source.position[2]+.3] as [number,number,number]}))}},
-  ];
-  try{
-    runtime=await createRuntime(canvas,options);
-    const {controller,signal}=runtime;
-    report.config=controller.getConfig();report.environment=runtime.environment;
-    report.provenance={...report.provenance,...runtime.prepared.provenance,initialization:'ready',
-      preparationMs:runtime.prepared.preparationMs,fixtureKey:runtime.prepared.fixtureKey,geometry:runtime.geometry,publicPrepare:true,publicExplorer:true};
-    for(const [index,stage] of stages.entries()){
-      options.onProgress?.(`Images identiques · ${index+1}/${stages.length} · ${stage.id}`);await nextFrame(signal);
-      runtime.setConfig({...stage.patch,variant:'brute'});controller.render();
-      const a=runtime.capturePixels(),aa=runtime.capturePixels();
-      runtime.setConfig({variant:'bvh'});const b=runtime.capturePixels();
-      const repeat=compareImages(a,aa),candidate=compareImages(a,b);
-      let foregroundPixels=0;for(let i=4;i<a.length;i+=4)if(a[i]!==a[0]||a[i+1]!==a[1]||a[i+2]!==a[2])foregroundPixels++;
-      const visibleOrUnlit=foregroundPixels>100||controller.getConfig().lightIntensity===0;
-      const passed=visibleOrUnlit&&repeat.differentPixels===0&&candidate.differentPixels===0;
-      report.quality.captures.push({scenario:stage.id,repeatDifferentPixels:repeat.differentPixels,candidateDifferentPixels:candidate.differentPixels,
-        maxRepeatChannelError:repeat.maxChannelError,maxCandidateChannelError:candidate.maxChannelError,foregroundPixels,passed});
-      report.artifacts.push({scenario:stage.id,variant:'brute',dataUrl:png(a,canvas.width,canvas.height)},{scenario:stage.id,variant:'bvh',dataUrl:png(b,canvas.width,canvas.height)});
+      if (carNode && carExplorer && !failedNodes.has(carNode.name)) {
+        carNode.advance(elapsed, animSpeed);
+        const target = nodeBuffers.get(carNode.name)!;
+        try { carExplorer.setTransform(carNode.name, writeWorldMatrix(carNode, target.matrix, target.buffer, unitScale)); }
+        catch { failedNodes.add(carNode.name); }
+      }
     }
-    report.quality.passed=report.quality.captures.every(capture=>capture.passed);
-    if(report.quality.passed){
-      runtime.setConfig(config);await runtime.waitGpu();
-      const idle:number[]=[];let previous=await nextFrame(signal);
-      for(let i=0;i<20;i++){const now=await nextFrame(signal);idle.push(now-previous);previous=now;}
-      const sorted=idle.sort((a,b)=>a-b);report.observedRafCeilingHz=1000/sorted[Math.floor(sorted.length/2)];
-      const order:LightingVariant[]=['brute','bvh','bvh','brute'];
-      for(const variant of order){
-        options.onProgress?.(`Cadence à qualité constante · ${variant==='brute'?'référence':'arbre d’obstacles'}`);
-        runtime.setConfig({variant});await runtime.waitGpu();
-        for(let i=0;i<LIGHTING_PROTOCOL.warmupFrames;i++){await nextFrame(signal);controller.render();}
-        const frames:LightingFrame[]=[];let previous=await nextFrame(signal);
-        // Timing frames contain no capture, readback, UI publication or CPU light solve.
-        for(let i=0;i<LIGHTING_PROTOCOL.sampleFrames;i++){
-          const frame=controller.render();const now=await nextFrame(signal),interval=now-previous;previous=now;
-          frames.push({...frame,rafDeltaMs:interval,fps:1000/interval});
-        }
-        report.blocks.push({variant,kind:'cadence',frames});await runtime.waitGpu();
-      }
-      for(const variant of order){
-        options.onProgress?.(`Temps GPU isolé · ${variant==='brute'?'référence':'arbre d’obstacles'}`);
-        runtime.setConfig({variant});
-        for(let i=0;i<2;i++)await runtime.isolatedFrame();
-        const frames:LightingFrame[]=[];
-        for(let i=0;i<5;i++)frames.push(await runtime.isolatedFrame());
-        report.blocks.push({variant,kind:'gpu-isolated',frames});
-      }
-      report.status='measured';
+
+    const adjustable = capShadows(config.lights, config.shadows);
+    const auto = capShadows(autoLights, config.shadows);
+    let desired = [...adjustable, ...auto];
+    if (scene === 'emerald-night') {
+      const heads = carHeadlightPoses(elapsed, animSpeed);
+      desired = [...desired, ...heads.map((head, index): SceneLight => ({
+        id: `headlight-${index}`, kind: 'spot', position: head.position, direction: head.direction,
+        color: [1, 0.95, 0.85], intensity: 10, range: 20, coneAngle: 0.45, castsShadow: false,
+      }))];
     }
-  }catch(error){
-    const stopped=options.signal?.aborted||runtime?.signal.aborted;
-    report.status=stopped?'stopped':'error';
-    report.error=stopped?'Campagne arrêtée à la demande.':error instanceof Error?error.message:String(error);
-    if(!runtime)report.provenance.initialization=stopped?'stopped':'failed';
-  }finally{runtime?.controller.dispose();}
-  options.onProgress?.('Archivage des images, des mesures et des sources…');
-  // An aborted rendering job must still save its partial evidence; use a separate bounded request.
-  try{
-    const response=await fetch('/api/lighting-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(report),signal:AbortSignal.timeout(30_000)});
-    if(!response.ok)throw Error(await response.text());
-  }catch(error){report.status='error';report.error=`Archivage échoué : ${String(error)}`;}
-  return report;
+    applyLightSet(explorer, capabilities, activeLightIds, desired);
+
+    // FrameMetrics porte directement les compteurs lampes/ombres quand le backend actif les publie ;
+    // aucun appel séparé n'existe pour eux.
+    const metrics = explorer.render();
+    carExplorer?.render();
+    stats = {
+      fps: interval && interval > 0 ? 1000 / interval : null,
+      cpuFrameMs: metrics.cpuFrameMs ?? null,
+      gpuMs: metrics.gpuMs ?? metrics.gpuFrameMs ?? null,
+      lightsActive: metrics.lightsActive ?? (capabilities.addLight ? activeLightIds.size : null),
+      shadowsUpdated: metrics.shadowsUpdated ?? null,
+      gpuLightListsMs: metrics.gpuLightListsMs ?? null,
+      gpuShadowsMs: metrics.gpuShadowsMs ?? null,
+      gpuLightingMs: metrics.gpuLightingMs ?? null,
+      drawCalls: metrics.drawCalls ?? null,
+      triangles: metrics.triangles ?? null,
+    };
+    rafHandle = requestAnimationFrame(tick);
+  };
+  rafHandle = requestAnimationFrame(tick);
+
+  return {
+    getConfig: () => ({ ...config, lights: config.lights.map(light => ({ ...light })) }),
+    getCapabilities: () => ({ ...capabilities }),
+    getStats: () => stats,
+    update(patch) {
+      config = { ...config, ...patch, lights: patch.lights ? patch.lights.map(light => ({ ...light })) : config.lights };
+      if (patch.autoLightCount !== undefined) autoLights = buildAutoLights(scene, config.autoLightCount, [1, 0.85, 0.6], 5, config.shadows);
+      if (patch.night !== undefined) applyEnvironment();
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      cancelAnimationFrame(rafHandle);
+      resize.disconnect();
+      carResize?.disconnect();
+      controls.dispose();
+      explorer.dispose();
+      carExplorer?.dispose();
+    },
+  };
 }

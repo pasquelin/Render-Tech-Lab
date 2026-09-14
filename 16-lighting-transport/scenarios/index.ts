@@ -1,5 +1,4 @@
-export const scenarios = [
-  { id: 'two-rooms', title: 'Deux pièces · trois sources colorées', disabled: false },
-  { id: 'delayed-indirect-response', title: 'Retard de réponse lumineuse', disabled: false },
-] as const;
+import { SCENES } from '../contracts.ts';
+
+export const scenarios = SCENES.map(scene => ({ id: scene.id, title: scene.title, disabled: false }));
 export const scenarioIds = scenarios.map(scenario => scenario.id);

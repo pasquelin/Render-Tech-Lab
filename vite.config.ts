@@ -1,7 +1,5 @@
 import { createModelAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
 import { createLightingAssetsPlugin } from './16-lighting-transport/assets/vite.ts';
-import { createLightingArchivePlugin } from './16-lighting-transport/assets/archive.ts';
-import { createLightingDelayArchivePlugin } from './16-lighting-transport/assets/delayArchive.ts';
 import { createIntegrationArchivePlugin } from './shared/archive/integration.ts';
 import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
@@ -302,7 +300,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [createLightingAssetsPlugin(),createLightingArchivePlugin(),createLightingDelayArchivePlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createLightingAssetsPlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',

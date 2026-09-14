@@ -6,7 +6,7 @@ export const manifest = defineLabManifest({
   id: '16-lighting-transport',
   number: '16',
   title: 'Lumière',
-  description: 'Trois sources colorées mobiles : comparer le parcours des obstacles à éclairage et résolution identiques.',
+  description: 'Banc de test du moteur WebGeometry : deux scènes (intérieure et urbaine nocturne), lampes réglables et transformations de nœuds animées en boucle, appelées via les API publiques prepare()/createExplorer().',
   capabilities: ['webgl2'],
   scenarios,
   status: 'experimental',

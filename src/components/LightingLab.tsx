@@ -1,350 +1,268 @@
-import {useEffect,useRef,useState} from 'react';
-import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,LIGHTING_PROTOCOL,LIGHTING_UI,LIGHTING_DELAY_PROTOCOL,LIGHTING_DELAY_EVENTS,LIGHTING_DELAY_MS} from '../../16-lighting-transport/index.ts';
-import type {LightingArchiveEntry,LightingArchiveHistory,LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector,LightingDelayArchiveEntry,LightingDelayArchiveHistory,LightingDelayReport} from '../../16-lighting-transport/index.ts';
-import {initialSnapshot,type LabActions} from '../lab/labState.ts';
-import {navigateLabRoute} from '../lab/navigation.ts';
-import {parseMarkdownToHtml} from '../lab/markdown.ts';
-import {LabContext} from './LabContext.tsx';
-import {LabShell} from './LabShell.tsx';
-import {LabStats} from './LabStats.tsx';
-import {LabSection} from './ui/LabSection.tsx';
-import {Input} from './ui/Input.tsx';
-import {Select} from './ui/Select.tsx';
-import {Button} from './ui/Button.tsx';
-import {MetricGrid} from './ui/MetricGrid.tsx';
-import {StatusBadge} from './ui/StatusBadge.tsx';
-import {EmptyState} from './ui/EmptyState.tsx';
-import {LoadingState} from './ui/LoadingState.tsx';
-import {ErrorState} from './ui/ErrorState.tsx';
-import {ProgressPanel} from './ui/ProgressPanel.tsx';
-import {ReportSummary} from './ui/ReportSummary.tsx';
-import {ActionBar} from './ui/ActionBar.tsx';
+import { useEffect, useRef, useState } from 'react';
+import { Play, Flame } from 'lucide-react';
+import { LIGHTING_MODULE, LIGHTING_UI, SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig } from '../../16-lighting-transport/index.ts';
+import type { LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import { initialSnapshot, type LabActions } from '../lab/labState.ts';
+import { navigateLabRoute } from '../lab/navigation.ts';
+import { parseMarkdownToHtml } from '../lab/markdown.ts';
+import { loadMarkdownReport } from '../lab/reportReader.ts';
+// Caméra à la première personne : le composant existant du banc 15 (WASD, souris, saut, collisions
+// sur la géométrie), branché tel quel — jamais copié ni réécrit. src/components/ est la seule couche
+// autorisée à importer les fichiers internes d'un autre banc (voir test/labArchitecture.test.ts).
+import { createNavigationControls } from '../../15-virtualized-integration/implementation/navigationControls.ts';
+import { loadNavigationWorld } from '../../15-virtualized-integration/implementation/navigationSource.ts';
+import { LabContext } from './LabContext.tsx';
+import { LabShell } from './LabShell.tsx';
+import { LabStats } from './LabStats.tsx';
+import { PreparationStation } from './PreparationStation.tsx';
+import { ReportSection } from './ReportSection.tsx';
+import { LabSection } from './ui/LabSection.tsx';
+import { Input } from './ui/Input.tsx';
+import { Button } from './ui/Button.tsx';
+import { MetricGrid } from './ui/MetricGrid.tsx';
+import { StatusBadge } from './ui/StatusBadge.tsx';
+import { SegmentedControl } from './ui/SegmentedControl.tsx';
+import { LoadingState } from './ui/LoadingState.tsx';
 
-type Status='idle'|'loading'|'running'|'completed'|'stopped'|'error';
-type RunKind='interactive'|'comparison'|'delay';
-const moduleId='16-lighting-transport';
-const number=(value:number|null|undefined,unit='')=>value==null||!Number.isFinite(value)?'Non mesuré':value.toFixed(unit===' ms'?2:0)+unit;
-const copyConfig=(config:LightingConfig):LightingConfig=>({...config,lights:config.lights.map(light=>({...light,color:[...light.color],position:[...light.position]}))});
-const displayColor=(color:LightingVector)=>'#'+color.map(value=>{
-  const x=Math.min(1,Math.max(0,value));
-  return Math.round(255*(x<=.0031308?12.92*x:1.055*x**(1/2.4)-.055)).toString(16).padStart(2,'0');
-}).join('');
-const linearColor=(hex:string):LightingVector=>[1,3,5].map(offset=>{
-  const x=parseInt(hex.slice(offset,offset+2),16)/255;
-  return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;
-}) as LightingVector;
+type Status = 'idle' | 'loading' | 'running' | 'stopped' | 'error';
+const moduleId = '16-lighting-transport';
+const number = (value: number | null | undefined, unit = '') => (value == null || !Number.isFinite(value) ? 'Non mesuré' : value.toFixed(unit === ' ms' ? 2 : 0) + unit);
+const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
+const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
-declare global {
-  interface Window {
-    lightingBench16?: {snapshot:()=>{status:'running';config:LightingConfig;frame:LightingFrame|null}};
-    __lightingBench16Report?: LightingReport;
-    __lightingBench16DelayReport?: LightingDelayReport;
-  }
-}
-
-function LightFields({light,disabled,onChange}:{light:LightingLight;disabled:boolean;onChange:(patch:Partial<LightingLight>)=>void}) {
-  const prefix='lighting-'+light.id;
-  const controls=LIGHTING_LIGHT_CONTROLS[light.id];
-  if(!controls)return <p className="text-xs text-base-content/60">Réglages indisponibles pour {light.id}.</p>;
-  const move=(axis:0|2,value:number)=>{const position:LightingVector=[...light.position];position[axis]=value;onChange({position});};
-  return <div className="space-y-2" data-light-id={light.id}>
-    <h3 className="text-xs font-semibold">{controls.label}</h3>
-    <div className="grid grid-cols-2 gap-2">
-      <Input id={prefix+'-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event=>onChange({color:linearColor(event.target.value)})}/>
-      <Input id={prefix+'-intensity'} label={'Intensité · '+light.intensity.toFixed(2)} type="range" min={0} max={controls.maxIntensity} step={.01} value={light.intensity} disabled={disabled} onChange={event=>onChange({intensity:Number(event.target.value)})}/>
-      <Input id={prefix+'-x'} label="Gauche / droite" type="range" min={controls.minX} max={controls.maxX} step={.02} value={light.position[0]} disabled={disabled} onChange={event=>move(0,Number(event.target.value))}/>
-      <Input id={prefix+'-z'} label="Avant / arrière" type="range" min={controls.minZ} max={controls.maxZ} step={.02} value={light.position[2]} disabled={disabled} onChange={event=>move(2,Number(event.target.value))}/>
+function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; scene: SceneId; disabled: boolean; onChange: (patch: Partial<SceneLight>) => void }) {
+  const bounds = SCENE_LIGHT_BOUNDS[scene];
+  const prefix = 'lighting-' + light.id;
+  const move = (axis: 0 | 1 | 2, value: number) => { const position: Vec3 = [...light.position]; position[axis] = value; onChange({ position }); };
+  return (
+    <div className="space-y-2" data-light-id={light.id}>
+      <h3 className="text-xs font-semibold">{light.id}</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event => onChange({ color: linearColor(event.target.value) })} />
+        <Input id={prefix + '-intensity'} label={'Intensité · ' + light.intensity.toFixed(1)} type="range" min={0} max={20} step={0.5} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <Input id={prefix + '-x'} label="X" type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
+        <Input id={prefix + '-y'} label="Y" type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
+        <Input id={prefix + '-z'} label="Z" type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
+        <Input id={prefix + '-shadow'} label="Ombre" type="checkbox" checked={light.castsShadow} disabled={disabled} onChange={event => onChange({ castsShadow: event.target.checked })} />
+      </div>
     </div>
-  </div>;
+  );
 }
 
-/** React owns lifecycle and controls; all scene, transport and measurement work stays in the public runner. */
+/** React possède le cycle de vie et les commandes ; la scène, le rendu et les mesures restent dans le runner public. */
 export function LightingLab() {
-  const canvasRef=useRef<HTMLCanvasElement>(null),unusedGpu=useRef<HTMLCanvasElement>(null),unusedChart=useRef<HTMLCanvasElement>(null);
-  const controllerRef=useRef<LightingController|null>(null),abortRef=useRef<AbortController|null>(null);
-  const frameRef=useRef<LightingFrame|null>(null),configRef=useRef<LightingConfig|null>(null);
-  const generation=useRef(0),raf=useRef(0),busy=useRef(false),updating=useRef(false);
-  const previousRaf=useRef<number|null>(null);
-  const pending=useRef<LightingConfig|null>(null),failRef=useRef<(error:unknown)=>void>(()=>{});
-  const [status,setStatus]=useState<Status>('idle'),[kind,setKind]=useState<RunKind>('interactive');
-  const [request,setRequest]=useState<{id:number;kind:RunKind}|null>(null);
-  const [message,setMessage]=useState('Prêt à lancer la scène.');
-  const [config,setConfig]=useState<LightingConfig|null>(null),[frame,setFrame]=useState<LightingFrame|null>(null);
-  const [report,setReport]=useState<LightingReport|null>(null);
-  const [delayReport,setDelayReport]=useState<LightingDelayReport|null>(null);
-  const [archives,setArchives]=useState<LightingArchiveHistory>({formatVersion:1,latestAttempt:null,latestValid:null,attempts:[]});
-  const [delayArchives,setDelayArchives]=useState<LightingDelayArchiveHistory>({formatVersion:1,latestAttempt:null,attempts:[]});
-  const [selectedPackage,setSelectedPackage]=useState(''),[archiveMessage,setArchiveMessage]=useState('Lecture des archives…');
-  const [selectedDelayPackage,setSelectedDelayPackage]=useState(''),[delayArchiveMessage,setDelayArchiveMessage]=useState('Lecture des archives…');
-  const reportRequest=useRef<AbortController|null>(null);
-  const archivedReport=archives.attempts.find(entry=>entry.package===selectedPackage);
-  const archivedDelayReport=delayArchives.attempts.find(entry=>entry.package===selectedDelayPackage);
-  const reportLabel=(entry:LightingArchiveEntry)=>entry.status==='measured'?'Comparaison mesurée':entry.status==='rejected'?'Comparaison rejetée':entry.status==='error'?'Comparaison en erreur':'Comparaison arrêtée';
-  const delayReportLabel=(entry:LightingDelayArchiveEntry)=>entry.status==='measured'?'Campagne mesurée':entry.status==='error'?'Campagne en erreur':'Campagne arrêtée';
-  const [modal,setModal]=useState(()=>initialSnapshot(moduleId).reportModal);
-  const active=status==='loading'||status==='running';
-  const liveControls=status==='running'&&kind==='interactive';
-  const launchLabel=kind==='comparison'?'Comparer brut / BVH':kind==='delay'?'Lancer le retard de réponse':LIGHTING_MODULE.benchLabel;
+  const canvasRef = useRef<HTMLCanvasElement>(null), carCanvasRef = useRef<HTMLCanvasElement>(null);
+  const unusedGpu = useRef<HTMLCanvasElement>(null), unusedChart = useRef<HTMLCanvasElement>(null);
+  const controllerRef = useRef<LightingController | null>(null), abortRef = useRef<AbortController | null>(null);
+  const generation = useRef(0), poll = useRef(0), busy = useRef(false);
+  const reportRequest = useRef<AbortController | null>(null);
+  const [sceneId, setSceneId] = useState<SceneId>('house');
+  const [status, setStatus] = useState<Status>('idle');
+  const [message, setMessage] = useState('Prêt à ouvrir une scène.');
+  const [config, setConfig] = useState<LightingBenchConfig>(() => defaultConfig('house'));
+  const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(null);
+  const [stats, setStats] = useState<LightingFrameStats>({ fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null, gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null });
+  const [modal, setModal] = useState(() => initialSnapshot(moduleId).reportModal);
+  const active = status === 'loading' || status === 'running';
 
-  const release=()=>{
-    cancelAnimationFrame(raf.current);
-    controllerRef.current?.dispose();controllerRef.current=null;
-    pending.current=null;updating.current=false;previousRaf.current=null;
-    delete window.lightingBench16;
+  const release = () => {
+    cancelAnimationFrame(poll.current);
+    controllerRef.current?.dispose();
+    controllerRef.current = null;
   };
-  const stop=()=>{
-    if(!busy.current)return;
-    abortRef.current?.abort();release();busy.current=false;
-    setStatus('stopped');setMessage('Exécution arrêtée. Les ressources de rendu ont été libérées.');
+  const stop = () => {
+    if (!busy.current) return;
+    abortRef.current?.abort(); release(); busy.current = false;
+    setStatus('stopped'); setMessage('Scène arrêtée. Les ressources de rendu ont été libérées.'); setCapabilities(null);
   };
-  const launch=()=>{
-    if(busy.current)return;
-    busy.current=true;frameRef.current=null;setFrame(null);setStatus('loading');setMessage('Chargement du banc Lumière…');
-    setModal(old=>({...old,open:false}));
-    if(kind==='comparison')delete window.__lightingBench16Report;
-    if(kind==='delay')delete window.__lightingBench16DelayReport;
-    setRequest({id:++generation.current,kind});
-  };
-
-  useEffect(()=>{
-    document.title='16 · Lumière — render-tech-lab';
-    return()=>{generation.current++;abortRef.current?.abort();reportRequest.current?.abort();release();};
-  },[]);
-
-  useEffect(()=>{
-    if(active)return;
-    const abort=new AbortController();
-    void fetch('/api/lighting-report',{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Archives indisponibles.');
-      const history=await response.json() as LightingArchiveHistory;
-      if(abort.signal.aborted)return;
-      setArchives(history);setArchiveMessage(history.attempts.length?'':'Aucune campagne archivée pour ce banc.');
-      setSelectedPackage(previous=>history.attempts.find(entry=>entry.id===report?.id)?.package??
-        (history.attempts.some(entry=>entry.package===previous)?previous:history.latestAttempt??history.latestValid??''));
-    }).catch(error=>{if(!abort.signal.aborted)setArchiveMessage(error instanceof Error?error.message:String(error));});
-    return()=>abort.abort();
-  },[active,report?.id]);
-
-  useEffect(()=>{
-    if(active)return;
-    const abort=new AbortController();
-    void fetch('/api/lighting-delay-report',{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Archives indisponibles.');
-      const history=await response.json() as LightingDelayArchiveHistory;
-      if(abort.signal.aborted)return;
-      setDelayArchives(history);setDelayArchiveMessage(history.attempts.length?'':'Aucune campagne archivée pour ce scénario.');
-      setSelectedDelayPackage(previous=>history.attempts.find(entry=>entry.id===delayReport?.id)?.package??
-        (history.attempts.some(entry=>entry.package===previous)?previous:history.latestAttempt??''));
-    }).catch(error=>{if(!abort.signal.aborted)setDelayArchiveMessage(error instanceof Error?error.message:String(error));});
-    return()=>abort.abort();
-  },[active,delayReport?.id]);
-
-  useEffect(()=>{
-    if(!request)return;
-    const abort=new AbortController();abortRef.current=abort;
-    const current=()=>generation.current===request.id&&!abort.signal.aborted;
-    const fail=(error:unknown)=>{
-      if(!current())return;
-      generation.current++;abort.abort();
-      release();busy.current=false;setStatus('error');setMessage(error instanceof Error?error.message:String(error));
-    };
-    failRef.current=fail;
-    void(async()=>{
+  const launch = () => {
+    if (busy.current) return;
+    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null);
+    const abort = new AbortController(); abortRef.current = abort;
+    const owner = ++generation.current;
+    setConfig(defaultConfig(sceneId));
+    void (async () => {
       try {
-        const runner=await import('../../16-lighting-transport/index.ts');
-        if(!current())return;
-        const canvas=canvasRef.current;
-        if(!canvas)throw new Error('La surface de rendu est indisponible.');
-        const options={signal:abort.signal,onProgress:(value:string)=>{if(current())setMessage(value);}};
-        if(request.kind==='comparison') {
-          setStatus('running');
-          const result=await runner.runLightingComparison(canvas,options);
-          if(generation.current!==request.id)return;
-          setReport(result);window.__lightingBench16Report=result;
-          const stopped=abort.signal.aborted||result.status==='stopped';
-          setStatus(stopped?'stopped':result.status==='error'?'error':'completed');
-          setMessage(stopped?'Comparaison arrêtée.':result.status==='error'?result.error??'La comparaison a rencontré une erreur.':result.status==='measured'?'Comparaison terminée. Consultez ses mesures et ses limites.':'Comparaison rejetée par le contrôle des images.');
-          release();busy.current=false;
-          return;
-        }
-        if(request.kind==='delay') {
-          setStatus('running');
-          const result=await runner.runLightingDelayScenario(canvas,options);
-          if(generation.current!==request.id)return;
-          setDelayReport(result);window.__lightingBench16DelayReport=result;
-          const stopped=abort.signal.aborted||result.status==='stopped';
-          setStatus(stopped?'stopped':result.status==='error'?'error':'completed');
-          setMessage(stopped?'Campagne arrêtée.':result.status==='error'?result.error??'La campagne a rencontré une erreur.':'Campagne terminée. Consultez les vidéos et le rapport pour juger chaque retard.');
-          release();busy.current=false;
-          return;
-        }
-        const controller=await runner.createLightingBench(canvas,options);
-        if(!current()){controller.dispose();return;}
-        controllerRef.current=controller;const initial=copyConfig(controller.getConfig());configRef.current=initial;setConfig(initial);
-        setStatus('running');setMessage('Scène active. Déplacez la porte ou modifiez les lampes.');
-        const hook={snapshot:()=>({status:'running' as const,config:copyConfig(controller.getConfig()),frame:frameRef.current?{...frameRef.current}:null})};
-        window.lightingBench16=hook;
-        let published=-Infinity;
-        const tick=(time:number)=>{
-          if(!current())return;
-          try {
-            if(!updating.current) {
-              const interval=previousRaf.current===null?null:time-previousRaf.current;
-              const next={...controller.render(),rafDeltaMs:interval,fps:interval!==null&&interval>0?1000/interval:null};
-              previousRaf.current=time;frameRef.current=next;
-              if(time-published>=200){setFrame({...next});published=time;}
-            }else previousRaf.current=null;
-            raf.current=requestAnimationFrame(tick);
-          } catch(error){fail(error);}
+        const runner = await import('../../16-lighting-transport/index.ts');
+        if (generation.current !== owner || abort.signal.aborted) return;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('La surface de rendu est indisponible.');
+        // Maison : navigation à pied du banc 15 (WASD, saut, collisions sur les murs/le sol générés
+        // par assets/house.ts + assets/prepareHouseNavigation.ts). Emerald : le cache du Lab principal
+        // est en lecture seule, donc aucun navigation.bin n'est généré pour lui ; repli sur les vraies
+        // orbit controls de l'Explorer (pas une commande maison) — à signaler, pas à réimplémenter.
+        const createControls = async (context: ControlsContext): Promise<LightingControlsHandle> => {
+          if (sceneId === 'house') {
+            try {
+              const world = await loadNavigationWorld(context.manifestUrl, context.sourceKey, context.bounds, 1, abort.signal);
+              return createNavigationControls(context.canvas, context.camera, context.bounds, world, 1, 'game', 0);
+            } catch (error) {
+              console.warn('[16-lighting-transport] navigation à la première personne (banc 15) indisponible, repli orbite :', error);
+            }
+          }
+          const orbit = context.orbitControls();
+          return { update: () => orbit.update(), dispose: () => orbit.dispose() };
         };
-        raf.current=requestAnimationFrame(tick);
-      } catch(error){fail(error);}
+        const controller = await runner.createLightingBench(canvas, sceneId === 'emerald-night' ? carCanvasRef.current : null, sceneId, {
+          signal: abort.signal, onProgress: value => { if (generation.current === owner) setMessage(value); }, createControls,
+        });
+        if (generation.current !== owner || abort.signal.aborted) { controller.dispose(); return; }
+        controllerRef.current = controller;
+        setCapabilities(controller.getCapabilities());
+        setStatus('running'); setMessage('Scène active. Cliquez dans la vue pour capturer la souris (WASD, Espace pour sauter, Maj pour courir, Échap pour libérer).');
+        const tick = () => {
+          if (generation.current !== owner || !controllerRef.current) return;
+          setStats(controllerRef.current.getStats());
+          poll.current = requestAnimationFrame(tick);
+        };
+        poll.current = requestAnimationFrame(tick);
+      } catch (error) {
+        if (generation.current !== owner) return;
+        release(); busy.current = false; setStatus('error'); setMessage(error instanceof Error ? error.message : String(error));
+      }
     })();
-    return()=>{abort.abort();release();};
-  },[request]);
+  };
 
-  const change=(patch:Partial<LightingConfig>)=>{
-    const controller=controllerRef.current,currentConfig=configRef.current;
-    if(!liveControls||!controller||!currentConfig)return;
-    const next=copyConfig({...currentConfig,...patch});configRef.current=next;setConfig(next);pending.current=next;
-    if(updating.current)return;
-    const owner=generation.current;updating.current=true;
-    void(async()=>{
-      try {
-        while(pending.current&&generation.current===owner&&controllerRef.current===controller) {
-          const nextConfig=pending.current;pending.current=null;
-          const nextFrame=await controller.update(nextConfig);
-          if(generation.current!==owner||controllerRef.current!==controller)return;
-          previousRaf.current=null;frameRef.current=nextFrame;setFrame({...nextFrame});
-        }
-      } catch(error){if(generation.current===owner&&controllerRef.current===controller)failRef.current(error);}
-      finally{if(generation.current===owner)updating.current=false;}
-    })();
+  useEffect(() => {
+    document.title = '16 · Lumière — render-tech-lab';
+    return () => { generation.current++; abortRef.current?.abort(); reportRequest.current?.abort(); release(); };
+  }, []);
+
+  const change = (patch: Partial<LightingBenchConfig>) => {
+    if (!controllerRef.current) return;
+    setConfig(previous => ({ ...previous, ...patch })); controllerRef.current.update(patch);
   };
-  const changeLight=(id:string,patch:Partial<LightingLight>)=>{
-    const current=configRef.current;if(!current)return;
-    change({lights:current.lights.map(light=>light.id===id?{...light,...patch}:light)});
+  const changeLight = (id: string, patch: Partial<SceneLight>) => {
+    change({ lights: config.lights.map(light => (light.id === id ? { ...light, ...patch } : light)) });
   };
-  const openReport=()=>{
-    if(!archivedReport)return;
+
+  const openReport = () => {
     reportRequest.current?.abort();
-    const abort=new AbortController();reportRequest.current=abort;
-    const path='reports/'+moduleId+'/'+archivedReport.package+'/REPORT.md';
-    setModal({open:true,title:'Rapport · 16 Lumière',path,raw:'',html:'Chargement du rapport…',feedback:''});
-    void fetch('/api/lighting-report?package='+encodeURIComponent(archivedReport.package),{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Lecture du rapport archivé impossible.');
-      const raw=await response.text();
-      if(!abort.signal.aborted)setModal(old=>({...old,raw,html:parseMarkdownToHtml(raw)}));
-    }).catch(error=>{if(!abort.signal.aborted)setModal(old=>({...old,html:error instanceof Error?error.message:String(error),feedback:'Le rapport n’a pas pu être chargé.'}));});
+    const abort = new AbortController(); reportRequest.current = abort;
+    setModal({ open: true, title: 'Rapport · 16 Lumière', path: 'reports/' + moduleId + '/…/REPORT.md', raw: '', html: 'Chargement du rapport…', feedback: '' });
+    void loadMarkdownReport(fetch, moduleId).then(report => {
+      if (abort.signal.aborted) return;
+      setModal(old => ({ ...old, raw: report.ok ? report.raw : '', html: report.ok ? parseMarkdownToHtml(report.raw) : `<p>${report.raw}</p>`, feedback: report.feedback }));
+    }).catch(error => { if (!abort.signal.aborted) setModal(old => ({ ...old, html: error instanceof Error ? error.message : String(error), feedback: 'Le rapport n’a pas pu être chargé.' })); });
   };
-  const downloadReport=()=>{
-    if(!archivedReport)return;
-    const link=document.createElement('a');
-    link.href='/api/report-artifact?package='+encodeURIComponent(moduleId+'/'+archivedReport.package)+'&file=objects%2Fresult.json.gz';
-    link.download='lumiere-'+archivedReport.id+'.json.gz';link.click();
+  const openFinder = () => {
+    void fetch('/api/open-folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: moduleId, folder: 'reports' }) })
+      .then(response => { if (!response.ok) throw new Error('Dossier indisponible'); return response.json(); })
+      .then(() => setModal(old => ({ ...old, feedback: 'Dossier des rapports ouvert.' }))).catch(() => setModal(old => ({ ...old, feedback: 'Rapports : reports/' + moduleId + '/' })));
   };
-  const openDelayReport=()=>{
-    if(!archivedDelayReport)return;
-    reportRequest.current?.abort();
-    const abort=new AbortController();reportRequest.current=abort;
-    const path='reports/'+moduleId+'/'+archivedDelayReport.package+'/REPORT.md';
-    setModal({open:true,title:'Rapport · Retard de réponse lumineuse',path,raw:'',html:'Chargement du rapport…',feedback:''});
-    void fetch('/api/lighting-delay-report?package='+encodeURIComponent(archivedDelayReport.package),{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Lecture du rapport archivé impossible.');
-      const raw=await response.text();
-      if(!abort.signal.aborted)setModal(old=>({...old,raw,html:parseMarkdownToHtml(raw)}));
-    }).catch(error=>{if(!abort.signal.aborted)setModal(old=>({...old,html:error instanceof Error?error.message:String(error),feedback:'Le rapport n’a pas pu être chargé.'}));});
+  const copyReport = () => {
+    void navigator.clipboard.writeText(modal.raw).then(() => setModal(old => ({ ...old, feedback: 'Rapport copié.' }))).catch(() => setModal(old => ({ ...old, feedback: 'Copie indisponible.' })));
   };
-  const downloadDelayReport=()=>{
-    if(!archivedDelayReport)return;
-    const link=document.createElement('a');
-    link.href='/api/report-artifact?package='+encodeURIComponent(moduleId+'/'+archivedDelayReport.package)+'&file=objects%2Fresult.json.gz';
-    link.download='lumiere-retard-'+archivedDelayReport.id+'.json.gz';link.click();
+
+  const actions: LabActions = {
+    switchModule: id => { if (!busy.current) navigateLabRoute(id); }, setMode: () => {}, setScenario: () => {},
+    runBenchmark: launch, runPain: stop, stopBenchmark: stop,
+    openReport, closeReport: () => setModal(old => ({ ...old, open: false })), copyReport, refreshReport: openReport, openFinder,
+    newExecution: () => { if (!active) { setStatus('idle'); setMessage('Prêt à ouvrir une scène.'); } },
   };
-  const actions:LabActions={
-    switchModule:id=>{if(!busy.current)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},
-    runBenchmark:launch,runPain:stop,stopBenchmark:stop,openReport:kind==='delay'?openDelayReport:openReport,
-    closeReport:()=>setModal(old=>({...old,open:false})),refreshReport:kind==='delay'?openDelayReport:openReport,
-    copyReport:()=>{void navigator.clipboard.writeText(modal.raw).then(()=>setModal(old=>({...old,feedback:'Rapport copié.'}))).catch(()=>setModal(old=>({...old,feedback:'Copie indisponible.'})));},
-    openFinder:()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:moduleId,folder:'reports'})})
-      .then(response=>{if(!response.ok)throw new Error('Dossier indisponible');return response.json();})
-      .then(()=>setModal(old=>({...old,feedback:'Dossier des rapports ouvert.'}))).catch(()=>setModal(old=>({...old,feedback:'Rapports : reports/'+moduleId+'/'})));},
+  const primaryStats = { submit: 'Non mesuré', cpuFrame: number(stats.cpuFrameMs, ' ms'), fps: number(stats.fps, ' FPS'), drawCalls: number(stats.drawCalls) };
+  const contextState = {
+    ...initialSnapshot(moduleId), running: active, framePresented: status === 'running', reportModal: modal,
+    stats: { ...initialSnapshot(moduleId).stats, ...primaryStats },
+    execution: { status: status === 'loading' ? ('running' as const) : status, phase: message, lastCampaign: null },
   };
-  const stats={submit:number(frame?.cpuSubmitMs,' ms'),cpuFrame:number(frame?.cpuFrameMs,' ms'),fps:number(frame?.fps,' FPS'),drawCalls:number(frame?.drawCalls)};
-  const contextState={...initialSnapshot(moduleId),running:active,framePresented:!!frame,reportModal:modal,
-    stats:{...initialSnapshot(moduleId).stats,...stats},
-    execution:{status:status==='loading'?'running' as const:status,phase:message,lastCampaign:null}};
-  const reportActions=archivedReport?<ActionBar><Button id="lighting-open-report" variant="secondary" disabled={active} onClick={openReport}>Lire le rapport</Button><Button variant="outline" disabled={active} onClick={downloadReport}>Exporter les données</Button></ActionBar>:null;
-  const delayReportActions=archivedDelayReport?<ActionBar><Button id="lighting-delay-open-report" variant="secondary" disabled={active} onClick={openDelayReport}>Lire le rapport</Button><Button variant="outline" disabled={active} onClick={downloadDelayReport}>Exporter les données</Button></ActionBar>:null;
-  const sidebar=<>
-    <LabSection id="lab-mode-card" number={1} title="Configuration / mode d’exécution" help={LIGHTING_UI.modeHint}>
-      <Select id="lighting-run-kind" label="Exécution" value={kind} disabled={active} onChange={event=>setKind(event.target.value as RunKind)}>
-        <option value="interactive">Explorer la lumière</option><option value="comparison">Comparer brut / BVH</option>
-        <option value="delay">Retard de réponse lumineuse</option>
-      </Select>
-      {kind==='delay'?<div className="space-y-1 text-xs text-base-content/70">
-        <p>Caméra fixe · pose « {LIGHTING_DELAY_PROTOCOL.cameraLabel} ». Pas de temps simulé 1/{LIGHTING_DELAY_PROTOCOL.fps} s · {LIGHTING_DELAY_PROTOCOL.preRollFrames} images avant t0 · {LIGHTING_DELAY_PROTOCOL.postRollFrames} images après (≈ {((LIGHTING_DELAY_PROTOCOL.preRollFrames+LIGHTING_DELAY_PROTOCOL.postRollFrames)/LIGHTING_DELAY_PROTOCOL.fps).toFixed(1)} s de vidéo par retard).</p>
-        <p>Retards testés : {LIGHTING_DELAY_MS.join(' / ')} ms.</p>
-        <p>Événements : {LIGHTING_DELAY_EVENTS.map(event=>event.label).join(' · ')}.</p>
-        <p>Qualité du protocole fixe, identique pour A et B : {LIGHTING_PROTOCOL.raysPerPatch} rayons/patch, {LIGHTING_PROTOCOL.directLightSamples} échantillons directs, {LIGHTING_PROTOCOL.reflectionSamples} échantillons GGX, {LIGHTING_PROTOCOL.width} × {LIGHTING_PROTOCOL.height} DPR {LIGHTING_PROTOCOL.pixelRatio}.</p>
-        <p className="text-base-content/55">Calcul lent (temps simulé, hors temps réel) ; les vidéos sont assemblées après coup à {LIGHTING_DELAY_PROTOCOL.fps} images par seconde réelles.</p>
-      </div>:config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
-        <option value="brute">Brut · tous les obstacles</option><option value="bvh">BVH · hiérarchie spatiale</option>
-      </Select>
-      <Input id="lighting-door" label={'Ouverture de la porte · '+Math.round(config.doorAngle*180/Math.PI)+'°'} type="range" min={0} max={90} step={1} value={config.doorAngle*180/Math.PI} disabled={!liveControls} onChange={event=>change({doorAngle:Number(event.target.value)*Math.PI/180})}/>
-      <Input id="lighting-camera" label="Position de la caméra" type="range" min={0} max={1} step={.01} value={config.cameraT} disabled={!liveControls} onChange={event=>change({cameraT:Number(event.target.value)})}/>
-      <Input id="lighting-lights-on" label="Éclairage allumé" type="checkbox" checked={config.lightIntensity>0} disabled={!liveControls} onChange={event=>change({lightIntensity:event.target.checked?1:0})}/>
-      {config.lights.map(light=><LightFields key={light.id} light={light} disabled={!liveControls} onChange={patch=>changeLight(light.id,patch)}/>)}</>:<p className="text-xs text-base-content/60">Les commandes de la porte, de la caméra et des trois lampes apparaissent après le lancement de l’exploration.</p>}
-    </LabSection>
-    <LabSection id="lab-metrics-card" number={2} title="Métriques en direct">
-      <LabStats stats={stats} provenance="1000 ÷ intervalle rAF. La cadence dépend aussi de l’écran ; aucune fréquence physique n’est déduite."/>
-      <MetricGrid label="Éclairage" items={[
-        {id:'lighting-cpu-transport',label:'Transport CPU',value:number(frame?.cpuTransportMs,' ms')},
-        {id:'lighting-gpu',label:'Rendu GPU',value:number(frame?.gpuMs,' ms')},
-        {id:'lighting-raf',label:'Intervalle rAF',value:number(frame?.rafDeltaMs,' ms')},
-        {id:'lighting-triangles',label:'Triangles',value:number(frame?.triangles)},
-        {id:'lighting-refit',label:'Mise à jour BVH CPU',value:number(frame?.bvhRefitMs,' ms')},
-        {id:'lighting-rays',label:'Rayons réutilisés',value:frame?.raysReused==null?'Non mesuré':String(frame.raysReused)+' / '+number(frame.totalRays)},
-      ]}/>
-      {!active&&frame?<p className="text-xs text-base-content/60">Dernière observation de l’exploration arrêtée.</p>:null}
-    </LabSection>
-    <LabSection id="lab-run-card" number={3} title="Campagne / comparaison">
-      <StatusBadge id="bench-status" tone={status==='error'?'error':status==='running'?'success':'neutral'}>{status==='idle'?'Prêt':status==='loading'?'Chargement':status==='running'?'En cours':status==='stopped'?'Arrêté':status==='error'?'Erreur':'Terminé'}</StatusBadge>
-      <p className="text-xs text-base-content/60">{LIGHTING_UI.protocol}</p>
-      <p className="text-xs text-base-content/60">{LIGHTING_PROTOCOL.width} × {LIGHTING_PROTOCOL.height} · DPR {LIGHTING_PROTOCOL.pixelRatio} · qualité identique pour les deux variantes.</p>
-      {active?<Button id="lighting-stop" variant="danger" onClick={stop}>Arrêter</Button>:status==='idle'?<p className="text-xs">Lancez le mode choisi depuis la fiche centrale.</p>:<Button id="lighting-relaunch" onClick={launch}>{launchLabel}</Button>}
-      {active?<ProgressPanel message={message}/>:null}
-    </LabSection>
-    <LabSection id="lab-report-card" number={4} title="Rapports et suivi">
-      {archives.attempts.length?<Select id="lighting-report-history" label="Campagne archivée" value={selectedPackage} disabled={active} onChange={event=>setSelectedPackage(event.target.value)}>
-        {archives.attempts.map(entry=><option key={entry.package} value={entry.package}>{entry.timestamp+' · '+reportLabel(entry)+(entry.package===archives.latestValid?' · dernier résultat valide':'')}</option>)}
-      </Select>:null}
-      {archivedReport?<><ReportSummary title={reportLabel(archivedReport)}>
-        <p className="text-xs">{archivedReport.qualityPassed===true?'Contrôle des images réussi.':archivedReport.qualityPassed===false?'Le contrôle des images a échoué.':'Contrôle des images non terminé.'}</p>
-        <p className="text-xs text-base-content/60">{archivedReport.timestamp}</p>
-      </ReportSummary>{reportActions}</>:<p className="text-xs text-base-content/60">{archiveMessage}</p>}
-      {delayArchives.attempts.length?<Select id="lighting-delay-report-history" label="Campagne de retard archivée" value={selectedDelayPackage} disabled={active} onChange={event=>setSelectedDelayPackage(event.target.value)}>
-        {delayArchives.attempts.map(entry=><option key={entry.package} value={entry.package}>{entry.timestamp+' · '+delayReportLabel(entry)}</option>)}
-      </Select>:null}
-      {archivedDelayReport?<><ReportSummary title={delayReportLabel(archivedDelayReport)}>
-        <p className="text-xs text-base-content/60">{archivedDelayReport.timestamp}</p>
-      </ReportSummary>{delayReportActions}</>:<p className="text-xs text-base-content/60">{delayArchiveMessage}</p>}
-    </LabSection>
-  </>;
-  const completedTitle=kind==='delay'?'Campagne de retard terminée':'Comparaison terminée';
-  const activeArchivedReport=kind==='delay'?archivedDelayReport:archivedReport;
-  const openActiveReport=kind==='delay'?openDelayReport:openReport;
-  const viewport=<main data-lighting-status={status} className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-base-100 flex flex-col">
-    {active?<><canvas id="lighting-canvas" ref={canvasRef} aria-label="Deux pièces et trois sources lumineuses" className="block w-full h-full min-h-0 object-contain"/>
-      {status==='loading'?<div className="absolute inset-0 flex items-center justify-center bg-base-100"><LoadingState message={message}/></div>:null}
-      {kind==='comparison'||kind==='delay'?<div className="absolute left-3 right-3 bottom-3"><ProgressPanel message={message}/></div>:null}
-    </>:<div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center">
-      {status==='error'?<ErrorState message={message} action={<Button onClick={launch}>{launchLabel}</Button>}/>:<EmptyState title={status==='idle'?'16 · Lumière':status==='stopped'?'Exécution arrêtée':completedTitle}>
-        <p className="max-w-xl text-sm text-base-content/70">{status==='idle'?LIGHTING_MODULE.description:message}</p>
-        <p className="max-w-xl text-xs text-base-content/55">{LIGHTING_UI.idleNote}</p>
-        <ActionBar><Button id="lighting-launch" onClick={launch}>{launchLabel}</Button>{activeArchivedReport?<Button variant="secondary" onClick={openActiveReport}>Lire le rapport</Button>:null}</ActionBar>
-      </EmptyState>}
-    </div>}
-  </main>;
-  return <LabContext.Provider value={{state:contextState,actions}}><LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart} viewport={viewport} sidebar={sidebar}/></LabContext.Provider>;
+
+  const sidebar = (
+    <>
+      <LabSection id="lab-run-card" number={1} title="Campagne / comparaison">
+        <Button id="btn-benchmark" className="w-full shadow-xs gap-2" disabled={active} onClick={launch}>
+          <Play className="w-3.5 h-3.5 fill-current" />
+          <span>{status === 'stopped' || status === 'error' ? 'Relancer' : LIGHTING_MODULE.benchLabel}</span>
+        </Button>
+        <Button id="btn-pain-benchmark" variant="danger" className={`w-full shadow-xs gap-2 ${active ? '' : 'hidden'}`} onClick={stop}>
+          <Flame className="w-3.5 h-3.5" /><span>Arrêter</span>
+        </Button>
+        <StatusBadge id="bench-status" tone={status === 'error' ? 'error' : status === 'running' ? 'success' : 'neutral'} className="w-full justify-start font-mono text-[10px] h-auto py-2 whitespace-nowrap truncate">
+          {status === 'idle' ? 'Prêt' : status === 'loading' ? 'Chargement' : status === 'running' ? 'En cours' : status === 'stopped' ? 'Arrêté' : 'Erreur'}
+        </StatusBadge>
+      </LabSection>
+
+      <LabSection id="lab-mode-card" number={2} title={active ? 'Contrôles pendant le rendu' : 'Configuration / mode d’exécution'} help={active ? 'Pendant le rendu, seuls les réglages encore actifs restent ici.' : LIGHTING_UI.modeHint}>
+        {active ? (
+          <>
+            <p className="text-xs text-base-content/65">Réglages actifs pendant le rendu de « {SCENES.find(scene => scene.id === sceneId)?.title} ».</p>
+            <Input id="lighting-night" label="Mode nuit" type="checkbox" checked={config.night} disabled={!capabilities?.setEnvironment} onChange={event => change({ night: event.target.checked })} />
+            <Input id="lighting-shadows" label="Ombres" type="checkbox" checked={config.shadows} onChange={event => change({ shadows: event.target.checked })} />
+            <Input id="lighting-auto-count" label={'Lampes automatiques · ' + config.autoLightCount} type="range" min={AUTO_LIGHT_MIN} max={AUTO_LIGHT_MAX} step={1} value={config.autoLightCount} disabled={!capabilities?.addLight} onChange={event => change({ autoLightCount: Number(event.target.value) })} />
+            {ADJUSTABLE_LIGHT_IDS.map(id => {
+              const light = config.lights.find(entry => entry.id === id);
+              return light ? <LightFields key={id} light={light} scene={sceneId} disabled={false} onChange={patch => changeLight(id, patch)} /> : null;
+            })}
+            <Button id="lighting-pause" variant={config.animationPaused ? 'primary' : 'secondary'} onClick={() => change({ animationPaused: !config.animationPaused })}>
+              {config.animationPaused ? 'Reprendre' : 'Mettre en pause'}
+            </Button>
+            <Input id="lighting-speed" label={'Vitesse · ×' + config.animationSpeed.toFixed(1)} type="range" min={0.1} max={4} step={0.1} value={config.animationSpeed} onChange={event => change({ animationSpeed: Number(event.target.value) })} />
+            <p className="text-xs text-base-content/60">Portes, ventilateur, panneau, lampe baladeuse, miroir pivotant{sceneId === 'emerald-night' ? ', voiture et phares' : ''} : pilotés par setTransform/setLight à chaque image, sans allocation.</p>
+          </>
+        ) : (
+          <>
+            <SegmentedControl label="Scène" disabled={active} value={sceneId} onChange={value => setSceneId(value)} options={SCENES.map(scene => ({ value: scene.id, label: scene.title }))} />
+            <p className="text-xs text-base-content/60">{SCENES.find(scene => scene.id === sceneId)?.description}</p>
+          </>
+        )}
+      </LabSection>
+
+      <LabSection id="lab-metrics-card" number={3} title="Métriques en direct">
+        <LabStats stats={primaryStats} provenance="1000 ÷ intervalle rAF. La cadence dépend aussi de l’écran ; aucune fréquence physique n’est déduite." />
+        <MetricGrid label="Éclairage" items={[
+          { id: 'lighting-gpu', label: 'GPU (passe)', value: number(stats.gpuMs, ' ms') },
+          { id: 'lighting-lights-active', label: 'Lampes actives', value: number(stats.lightsActive) },
+          { id: 'lighting-shadows-updated', label: 'Ombres mises à jour', value: number(stats.shadowsUpdated) },
+          { id: 'lighting-gpu-lightlists', label: 'GPU listes de lampes', value: number(stats.gpuLightListsMs, ' ms') },
+          { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
+          { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
+        ]} />
+      </LabSection>
+
+      <ReportSection testId={moduleId} refreshKey={status} running={active} number={4} hint="Rapports : reports/16-lighting-transport/" onOpen={openReport} onReveal={openFinder} />
+    </>
+  );
+
+  const viewport = (
+    <main className="relative flex-1 min-w-0 min-h-0 overflow-hidden bg-base-100 flex flex-col" data-lighting-status={status} data-lighting-scene={sceneId}>
+      {active ? (
+        <div className="relative flex-1 min-h-0">
+          <div className="relative min-w-0 min-h-0 h-full">
+            <canvas id="lighting-canvas" ref={canvasRef} tabIndex={0} aria-label={'Scène ' + sceneId} className={`absolute inset-0 block w-full h-full outline-none bg-base-100 ${status === 'running' ? '' : 'invisible'}`} />
+            {sceneId === 'emerald-night' && status === 'running' ? (
+              <canvas ref={carCanvasRef} aria-label="Aperçu de la voiture" className="absolute bottom-3 right-3 w-40 h-28 rounded-box border border-base-content/20 bg-base-300" />
+            ) : null}
+            {status === 'running' ? (
+              <div className="absolute left-3 bottom-3 right-3 pointer-events-none">
+                <p className="bg-base-200/90 p-3 rounded-box text-xs">{sceneId === 'house' ? 'Jeu à la première personne (banc 15) · clic pour capturer la souris, WASD, Espace pour sauter, Maj pour courir, Échap pour libérer.' : 'Orbite · glisser pour tourner, molette pour zoomer.'}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      {status === 'loading' ? (
+        <div className="absolute inset-0 bg-base-100/95 p-6 flex items-center justify-center"><LoadingState message={message} /></div>
+      ) : null}
+      {!active ? (
+        <PreparationStation
+          controls={<SegmentedControl label="Scène" disabled={false} value={sceneId} onChange={value => setSceneId(value)} options={SCENES.map(scene => ({ value: scene.id, label: scene.title }))} />}
+          presentation={{
+            description: SCENES.find(scene => scene.id === sceneId)?.description ?? LIGHTING_MODULE.description,
+            question: 'Les lampes, les ombres et les transformations de nœuds du moteur restent-elles correctes pendant une exploration continue ?',
+            protocol: LIGHTING_UI.protocol,
+            steps: ['Choisir la scène', 'Ouvrir', 'Régler les lampes', 'Observer les métriques'],
+            metadata: [['Backend', LIGHTING_UI.backend], ['Scène', SCENES.find(scene => scene.id === sceneId)?.title ?? ''], ['Caméra', 'Première personne']],
+          }}
+        >
+          <p className="text-xs" data-lighting-message="">{status === 'error' ? message : LIGHTING_UI.idleNote}</p>
+        </PreparationStation>
+      ) : null}
+    </main>
+  );
+
+  return (
+    <LabContext.Provider value={{ state: contextState, actions }}>
+      <LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart} viewport={viewport} sidebar={sidebar} />
+    </LabContext.Provider>
+  );
 }
