@@ -10,8 +10,8 @@ import type { LightingBenchOptions, LightingController, SceneId } from './contra
 
 /** Importing the public metadata does not load the SDK renderer or create a canvas. */
 export async function createLightingBench(
-  canvas: HTMLCanvasElement, carCanvas: HTMLCanvasElement | null, scene: SceneId, options: LightingBenchOptions = {},
+  canvas: HTMLCanvasElement, scene: SceneId, options: LightingBenchOptions = {},
 ): Promise<LightingController> {
   const runner = await import('./runner/index.ts');
-  return runner.createLightingBench(canvas, carCanvas, scene, options);
+  return runner.createLightingBench(canvas, scene, options);
 }

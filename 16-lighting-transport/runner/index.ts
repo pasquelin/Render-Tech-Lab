@@ -7,7 +7,7 @@ import {
   type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
 } from '../contracts.ts';
 import { detectEngineCapabilities } from '../implementation/engineCapabilities.ts';
-import { createHouseAnimatedNodes, createCarAnimatedNode, carHeadlightPoses, buildAutoLights, type AnimatedNode } from '../implementation/sceneAnimations.ts';
+import { createHouseAnimatedNodes, carHeadlightPoses, autoLightOnOff, buildAutoLights, type AnimatedNode } from '../implementation/sceneAnimations.ts';
 
 const noopControls: LightingControlsHandle = { update() {}, dispose() {} };
 
@@ -15,7 +15,6 @@ const MANIFEST_URLS: Record<SceneId, string> = {
   house: '/16-lighting-cache/house/native/full/manifest.json',
   'emerald-night': '/emerald-night-cache/native/full/manifest.json',
 };
-const CAR_MANIFEST_URL = '/16-lighting-cache/car/native/full/manifest.json';
 
 const emptyStats = (): LightingFrameStats => ({
   fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null,
@@ -72,7 +71,7 @@ async function pickBackend(): Promise<BackendFactory> {
 }
 
 export async function createLightingBench(
-  canvas: HTMLCanvasElement, carCanvas: HTMLCanvasElement | null, scene: SceneId, options: LightingBenchOptions = {},
+  canvas: HTMLCanvasElement, scene: SceneId, options: LightingBenchOptions = {},
 ): Promise<LightingController> {
   const { signal, onProgress } = options;
   onProgress?.('Préparation de la scène avec le SDK…');
@@ -83,27 +82,12 @@ export async function createLightingBench(
     backends: [backend], onPreparation: event => onProgress?.(event.message),
   });
   const capabilities = detectEngineCapabilities(explorer);
-  let carExplorer: Explorer | null = null;
-  if (scene === 'emerald-night' && carCanvas) {
-    try {
-      const carSize = boxSize(carCanvas);
-      carExplorer = await createExplorer(carCanvas, { manifestUrl: CAR_MANIFEST_URL, scope: 'full', signal, preload: 'all', backends: [backend], width: carSize.width, height: carSize.height });
-      carExplorer.camera.position.set(3, 2.2, 5);
-      carExplorer.camera.lookAt(0, 0.4, 0);
-      carExplorer.camera.updateMatrixWorld();
-    } catch { carExplorer = null; }
-  }
 
   const resize = new ResizeObserver(() => {
     const size = canvas.getBoundingClientRect();
     if (size.width > 0 && size.height > 0) explorer.resize(Math.round(size.width), Math.round(size.height));
   });
   resize.observe(canvas);
-  const carResize = carCanvas && carExplorer ? new ResizeObserver(() => {
-    const size = carCanvas.getBoundingClientRect();
-    if (size.width > 0 && size.height > 0) carExplorer!.resize(Math.round(size.width), Math.round(size.height));
-  }) : null;
-  if (carResize && carCanvas) carResize.observe(carCanvas);
 
   // La caméra à la première personne (WASD, souris, collisions) est le composant existant du banc 15 ;
   // ce fichier ne construit rien lui-même — options.createControls (fourni par LightingLab.tsx, la
@@ -114,9 +98,8 @@ export async function createLightingBench(
   }) : noopControls;
 
   const houseNodes = scene === 'house' ? createHouseAnimatedNodes() : [];
-  const carNode = carExplorer ? createCarAnimatedNode() : null;
   const nodeBuffers = new Map<string, { matrix: THREE.Matrix4; buffer: Float32Array }>();
-  for (const nodeEntry of [...houseNodes, ...(carNode ? [carNode] : [])]) nodeBuffers.set(nodeEntry.name, { matrix: new THREE.Matrix4(), buffer: new Float32Array(16) });
+  for (const nodeEntry of houseNodes) nodeBuffers.set(nodeEntry.name, { matrix: new THREE.Matrix4(), buffer: new Float32Array(16) });
   const unitScale = new THREE.Vector3(1, 1, 1);
   const failedNodes = new Set<string>();
 
@@ -157,16 +140,13 @@ export async function createLightingBench(
         try { explorer.setTransform(nodeEntry.name, writeWorldMatrix(nodeEntry, target.matrix, target.buffer, unitScale)); }
         catch { failedNodes.add(nodeEntry.name); }
       }
-      if (carNode && carExplorer && !failedNodes.has(carNode.name)) {
-        carNode.advance(elapsed, animSpeed);
-        const target = nodeBuffers.get(carNode.name)!;
-        try { carExplorer.setTransform(carNode.name, writeWorldMatrix(carNode, target.matrix, target.buffer, unitScale)); }
-        catch { failedNodes.add(carNode.name); }
-      }
     }
 
     const adjustable = capShadows(config.lights, config.shadows);
-    const auto = capShadows(autoLights, config.shadows);
+    // Vague allumée/éteinte des lampes automatiques, indépendante des trois lampes réglables à la main.
+    // Le contrat refuse une intensité nulle (INVALID_SCENE_LIGHT) : une lampe « éteinte » est simplement
+    // absente de la liste souhaitée, retirée par applyLightSet le temps qu'elle reste hors cycle.
+    const auto = capShadows(autoLights.filter((_, index) => autoLightOnOff(index, elapsed, animSpeed)), config.shadows);
     let desired = [...adjustable, ...auto];
     if (scene === 'emerald-night') {
       const heads = carHeadlightPoses(elapsed, animSpeed);
@@ -180,7 +160,6 @@ export async function createLightingBench(
     // FrameMetrics porte directement les compteurs lampes/ombres quand le backend actif les publie ;
     // aucun appel séparé n'existe pour eux.
     const metrics = explorer.render();
-    carExplorer?.render();
     stats = {
       fps: interval && interval > 0 ? 1000 / interval : null,
       cpuFrameMs: metrics.cpuFrameMs ?? null,
@@ -211,10 +190,8 @@ export async function createLightingBench(
       disposed = true;
       cancelAnimationFrame(rafHandle);
       resize.disconnect();
-      carResize?.disconnect();
       controls.dispose();
       explorer.dispose();
-      carExplorer?.dispose();
     },
   };
 }

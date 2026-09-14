@@ -60,5 +60,3 @@ export const EMERALD_CAR_LOOP: readonly Vec3[] = [
   [-60, 0.4, 60],
   [-60, 0.4, 20],
 ];
-
-export const EMERALD_CAR_BOX_SIZE: Vec3 = [1.8, 1.4, 4.2];

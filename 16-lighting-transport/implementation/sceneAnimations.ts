@@ -64,15 +64,8 @@ const carLoopPoint = (t: number, out: THREE.Vector3) => {
   carDirection.set(b[0] - a[0], 0, b[2] - a[2]).normalize();
 };
 
-/** La voiture (boîte de secours) roule sur le parcours fermé ; période 24 s à vitesse ×1. */
-export function createCarAnimatedNode(): AnimatedNode {
-  return node('car', EMERALD_CAR_LOOP[0], (t, pos, quat) => {
-    carLoopPoint(t / 24, pos);
-    quat.setFromAxisAngle(UP, Math.atan2(carDirection.x, carDirection.z));
-  });
-}
-
-/** Pose courante de la voiture, utilisée pour faire suivre les deux phares (spots) à la scène Emerald. */
+/** Pose courante de la voiture (période 24 s à vitesse ×1), utilisée pour faire suivre les deux
+ * phares (spots) à la scène Emerald — la voiture elle-même n'a pas de canvas dédié (voir le rapport). */
 export function carHeadlightPoses(timeSeconds: number, speed: number): { position: Vec3; direction: Vec3 }[] {
   const t = (timeSeconds * speed) / 24;
   const position = new THREE.Vector3();

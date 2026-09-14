@@ -5,7 +5,7 @@ export type SceneId = 'house' | 'emerald-night';
 
 export const SCENES: ReadonlyArray<{ readonly id: SceneId; readonly title: string; readonly description: string }> = [
   { id: 'house', title: 'Maison de test', description: 'Quatre pièces et un couloir sur 40 × 30 m, portes, ventilateur, panneau, lampe baladeuse, miroirs, sphère, fente et deux objets identiques.' },
-  { id: 'emerald-night', title: 'Emerald de nuit', description: 'Le pâté de maisons Emerald Square, de nuit, lampadaires du modèle et une voiture qui roule en boucle, phares allumés.' },
+  { id: 'emerald-night', title: 'Scène urbaine de nuit', description: 'Un pâté de maisons de nuit, lampadaires du modèle et deux phares qui suivent un parcours fermé.' },
 ];
 
 /** Contrat livré par l'Opus (moteur) ; le banc l'appelle tel quel et détecte ce qui manque encore. */
