@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { access, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { access, readFile, stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { totalmem } from 'node:os';
@@ -54,8 +54,9 @@ for (const [index, model] of selected.entries()) {
   const progress = createTerminalProgress({ label: model.id, index, total: selected.length });
   const sourceDirectory = resolve(root, model.sourceDirectory);
   const derivedDirectory = resolve(root, model.derivedDirectory);
+  progress.note('manifeste source');
   await ensureRuntimeManifest(model.sourceDirectory, model.runtimeFile);
-  await rm(derivedDirectory, { recursive: true, force: true });
+  // Pas de suppression du dossier dérivé : le compilateur élague lui-même les anciennes clés et les objets orphelins.
   const result = await prepare(sourceDirectory, derivedDirectory, 'full', 150000, {
     threads: 8,
     ramBudgetMb,
