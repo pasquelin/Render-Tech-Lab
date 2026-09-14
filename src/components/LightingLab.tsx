@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig } from '../../16-lighting-transport/index.ts';
+import { SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
 import type { LightingBackendId, LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
@@ -25,15 +25,12 @@ const number = (value: number | null | undefined, unit = '') => (value == null |
 /** Les bornes de position des lampes sont des mètres monde (SCENE_LIGHT_BOUNDS). */
 const metres = (value: number) => value.toFixed(1) + ' m';
 
-/** Coût d'une étape du rendu : une ligne par étape, colonnes CPU et GPU, quantiles p50 et p95.
- *  `null` signifie « non mesuré » et reste distinct de 0, qui serait une étape mesurée à coût nul.
- *  Le contrat moteur arrive dans un lot séparé : ici seul l'emplacement est posé. */
-export interface StageCostQuantiles { readonly p50: number | null; readonly p95: number | null }
-export interface StageCost { readonly stage: string; readonly cpuMs: StageCostQuantiles; readonly gpuMs: StageCostQuantiles }
-const quantiles = (value: StageCostQuantiles) =>
-  value.p50 == null && value.p95 == null ? 'Non mesuré' : number(value.p50, ' ms') + ' / ' + number(value.p95, ' ms');
-/** Tant que le moteur ne publie rien, la liste reste vide et le bloc affiche « Non mesuré ». */
-const STAGE_COSTS: readonly StageCost[] = [];
+/** Le moteur ne publie encore aucun coût par étape ; l'emplacement est posé et affiche « Non mesuré »,
+ *  jamais 0, qui se lirait comme une étape mesurée à coût nul. */
+const STAGE_COST_ITEMS = [{
+  id: 'lighting-stage-cost', label: 'Étapes du rendu', value: 'Non mesuré',
+  provenance: 'Le moteur ne publie pas encore le coût par étape ; son contrat arrive dans un lot séparé.',
+}];
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
@@ -69,7 +66,7 @@ export function LightingLab() {
   const [message, setMessage] = useState('Prêt à ouvrir une scène.');
   const [config, setConfig] = useState<LightingBenchConfig>(() => defaultConfig('house'));
   const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(null);
-  const [stats, setStats] = useState<LightingFrameStats>({ fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null, gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null, frame: null, cameraPose: null });
+  const [stats, setStats] = useState<LightingFrameStats>(emptyLightingStats);
   const [backend, setBackend] = useState<LightingBackendId | null>(null);
   // Les commandes réelles : jeu à la première personne quand celles du banc 15 ont pu être construites,
   // orbite de l'Explorer sinon. Le panneau « Caméra active » annonce ce qui est branché, pas l'intention.
@@ -173,19 +170,13 @@ export function LightingLab() {
     openReport, closeReport: () => setModal(old => ({ ...old, open: false })), copyReport, refreshReport: openReport, openFinder,
     newExecution: () => { if (!active) { generation.current++; setStatus('idle'); setMessage('Prêt à ouvrir une scène.'); } },
   };
-  const stats4 = { submit: 'Non mesuré', cpuFrame: number(stats.cpuFrameMs, ' ms'), fps: number(stats.fps, ' FPS'), drawCalls: number(stats.drawCalls) };
+  const stats4 = { submit: 'Non mesuré', cpuFrame: number(stats.frame?.cpuFrameMs, ' ms'), fps: number(stats.fps, ' FPS'), drawCalls: number(stats.frame?.drawCalls) };
   // Ce que le banc 16 sait remplir du panneau commun : le reste s'affiche « Non mesuré », jamais 0.
+  // Ses deux backends sont des moteurs à pages, donc les compteurs de pages du panneau sont réels.
   const metricsSource: ModelMetricsSource = {
     metrics: stats.frame, frameIntervalMs: stats.fps ? 1000 / stats.fps : null, cameraPose: stats.cameraPose,
-    availableTriangles: null, engine: backend ?? 'Non mesuré', diagnostic: 'beauty', camera: cameraMode,
+    availableTriangles: null, engine: backend ?? 'Non mesuré', camera: cameraMode, exactPageCounters: true,
   };
-  // Une ligne par étape, colonne CPU puis colonne GPU ; sans donnée moteur, une seule case « Non mesuré ».
-  const stageItems = STAGE_COSTS.length === 0
-    ? [{ id: 'lighting-stage-cost', label: 'Étapes du rendu', value: 'Non mesuré', provenance: 'Le moteur ne publie pas encore le coût par étape ; son contrat arrive dans un lot séparé.' }]
-    : STAGE_COSTS.flatMap(cost => [
-        { id: 'lighting-stage-' + cost.stage + '-cpu', label: cost.stage + ' · CPU', value: quantiles(cost.cpuMs), provenance: 'p50 / p95' },
-        { id: 'lighting-stage-' + cost.stage + '-gpu', label: cost.stage + ' · GPU', value: quantiles(cost.gpuMs), provenance: 'p50 / p95' },
-      ]);
   const contextState = {
     ...baseSnapshot, running: active, framePresented: status === 'running', reportModal: modal, showWebgl: active,
     stats: { ...baseSnapshot.stats, ...stats4 },
@@ -228,7 +219,7 @@ export function LightingLab() {
             { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
             { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
           ]} />
-          <MetricGrid label="Coût par étape" items={stageItems} />
+          <MetricGrid label="Coût par étape" items={STAGE_COST_ITEMS} />
         </>
       } />
     ),

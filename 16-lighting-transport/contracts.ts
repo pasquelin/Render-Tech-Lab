@@ -84,20 +84,27 @@ export type LightingBackendId = 'exact-cluster-pages' | 'webgpu-page-raster';
 
 export interface LightingFrameStats {
   fps: number | null;
-  cpuFrameMs: number | null;
+  /** Somme des passes GPU de l'image, quel que soit le compteur que le backend publie. */
   gpuMs: number | null;
   lightsActive: number | null;
   shadowsUpdated: number | null;
   gpuLightListsMs: number | null;
   gpuShadowsMs: number | null;
   gpuLightingMs: number | null;
-  drawCalls: number | null;
-  triangles: number | null;
-  /** Compteurs bruts publiés par le moteur pour cette image : ils alimentent le panneau de métriques
-   *  commun au banc 15, sans être recopiés ni recalculés ici. */
+  /** Compteurs bruts publiés par le moteur pour cette image (CPU, draw calls, triangles, pages) :
+   *  ils alimentent le panneau de métriques commun au banc 15, sans être recopiés ni recalculés ici. */
   frame: FrameMetrics | null;
   /** Pose de la caméra active, pour le bloc « Caméra active » du même panneau commun. */
   cameraPose: CameraPose | null;
+}
+
+/** Aucune image mesurée : tout est « Non mesuré », jamais 0. L'état initial du composant React et
+ *  celui du runner sortent d'ici, pour qu'un compteur ajouté ne puisse pas manquer d'un côté. */
+export function emptyLightingStats(): LightingFrameStats {
+  return {
+    fps: null, gpuMs: null, lightsActive: null, shadowsUpdated: null,
+    gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, frame: null, cameraPose: null,
+  };
 }
 
 /** Ce que le runner tient à jour chaque image et libère à dispose() ; peu importe qui la construit. */
