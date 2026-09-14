@@ -18,7 +18,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
     const itemType = /shader|WGSL/i.test(value) ? 'shaders' : /objet|niveau|géométr/i.test(value) ? 'meshes' : /buffer|readback/i.test(value) ? 'buffers' : 'scène';
     onUpdate({ benchStatus: value, execution, progress: { phase: value, itemType, ...(count ? { completed: Number(count[1]), total: Number(count[2]) } : {}), message: value }, ...(phaseMode ? { mode: phaseMode, classicActive: phaseMode === 'classic' } : {}) });
   };
-  let canvas = el<HTMLCanvasElement>('canvas-webgpu');
+  let canvas: HTMLCanvasElement;
   const run = el<HTMLButtonElement>('btn-benchmark'), stop = el<HTMLButtonElement>('btn-pain-benchmark');
   const a = el<HTMLButtonElement>('btn-classic'), b = el<HTMLButtonElement>('btn-gpu-driven');
   const counts = el<HTMLSelectElement>('select-count'), modules = el<HTMLSelectElement>('select-module');
@@ -26,13 +26,14 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   let active: AbortController | null = null;
   let markdown = '', pending: {report: unknown; markdown: string} | null = null;
   let archive: {jsonUrl: string; markdownUrl: string; sourcesUrl?: string} | null = null;
-  let liveChart = new GenericLabChart(el<HTMLCanvasElement>('canvas-chart'));
+  let liveChart: GenericLabChart | undefined;
   const livePoints: { label: string; valA: number | null; valB: number | null }[] = [];
   let finalCanvas: HTMLCanvasElement | null = null;
   const mountCampaignSurfaces = () => {
     canvas = el<HTMLCanvasElement>('canvas-webgpu');
-    liveChart.dispose();
+    liveChart?.dispose();
     liveChart = new GenericLabChart(el<HTMLCanvasElement>('canvas-chart'));
+    liveChart.setActive(true);
     finalCanvas = document.createElement('canvas');
     finalCanvas.id = 'native-final-image';
     finalCanvas.className = canvas.className;
@@ -81,16 +82,13 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   document.title = '04 · LOD WebGPU natif — Render Tech Lab';
   text('nav-module-title', '04 · GPU LOD & Screen-Space Error');
   el('view-baseline').classList.add('hidden'); el('viewport-workbench').classList.add('hidden');
-  el('canvas-webgl').style.display = 'none'; canvas.style.display = ''; canvas.style.objectFit = 'cover';
-  el('canvas-chart').parentElement!.classList.remove('hidden');
-  liveChart.setActive(true);
   el('btn-lod-comparison').classList.add('hidden');
   text('viewport-telemetry-mode', 'LOD · WebGPU natif');
   text('viewport-telemetry-detail', 'A : calcul CPU de référence · B : calcul WGSL · raster commun');
   text('stat-mode', 'Aperçu arrêté');
   text('open-report-hint', 'reports/04-gpu-lod-comparison/campaign-…/');
   stop.style.display = 'none';
-  onUpdate({ benchLabel: 'Comparer le LOD CPU et GPU', painLabel: 'Arrêter' });
+  onUpdate({ benchLabel: 'Comparer le LOD CPU et GPU', painLabel: 'Arrêter', reportHint: 'reports/04-gpu-lod-comparison/campaign-…/' });
   el('lab-mode-card').children[1].textContent = 'Même rendu natif ; sélection LOD de référence sur CPU ou portée en WGSL.';
   const urlParams = new URLSearchParams(window.location.search);
   const initialRes = urlParams.get('resolution') ?? (urlParams.get('res') === '4k' ? '3840,2160' : '1920,1080');
@@ -102,8 +100,6 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   el('stat-fps').parentElement!.querySelector('.stat-desc')!.textContent = '1 000 / intervalle moyen';
   const frequency = el('lab-metrics-card').firstElementChild!.querySelector('.badge');
   if (frequency) frequency.textContent = '500 ms';
-  el('lab-report-card').children[1].textContent = 'Rapports, données brutes et sources archivés pour chaque campagne.';
-  el('lab-run-card').firstElementChild!.textContent = '3. Comparaison native';
 
   const settings = document.createElement('fieldset'); settings.className = 'space-y-3';
   const field = (id: string, label: string, values: Array<[string,string]>, initial: string) => {
@@ -128,9 +124,13 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   }
   el('lab-metrics-card').append(instrument);
   const legacy = document.createElement('a'); legacy.href = '/?test=04-gpu-lod&backend=legacy'; legacy.className = 'btn btn-sm btn-lab-secondary w-full'; legacy.textContent = 'Études 04A / 04B archivées';
-  el('lab-report-card').append(legacy);
-  const history = document.createElement('div'); history.className = 'space-y-2 text-xs'; el('lab-report-card').append(history);
-  const retry = document.createElement('button'); retry.className = 'btn btn-sm btn-lab-secondary w-full hidden'; retry.textContent = 'Réessayer la sauvegarde'; el('lab-report-card').append(retry);
+  const history = document.createElement('div'); history.className = 'space-y-2 text-xs';
+  const retry = document.createElement('button'); retry.className = 'btn btn-sm btn-lab-secondary w-full hidden'; retry.textContent = 'Réessayer la sauvegarde';
+  const mountReports = () => {
+    const card = document.getElementById('lab-report-card');
+    if (card) for (const node of [legacy, history, retry]) if (node.parentElement !== card) card.append(node);
+  };
+  mountReports();
   const options = (order: NativeComparisonOptions['order'] = 'ABBA'): NativeComparisonOptions => {
     const [width,height] = resolution.value.split(',').map(Number);
     return {count:Number(counts.value),width,height,samples:Number(samples.value),warmup:Number(warmup.value),seed:417,order};
@@ -142,12 +142,14 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
     settings.disabled = value; stop.style.display = value ? '' : 'none';
     if (value) {
       execution = { status: 'running', phase: 'Préparer', lastCampaign: null };
-      liveChart.setStatus('Préparation de la campagne native…');
+      liveChart?.setStatus('Préparation de la campagne native…');
     } else {
+      liveChart?.dispose();
+      liveChart = undefined;
       finalCanvas?.remove();
       finalCanvas = null;
     }
-    onUpdate({ running: value, ...(value ? { framePresented: false, progress: { phase: 'Préparer', itemType: 'scène', message: 'Préparation des niveaux de détail et du raster WebGPU.' } as const } : {}), execution });
+    onUpdate({ running: value, showChart: value, ...(value ? { framePresented: false, progress: { phase: 'Préparer', itemType: 'scène', message: 'Préparation des niveaux de détail et du raster WebGPU.' } as const } : {}), execution });
   };
   const ms = (n: number | null | undefined) => n != null && Number.isFinite(n) ? `${n.toFixed(2)} ms` : 'Non mesuré';
   function metrics(m: NativeComparisonMetrics) {
@@ -163,7 +165,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
         valA: m.variant === 'cpu' ? m.cpuFrameWorkMs : null,
         valB: m.variant === 'gpu' ? m.cpuFrameWorkMs : null });
       if (livePoints.length > 12) livePoints.shift();
-      liveChart.update('Travail CPU pendant les blocs mesurés', 'ms', [...livePoints], livePoints.length - 1,
+      liveChart?.update('Travail CPU pendant les blocs mesurés', 'ms', [...livePoints], livePoints.length - 1,
         m.variant === 'cpu' ? 'classic' : 'gpu-driven', { a: 'A · Calcul CPU', b: 'B · Calcul GPU' });
     }
     diagnostic({
@@ -206,8 +208,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
     }
     modal.showModal();
   }
-  el('btn-view-report').onclick = openReport; el('btn-refresh-report').onclick = openReport;
-  el('btn-copy-report').onclick = () => { void navigator.clipboard.writeText(markdown); };
+  const copyReport = () => { void navigator.clipboard.writeText(markdown); };
   const reveal = () => {
     void fetch('/api/open-folder', {
       method: 'POST',
@@ -215,15 +216,15 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
       body: JSON.stringify({ testId: '04-gpu-lod', folder: 'reports' }),
     });
   };
-  el('btn-open-reports').onclick = reveal; el('btn-modal-open-finder').onclick = reveal;
   const runCampaign = async () => {
     if(active || pending)return; const controller=new AbortController();active=controller;busy(true);
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
-    mountCampaignSurfaces();
-    livePoints.length = 0;
-    liveChart.update('Travail CPU pendant les blocs mesurés', 'ms', [], 0, 'classic', { a: 'A · Calcul CPU', b: 'B · Calcul GPU' });
-    status('Préparation de la campagne CPU / WGSL native.');
     try{
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      controller.signal.throwIfAborted();
+      mountCampaignSurfaces();
+      livePoints.length = 0;
+      liveChart?.update('Travail CPU pendant les blocs mesurés', 'ms', [], 0, 'classic', { a: 'A · Calcul CPU', b: 'B · Calcul GPU' });
+      status('Préparation de la campagne CPU / WGSL native.');
       for(let i=0;i<Number(repeats.value);i++){
         controller.signal.throwIfAborted(); const before=await metadata();
         clearFinalImage();
@@ -256,7 +257,7 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
   }
   const dispose = () => {
     active?.abort();
-    liveChart.dispose();
+    liveChart?.dispose();
     finalCanvas?.remove();
     delete (window as unknown as { __renderTechLabNative?: unknown }).__renderTechLabNative;
   };
@@ -270,14 +271,15 @@ export function mountNativeLodWorkbench(formatMarkdown: (markdown: string) => st
     getArchive: () => archive,
   };
   void refreshHistory().catch(error=>status(String(error)));
-  if (urlParams.get('autorun') === '1') {
-    setTimeout(() => { void runCampaign(); }, 300);
-  }
   return {
     run: runCampaign,
     setMode: selectMode,
     setScenario,
     report: openReport,
+    openFinder: reveal,
+    copyReport,
+    closeReport: () => modal.close(),
+    mountReports,
     stop: stopCampaign,
     dispose,
   };

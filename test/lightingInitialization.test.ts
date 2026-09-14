@@ -47,7 +47,7 @@ test('comparison archives preparation failure and cancellation before a renderer
       const markdown=await response.text();
       assert.match(markdown,/Initialisation non achevée/);
       assert.match(markdown,/Non mesuré/);
-      assert.match(markdown,scenario==='failure'?/Compilateur indisponible/:/Campagne arrêtée à la demande/);
+      assert.match(markdown,scenario==='failure'?/Compilateur indisponible/:/Test arrêté à la demande/);
       assert.match(markdown,/<!-- report-package:16-lighting-transport\/campaign-/);
     }finally{globalThis.fetch=nativeFetch;await server.close();await rm(root,{recursive:true,force:true});}
   }

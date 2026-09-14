@@ -29,6 +29,7 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
   const webglRef = useRef<HTMLCanvasElement>(null);
   const webgpuRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<HTMLCanvasElement>(null);
+  const nativeReportsRef = useRef<(() => void) | undefined>(undefined);
   const [state, setState] = useState<LabSnapshot>(() => initialSnapshot(test));
   const [actions, setActions] = useState<LabActions>(() => idleActions);
 
@@ -38,6 +39,7 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
     let dispose: (() => void) | undefined;
     const patch = (value: Partial<LabSnapshot>) => { if (!cancelled) setState(previous => ({ ...previous, ...value })); };
     setActions(idleActions);
+    nativeReportsRef.current = undefined;
     void (async () => {
       if (test === '00-baseline') {
         setState(initialSnapshot('00-baseline'));
@@ -64,8 +66,8 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
       }
       const initial = initialSnapshot(test);
       const worldOptions = ['1', '9', '25'].map(value => ({ val: value, label: `${value} quartier${value === '1' ? '' : 's'}`, selected: value === '9' }));
-      patch({ ...initial, moduleId: test, showBaseline: false, showWebgl: test === '14-open-world', showWebgpu: test === '04-gpu-lod', showChart: test === '04-gpu-lod', showPain: true, running: true,
-        execution: { status: 'running', phase: 'Initialisation du banc…', lastCampaign: null },
+      patch({ ...initial, moduleId: test, showBaseline: false, showWebgl: test === '14-open-world', showWebgpu: test === '04-gpu-lod', showChart: false, showPain: true, running: false,
+        execution: { status: 'idle', phase: '', lastCampaign: null },
         ...(test === '14-open-world' ? { scenarioVal: '9', scenarioOptions: worldOptions, stats: { ...initial.stats, objects: '9 quartiers' } } : {}) });
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (cancelled) return;
@@ -74,20 +76,24 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
         const controller = mountWorldWorkbench(patch);
         if (cancelled) return controller.dispose();
         dispose = controller.dispose;
+        nativeReportsRef.current = controller.mountReports;
         const reset = () => patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
-        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report });
+        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report, refreshReport: controller.report, openFinder: controller.openFinder, copyReport: controller.copyReport, closeReport: controller.closeReport });
       } else {
         const { mountNativeLodWorkbench } = await import('../../04-gpu-lod/runner/nativePage.ts');
         const controller = mountNativeLodWorkbench(parseMarkdownToHtml, patch);
         if (cancelled) return controller.dispose();
         dispose = controller.dispose;
+        nativeReportsRef.current = controller.mountReports;
         const reset = () => patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
-        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report });
+        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report, refreshReport: controller.report, openFinder: controller.openFinder, copyReport: controller.copyReport, closeReport: controller.closeReport });
       }
       patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
     })();
-    return () => { cancelled = true; dispose?.(); };
+    return () => { cancelled = true; nativeReportsRef.current = undefined; dispose?.(); };
   }, [test, native]);
+
+  useLayoutEffect(() => { if (!state.running) nativeReportsRef.current?.(); }, [state.running, actions]);
 
   return <LabContext.Provider value={{ state, actions, onIntegrationScene: onScene }}><LabShell key={test} webglRef={webglRef} webgpuRef={webgpuRef} chartRef={chartRef} /></LabContext.Provider>;
 }

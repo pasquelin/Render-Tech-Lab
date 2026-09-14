@@ -4,19 +4,25 @@ import {createServer} from 'vite';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 
-test('lighting starts without a rendering surface and owns its four canonical panels',async()=>{
+test('lighting uses the common preparation, sidebar and report panels without an idle canvas',async()=>{
   const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
   try {
     const {UnifiedLab}=await server.ssrLoadModule('/src/components/UnifiedLab.tsx');
     const html=renderToStaticMarkup(createElement(UnifiedLab,{test:'16-lighting-transport',native:false}));
-    assert.match(html,/data-lighting-status="idle"/);
+    assert.match(html,/data-execution-view="idle"/);
+    assert.doesNotMatch(html,/lighting-report-history|Campagne archivée|Exporter les données|Campagne \/ comparaison/);
+    assert.match(html,/id="viewport-container"/);
     assert.doesNotMatch(html,/<canvas\b/,'loading the route must not create a render surface');
-    assert.equal((html.match(/id="lighting-launch"/g)??[]).length,1);
-    assert.doesNotMatch(html,/id="lighting-relaunch"|id="lighting-stop"/);
+    assert.equal((html.match(/id="btn-benchmark"/g)??[]).length,1);
+    assert.match(html,/id="btn-view-report"/);
+    assert.match(html,/id="btn-open-reports"/);
+    assert.doesNotMatch(html,/id="lighting-(?:launch|relaunch|stop)"|data-lighting-status/);
     assert.match(html,/<label[^>]*for="lighting-run-kind"/);
     assert.match(html,/<select[^>]*id="lighting-run-kind"/);
     const sidebar=html.match(/<aside id="sidebar"[\s\S]*?<\/aside>/)?.[0]??'';
-    const panels=['lab-mode-card','lab-metrics-card','lab-run-card','lab-report-card'];
+    const reference=renderToStaticMarkup(createElement(UnifiedLab,{test:'01-indirect-draw',native:false}));
+    const panels=[...reference.matchAll(/<section[^>]*id="(lab-[^"]+-card)"/g)].map(match=>match[1]);
+    assert.equal(panels.length,4,'reference has four common panels');
     for(let i=0;i<panels.length;i++){
       assert.equal((sidebar.match(new RegExp('id="'+panels[i]+'"','g'))??[]).length,1);
       if(i)assert.ok(sidebar.indexOf(panels[i-1])<sidebar.indexOf(panels[i]));

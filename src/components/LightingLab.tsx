@@ -1,24 +1,16 @@
-import {useEffect,useRef,useState} from 'react';
-import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,LIGHTING_PROTOCOL,LIGHTING_UI} from '../../16-lighting-transport/index.ts';
-import type {LightingArchiveEntry,LightingArchiveHistory,LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector} from '../../16-lighting-transport/index.ts';
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE} from '../../16-lighting-transport/index.ts';
+import type {LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector} from '../../16-lighting-transport/index.ts';
 import {initialSnapshot,type LabActions} from '../lab/labState.ts';
+import {campaignSummary} from '../lab/campaignSummary.ts';
 import {navigateLabRoute} from '../lab/navigation.ts';
 import {parseMarkdownToHtml} from '../lab/markdown.ts';
+import {loadMarkdownReport} from '../lab/reportReader.ts';
 import {LabContext} from './LabContext.tsx';
 import {LabShell} from './LabShell.tsx';
-import {LabStats} from './LabStats.tsx';
-import {LabSection} from './ui/LabSection.tsx';
 import {Input} from './ui/Input.tsx';
 import {Select} from './ui/Select.tsx';
-import {Button} from './ui/Button.tsx';
 import {MetricGrid} from './ui/MetricGrid.tsx';
-import {StatusBadge} from './ui/StatusBadge.tsx';
-import {EmptyState} from './ui/EmptyState.tsx';
-import {LoadingState} from './ui/LoadingState.tsx';
-import {ErrorState} from './ui/ErrorState.tsx';
-import {ProgressPanel} from './ui/ProgressPanel.tsx';
-import {ReportSummary} from './ui/ReportSummary.tsx';
-import {ActionBar} from './ui/ActionBar.tsx';
 
 type Status='idle'|'loading'|'running'|'completed'|'stopped'|'error';
 type RunKind='interactive'|'comparison';
@@ -63,18 +55,14 @@ export function LightingLab() {
   const controllerRef=useRef<LightingController|null>(null),abortRef=useRef<AbortController|null>(null);
   const frameRef=useRef<LightingFrame|null>(null),configRef=useRef<LightingConfig|null>(null);
   const generation=useRef(0),raf=useRef(0),busy=useRef(false),updating=useRef(false);
-  const previousRaf=useRef<number|null>(null);
+  const previousRaf=useRef<number|null>(null),resizeRef=useRef<ResizeObserver|null>(null);
   const pending=useRef<LightingConfig|null>(null),failRef=useRef<(error:unknown)=>void>(()=>{});
   const [status,setStatus]=useState<Status>('idle'),[kind,setKind]=useState<RunKind>('interactive');
   const [request,setRequest]=useState<{id:number;kind:RunKind}|null>(null);
   const [message,setMessage]=useState('Prêt à lancer la scène.');
   const [config,setConfig]=useState<LightingConfig|null>(null),[frame,setFrame]=useState<LightingFrame|null>(null);
   const [report,setReport]=useState<LightingReport|null>(null);
-  const [archives,setArchives]=useState<LightingArchiveHistory>({formatVersion:1,latestAttempt:null,latestValid:null,attempts:[]});
-  const [selectedPackage,setSelectedPackage]=useState(''),[archiveMessage,setArchiveMessage]=useState('Lecture des archives…');
   const reportRequest=useRef<AbortController|null>(null);
-  const archivedReport=archives.attempts.find(entry=>entry.package===selectedPackage);
-  const reportLabel=(entry:LightingArchiveEntry)=>entry.status==='measured'?'Comparaison mesurée':entry.status==='rejected'?'Comparaison rejetée':entry.status==='error'?'Comparaison en erreur':'Comparaison arrêtée';
   const [modal,setModal]=useState(()=>initialSnapshot(moduleId).reportModal);
   const active=status==='loading'||status==='running';
   const liveControls=status==='running'&&kind==='interactive';
@@ -82,6 +70,7 @@ export function LightingLab() {
 
   const release=()=>{
     cancelAnimationFrame(raf.current);
+    resizeRef.current?.disconnect();resizeRef.current=null;
     controllerRef.current?.dispose();controllerRef.current=null;
     pending.current=null;updating.current=false;previousRaf.current=null;
     delete window.lightingBench16;
@@ -89,11 +78,11 @@ export function LightingLab() {
   const stop=()=>{
     if(!busy.current)return;
     abortRef.current?.abort();release();busy.current=false;
-    setStatus('stopped');setMessage('Exécution arrêtée. Les ressources de rendu ont été libérées.');
+    setStatus('stopped');setMessage(request?.kind==='interactive'?'Exploration arrêtée.':'Comparaison arrêtée.');
   };
   const launch=()=>{
     if(busy.current)return;
-    busy.current=true;frameRef.current=null;setFrame(null);setStatus('loading');setMessage('Chargement du banc Lumière…');
+    busy.current=true;frameRef.current=null;setFrame(null);setReport(null);setStatus('loading');setMessage('Chargement du banc Lumière…');
     setModal(old=>({...old,open:false}));
     if(kind==='comparison')delete window.__lightingBench16Report;
     setRequest({id:++generation.current,kind});
@@ -103,20 +92,6 @@ export function LightingLab() {
     document.title='16 · Lumière — render-tech-lab';
     return()=>{generation.current++;abortRef.current?.abort();reportRequest.current?.abort();release();};
   },[]);
-
-  useEffect(()=>{
-    if(active)return;
-    const abort=new AbortController();
-    void fetch('/api/lighting-report',{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Archives indisponibles.');
-      const history=await response.json() as LightingArchiveHistory;
-      if(abort.signal.aborted)return;
-      setArchives(history);setArchiveMessage(history.attempts.length?'':'Aucune campagne archivée pour ce banc.');
-      setSelectedPackage(previous=>history.attempts.find(entry=>entry.id===report?.id)?.package??
-        (history.attempts.some(entry=>entry.package===previous)?previous:history.latestAttempt??history.latestValid??''));
-    }).catch(error=>{if(!abort.signal.aborted)setArchiveMessage(error instanceof Error?error.message:String(error));});
-    return()=>abort.abort();
-  },[active,report?.id]);
 
   useEffect(()=>{
     if(!request)return;
@@ -134,9 +109,8 @@ export function LightingLab() {
         if(!current())return;
         const canvas=canvasRef.current;
         if(!canvas)throw new Error('La surface de rendu est indisponible.');
-        const options={signal:abort.signal,onProgress:(value:string)=>{if(current())setMessage(value);}};
+        const options={signal:abort.signal,onProgress:(value:string)=>{if(current()){setMessage(value);if(request.kind==='comparison'&&value.startsWith('Images identiques'))setStatus('running');}}};
         if(request.kind==='comparison') {
-          setStatus('running');
           const result=await runner.runLightingComparison(canvas,options);
           if(generation.current!==request.id)return;
           setReport(result);window.__lightingBench16Report=result;
@@ -148,7 +122,10 @@ export function LightingLab() {
         }
         const controller=await runner.createLightingBench(canvas,options);
         if(!current()){controller.dispose();return;}
-        controllerRef.current=controller;const initial=copyConfig(controller.getConfig());configRef.current=initial;setConfig(initial);
+        controllerRef.current=controller;
+        const resize=()=>{const box=canvas.getBoundingClientRect();if(box.width>0&&box.height>0){controller.resize(Math.round(box.width),Math.round(box.height));previousRaf.current=null;}};
+        resize();resizeRef.current=new ResizeObserver(resize);resizeRef.current.observe(canvas);
+        const initial=copyConfig(controller.getConfig());configRef.current=initial;setConfig(initial);
         setStatus('running');setMessage('Scène active. Déplacez la porte ou modifiez les lampes.');
         const hook={snapshot:()=>({status:'running' as const,config:copyConfig(controller.getConfig()),frame:frameRef.current?{...frameRef.current}:null})};
         window.lightingBench16=hook;
@@ -194,26 +171,18 @@ export function LightingLab() {
     change({lights:current.lights.map(light=>light.id===id?{...light,...patch}:light)});
   };
   const openReport=()=>{
-    if(!archivedReport)return;
+    if(active)return;
     reportRequest.current?.abort();
     const abort=new AbortController();reportRequest.current=abort;
-    const path='reports/'+moduleId+'/'+archivedReport.package+'/REPORT.md';
-    setModal({open:true,title:'Rapport · 16 Lumière',path,raw:'',html:'Chargement du rapport…',feedback:''});
-    void fetch('/api/lighting-report?package='+encodeURIComponent(archivedReport.package),{signal:abort.signal}).then(async response=>{
-      if(!response.ok)throw Error('Lecture du rapport archivé impossible.');
-      const raw=await response.text();
-      if(!abort.signal.aborted)setModal(old=>({...old,raw,html:parseMarkdownToHtml(raw)}));
+    setModal({open:true,title:'Rapport · 16 Lumière',path:'reports/'+moduleId+'/',raw:'',html:'Chargement du rapport…',feedback:''});
+    void loadMarkdownReport(url=>fetch(url,{signal:abort.signal}),moduleId).then(result=>{
+      if(!abort.signal.aborted)setModal(old=>({...old,raw:result.ok?result.raw:'',html:result.ok?parseMarkdownToHtml(result.raw):result.raw,feedback:result.feedback}));
     }).catch(error=>{if(!abort.signal.aborted)setModal(old=>({...old,html:error instanceof Error?error.message:String(error),feedback:'Le rapport n’a pas pu être chargé.'}));});
-  };
-  const downloadReport=()=>{
-    if(!archivedReport)return;
-    const link=document.createElement('a');
-    link.href='/api/report-artifact?package='+encodeURIComponent(moduleId+'/'+archivedReport.package)+'&file=objects%2Fresult.json.gz';
-    link.download='lumiere-'+archivedReport.id+'.json.gz';link.click();
   };
   const actions:LabActions={
     switchModule:id=>{if(!busy.current)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},
     runBenchmark:launch,runPain:stop,stopBenchmark:stop,openReport,
+    newExecution:()=>{if(!active){generation.current++;setRequest(null);setStatus('idle');setFrame(null);setMessage('Prêt à lancer la scène.');}},
     closeReport:()=>setModal(old=>({...old,open:false})),refreshReport:openReport,
     copyReport:()=>{void navigator.clipboard.writeText(modal.raw).then(()=>setModal(old=>({...old,feedback:'Rapport copié.'}))).catch(()=>setModal(old=>({...old,feedback:'Copie indisponible.'})));},
     openFinder:()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:moduleId,folder:'reports'})})
@@ -221,64 +190,39 @@ export function LightingLab() {
       .then(()=>setModal(old=>({...old,feedback:'Dossier des rapports ouvert.'}))).catch(()=>setModal(old=>({...old,feedback:'Rapports : reports/'+moduleId+'/'})));},
   };
   const stats={submit:number(frame?.cpuSubmitMs,' ms'),cpuFrame:number(frame?.cpuFrameMs,' ms'),fps:number(frame?.fps,' FPS'),drawCalls:number(frame?.drawCalls)};
-  const contextState={...initialSnapshot(moduleId),running:active,framePresented:!!frame,reportModal:modal,
+  const lastCampaign=useMemo(()=>report?.status==='measured'&&report.quality.passed===true?campaignSummary({
+    test:moduleId,timestamp:report.timestamp,status:report.status,
+    records:report.blocks.filter(block=>block.kind==='gpu-isolated').flatMap(block=>block.frames.map(value=>({variant:block.variant,cpuMs:null,gpuMs:value.gpuMs}))),
+  }):null,[report]);
+  const contextState={...initialSnapshot(moduleId),mode:'classic' as const,running:active,framePresented:status==='running'&&(kind==='comparison'||!!frame),reportModal:modal,
+    benchLabel:launchLabel,benchStatus:message,showPain:false,showWebgl:active,showWebgpu:false,
     stats:{...initialSnapshot(moduleId).stats,...stats},
-    execution:{status:status==='loading'?'running' as const:status,phase:message,lastCampaign:null}};
-  const reportActions=archivedReport?<ActionBar><Button id="lighting-open-report" variant="secondary" disabled={active} onClick={openReport}>Lire le rapport</Button><Button variant="outline" disabled={active} onClick={downloadReport}>Exporter les données</Button></ActionBar>:null;
-  const sidebar=<>
-    <LabSection id="lab-mode-card" number={1} title="Configuration / mode d’exécution" help={LIGHTING_UI.modeHint}>
+    execution:{kind:(request?.kind??kind)==='interactive'?'exploration' as const:'campaign' as const,status:status==='loading'?'running' as const:status,phase:message,lastCampaign}};
+  const panels={
+    configuration:<>
       <Select id="lighting-run-kind" label="Exécution" value={kind} disabled={active} onChange={event=>setKind(event.target.value as RunKind)}>
         <option value="interactive">Explorer la lumière</option><option value="comparison">Comparer brut / BVH</option>
       </Select>
-      {config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
+      {liveControls&&config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
         <option value="brute">Brut · tous les obstacles</option><option value="bvh">BVH · hiérarchie spatiale</option>
       </Select>
       <Input id="lighting-door" label={'Ouverture de la porte · '+Math.round(config.doorAngle*180/Math.PI)+'°'} type="range" min={0} max={90} step={1} value={config.doorAngle*180/Math.PI} disabled={!liveControls} onChange={event=>change({doorAngle:Number(event.target.value)*Math.PI/180})}/>
       <Input id="lighting-camera" label="Position de la caméra" type="range" min={0} max={1} step={.01} value={config.cameraT} disabled={!liveControls} onChange={event=>change({cameraT:Number(event.target.value)})}/>
       <Input id="lighting-lights-on" label="Éclairage allumé" type="checkbox" checked={config.lightIntensity>0} disabled={!liveControls} onChange={event=>change({lightIntensity:event.target.checked?1:0})}/>
       {config.lights.map(light=><LightFields key={light.id} light={light} disabled={!liveControls} onChange={patch=>changeLight(light.id,patch)}/>)}</>:<p className="text-xs text-base-content/60">Les commandes de la porte, de la caméra et des trois lampes apparaissent après le lancement de l’exploration.</p>}
-    </LabSection>
-    <LabSection id="lab-metrics-card" number={2} title="Métriques en direct">
-      <LabStats stats={stats} provenance="1000 ÷ intervalle rAF. La cadence dépend aussi de l’écran ; aucune fréquence physique n’est déduite."/>
+    </>,
+    metrics:<>
       <MetricGrid label="Éclairage" items={[
         {id:'lighting-cpu-transport',label:'Transport CPU',value:number(frame?.cpuTransportMs,' ms')},
         {id:'lighting-gpu',label:'Rendu GPU',value:number(frame?.gpuMs,' ms')},
         {id:'lighting-raf',label:'Intervalle rAF',value:number(frame?.rafDeltaMs,' ms')},
+        {id:'lighting-resolution',label:'Résolution',value:frame&&canvasRef.current?`${canvasRef.current.width} × ${canvasRef.current.height} · DPR 1`:'Non mesurée'},
         {id:'lighting-triangles',label:'Triangles',value:number(frame?.triangles)},
         {id:'lighting-refit',label:'Mise à jour BVH CPU',value:number(frame?.bvhRefitMs,' ms')},
         {id:'lighting-rays',label:'Rayons réutilisés',value:frame?.raysReused==null?'Non mesuré':String(frame.raysReused)+' / '+number(frame.totalRays)},
       ]}/>
       {!active&&frame?<p className="text-xs text-base-content/60">Dernière observation de l’exploration arrêtée.</p>:null}
-    </LabSection>
-    <LabSection id="lab-run-card" number={3} title="Campagne / comparaison">
-      <StatusBadge id="bench-status" tone={status==='error'?'error':status==='running'?'success':'neutral'}>{status==='idle'?'Prêt':status==='loading'?'Chargement':status==='running'?'En cours':status==='stopped'?'Arrêté':status==='error'?'Erreur':'Terminé'}</StatusBadge>
-      <p className="text-xs text-base-content/60">{LIGHTING_UI.protocol}</p>
-      <p className="text-xs text-base-content/60">{LIGHTING_PROTOCOL.width} × {LIGHTING_PROTOCOL.height} · DPR {LIGHTING_PROTOCOL.pixelRatio} · qualité identique pour les deux variantes.</p>
-      {active?<Button id="lighting-stop" variant="danger" onClick={stop}>Arrêter</Button>:status==='idle'?<p className="text-xs">Lancez le mode choisi depuis la fiche centrale.</p>:<Button id="lighting-relaunch" onClick={launch}>{launchLabel}</Button>}
-      {active?<ProgressPanel message={message}/>:null}
-    </LabSection>
-    <LabSection id="lab-report-card" number={4} title="Rapports et suivi">
-      {archives.attempts.length?<Select id="lighting-report-history" label="Campagne archivée" value={selectedPackage} disabled={active} onChange={event=>setSelectedPackage(event.target.value)}>
-        {archives.attempts.map(entry=><option key={entry.package} value={entry.package}>{entry.timestamp+' · '+reportLabel(entry)+(entry.package===archives.latestValid?' · dernier résultat valide':'')}</option>)}
-      </Select>:null}
-      {archivedReport?<><ReportSummary title={reportLabel(archivedReport)}>
-        <p className="text-xs">{archivedReport.qualityPassed===true?'Contrôle des images réussi.':archivedReport.qualityPassed===false?'Le contrôle des images a échoué.':'Contrôle des images non terminé.'}</p>
-        <p className="text-xs text-base-content/60">{archivedReport.timestamp}</p>
-      </ReportSummary>{reportActions}</>:<p className="text-xs text-base-content/60">{archiveMessage}</p>}
-
-    </LabSection>
-  </>;
-  const viewport=<main data-lighting-status={status} className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-base-100 flex flex-col">
-    {active?<><canvas id="lighting-canvas" ref={canvasRef} aria-label="Deux pièces et trois sources lumineuses" className="block w-full h-full min-h-0 object-contain"/>
-      {status==='loading'?<div className="absolute inset-0 flex items-center justify-center bg-base-100"><LoadingState message={message}/></div>:null}
-      {kind==='comparison'?<div className="absolute left-3 right-3 bottom-3"><ProgressPanel message={message}/></div>:null}
-    </>:<div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center">
-      {status==='error'?<ErrorState message={message} action={<Button onClick={launch}>{launchLabel}</Button>}/>:<EmptyState title={status==='idle'?'16 · Lumière':status==='stopped'?'Exécution arrêtée':'Comparaison terminée'}>
-        <p className="max-w-xl text-sm text-base-content/70">{status==='idle'?LIGHTING_MODULE.description:message}</p>
-        <p className="max-w-xl text-xs text-base-content/55">{LIGHTING_UI.idleNote}</p>
-        <ActionBar><Button id="lighting-launch" onClick={launch}>{launchLabel}</Button>{archivedReport?<Button variant="secondary" onClick={openReport}>Lire le rapport</Button>:null}</ActionBar>
-      </EmptyState>}
-    </div>}
-  </main>;
-  return <LabContext.Provider value={{state:contextState,actions}}><LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart} viewport={viewport} sidebar={sidebar}/></LabContext.Provider>;
+    </>,
+  };
+  return <LabContext.Provider value={{state:contextState,actions,panels}}><LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart}/></LabContext.Provider>;
 }

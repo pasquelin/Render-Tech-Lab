@@ -10,7 +10,7 @@ try {
   const preparationSignature = async () => page.locator('[data-execution-view="idle"] > section').evaluate(section => ({
     children: Array.from(section.children).map(child => child.tagName),
     headings: Array.from(section.querySelectorAll('h1,h2,h3')).map(node => node.textContent?.trim()),
-    hasProtocol: Boolean(section.querySelector('[aria-label="Étapes attendues de la campagne"]')),
+    hasProtocol: Boolean(section.querySelector('[aria-label="Étapes du test"]')),
     hasActions: Boolean(section.querySelector('button')),
   }));
   const modelSignature = await preparationSignature();
@@ -28,7 +28,7 @@ try {
   assert.equal(fixtureSignature.hasProtocol, true);
   assert.equal(fixtureSignature.hasActions, true);
   const fixtureText = await page.locator('body').innerText();
-  assert.doesNotMatch(fixtureText, /Commutez instantanément entre les pipelines|Mode unique|Aucune campagne mesurée disponible/);
+  assert.doesNotMatch(fixtureText, /Commutez instantanément entre les pipelines|Mode unique|Aucun résultat de test disponible/);
   assert.doesNotMatch(fixtureText, /Explorez la ville réelle et observez les compteurs de navigation/);
   assert.deepEqual(await page.locator('[aria-label="Configuration de lancement"] [role="radiogroup"]').evaluateAll(nodes => nodes.map(node => node.id)), ['model-scene']);
   for (const id of ['model-mode', 'model-extent', 'model-detail', 'model-anisotropy']) {

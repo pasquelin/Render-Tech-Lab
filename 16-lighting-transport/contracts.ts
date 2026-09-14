@@ -133,6 +133,7 @@ export interface LightingBenchOptions {
 export interface LightingController {
   update(patch: Partial<LightingConfig>): Promise<LightingFrame>;
   render(): LightingFrame;
+  resize(width: number, height: number): void;
   capture(): LightingCapture;
   getConfig(): LightingConfig;
   dispose(): void;

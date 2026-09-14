@@ -36,11 +36,11 @@ try {
    assert.ok(result.viewport.top>=result.headerBottom-1);assert.equal(result.whiteSpace,'nowrap');assert.ok(result.title.length>20);assert.equal(result.objectFit,'cover');
    if (phase === 'running') {
     assert.equal(result.preparations,0);assert.equal(result.mainButtons,0);
-    assert.doesNotMatch(result.mainText,/Campagne terminée|CPU Submit|Mesurer A\/B/);
+    assert.doesNotMatch(result.mainText,/Test terminé|CPU Submit|Mesurer A\/B/);
     assert.equal(result.scene.height,result.viewport.height);assert.equal(result.canvas.height,result.viewport.height);assert.equal(result.canvas.width,result.viewport.width);
    } else {
     assert.ok(result.preparations>=1);
-    assert.match(result.mainText,/Campagne terminée/);
+    assert.match(result.mainText,/Test terminé/);
     assert.equal(result.scene.height,0);
    }
    for(const id of ['select-module','btn-classic','btn-gpu-driven','select-count','btn-benchmark','btn-pain-benchmark','btn-view-report','btn-open-reports']) {

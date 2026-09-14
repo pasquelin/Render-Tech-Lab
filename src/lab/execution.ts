@@ -7,6 +7,7 @@ export type CampaignSummary = {
   scenarioChecks?: { id: string; label: string; a: number; b: number; quality: string }[];
 };
 export type ExecutionState = {
+  kind?: 'exploration' | 'campaign';
   status: ExecutionStatus;
   phase: string;
   lastCampaign: CampaignSummary | null;

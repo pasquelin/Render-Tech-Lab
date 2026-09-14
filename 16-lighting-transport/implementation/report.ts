@@ -9,7 +9,7 @@ export function formatLightingReport(report:LightingReport):string{
   const variants:LightingVariant[]=['brute','bvh'];
   const incomplete=report.provenance.initialization==='failed'||report.provenance.initialization==='stopped';
   return [
-    '# Banc 16 · Lumière','',`Campagne ${report.id} · ${report.timestamp}.`,
+    '# Banc 16 · Lumière','',`Test ${report.id} · ${report.timestamp}.`,
     `Équivalence A/A et A/B : ${report.quality.passed===null?'non testée':report.quality.passed?'réussie':'refusée'}. Statut : ${report.status}.`,
     ...(report.error?[`Motif : ${report.error}`]:[]),
     ...(incomplete?['Initialisation non achevée : aucun rendu ni mesure collectés ; les paramètres ci-dessous sont ceux demandés.']:[]),

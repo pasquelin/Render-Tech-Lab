@@ -96,7 +96,7 @@ async function createRuntime(canvas:HTMLCanvasElement,options:LightingBenchOptio
         return {...frame,gpuMs:Number(gl.getQueryParameter(query,gl.QUERY_RESULT))/1e6};
       }finally{gl.deleteQuery(query);}
     };
-    const controller:LightingController={update,render,capture,getConfig:()=>copyConfig(config),dispose:drop};
+    const controller:LightingController={update,render,resize:(width,height)=>{check();explorer.resize(width,height);},capture,getConfig:()=>copyConfig(config),dispose:drop};
     return {controller,signal,setConfig,capturePixels,isolatedFrame,waitGpu,prepared,
       environment:{userAgent:navigator.userAgent,devicePixelRatio:devicePixelRatio,logicalCpus:navigator.hardwareConcurrency,renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):null,vendor:debug?gl.getParameter(debug.UNMASKED_VENDOR_WEBGL):null,gpuTimerAvailable:!!timer,webglVersion:gl.getParameter(gl.VERSION),visibility:document.visibilityState},
       geometry:{surfaces:initial.surfaces.length,patches:initial.patches.length,triangles:explorer.metadata.selectedTriangles}};
@@ -183,7 +183,7 @@ export async function runLightingComparison(canvas:HTMLCanvasElement,options:Lig
   }catch(error){
     const stopped=options.signal?.aborted||runtime?.signal.aborted;
     report.status=stopped?'stopped':'error';
-    report.error=stopped?'Campagne arrêtée à la demande.':error instanceof Error?error.message:String(error);
+    report.error=stopped?'Test arrêté à la demande.':error instanceof Error?error.message:String(error);
     if(!runtime)report.provenance.initialization=stopped?'stopped':'failed';
   }finally{runtime?.controller.dispose();}
   options.onProgress?.('Archivage des images, des mesures et des sources…');

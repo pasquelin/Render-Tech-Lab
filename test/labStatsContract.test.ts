@@ -67,12 +67,13 @@ test('banks put campaign controls first and show reports only outside a running 
     assert.match(html, /FOV 55° · plans 0,1/);
     assert.doesNotMatch(idleHtml, /id="lab-mode-card"/, 'la configuration de lancement reste dans le panneau principal');
     assert.ok(idleHtml.indexOf('id="model-scene"') < idleHtml.indexOf('id="model-mode"'), 'la scène précède le modèle et le parcours');
+    assert.match(idleHtml, /data-bench-screen="start"/);
     assert.match(idleHtml, /id="model-start-engine"/, 'le moteur peut être choisi avant le premier lancement libre');
     assert.match(idleHtml, /name="model-start-engine"/, 'le choix initial de moteur est un groupe radio partagé');
     assert.match(idleHtml, /id="model-start-engine"[^>]*sm:grid-cols-4/, 'les quatre moteurs sont présentés sur une ligne');
     assert.match(idleHtml, /id="lab-preparation-card"/, 'la préparation du modèle est dans la colonne droite');
-    assert.ok(idleHtml.indexOf('id="lab-run-card"') < idleHtml.indexOf('id="lab-preparation-card"'), 'la campagne précède la préparation');
-    assert.match(idleHtml, /1\. Campagne \/ comparaison/);
+    assert.ok(idleHtml.indexOf('id="lab-run-card"') < idleHtml.indexOf('id="lab-preparation-card"'), 'le lancement précède la préparation');
+    assert.match(idleHtml, /1\. Exécution/);
     assert.match(idleHtml, /2\. Préparation du modèle/);
     assert.match(idleHtml, /id="model-detail"[^>]*sm:grid-cols-2/, 'le niveau de détail est lisible en deux colonnes');
     assert.match(idleHtml, /id="model-extent"[^>]*sm:grid-cols-4/, 'les quatre étendues tiennent sur une ligne');
@@ -94,13 +95,14 @@ test('banks put campaign controls first and show reports only outside a running 
     stoppedState.execution = { ...stoppedState.execution, status: 'stopped' };
     const stoppedHtml = renderShell({ state: stoppedState, actions, model: { ...model, status: 'stopped' }, onIntegrationScene() {} });
     assert.doesNotMatch(stoppedHtml.match(/<input[^>]*id="model-extent-1"[^>]*>/)?.[0] ?? '', /disabled/, 'après arrêt, l’étendue reste configurable');
+    assert.match(stoppedHtml, /data-bench-screen="end"/);
     assert.doesNotMatch(stoppedHtml, /id="lab-mode-card"/, 'hors exécution, les contrôles d’exploration ne sont pas affichés');
     assert.doesNotMatch(stoppedHtml, /id="lab-metrics-card"/, 'hors exécution, les métriques en direct ne sont pas affichées');
     assert.match(stoppedHtml, /id="lab-preparation-card"/, 'hors exécution, les réglages de préparation restent à droite');
     const runningHtml = renderShell({ state: runningState, actions, model: { ...model, status: 'ready' }, onIntegrationScene() {} });
     assert.equal(runningHtml.includes('id="model-scene"'), false, 'pendant le rendu, la config de lancement quitte le panneau principal');
     assert.doesNotMatch(runningHtml, /id="lab-preparation-card"/, 'pendant le rendu, les réglages de préparation disparaissent');
-    assert.match(runningHtml, /1\. Campagne \/ comparaison/);
+    assert.match(runningHtml, /1\. Exécution/);
     assert.match(runningHtml, /2\. Contrôles pendant le rendu/);
     assert.match(runningHtml, /3\. Métriques en direct/);
     assert.doesNotMatch(runningHtml.match(/<select[^>]*id="model-camera"[^>]*>/)?.[0] ?? '', /disabled/, 'la caméra reste changeable pendant la navigation');
@@ -121,7 +123,7 @@ test('banks put campaign controls first and show reports only outside a running 
     assert.doesNotMatch(pathRunningHtml, /Contrôles pendant le rendu|Seul Arrêter reste actif/);
     assert.match(pathRunningHtml, /id="lab-metrics-card"/);
     assert.match(pathRunningHtml, /id="lab-run-card"/);
-    assert.match(pathRunningHtml, /1\. Campagne \/ comparaison/);
+    assert.match(pathRunningHtml, /1\. Exécution/);
     assert.match(pathRunningHtml, /2\. Métriques en direct/);
     for (const status of ['idle', 'running', 'completed', 'stopped', 'error']) {
       for (const moduleId of Object.keys(MODULE_DESCRIPTORS).filter((id: string) => id !== '00-baseline')) {
