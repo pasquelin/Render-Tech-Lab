@@ -63,13 +63,6 @@ function validatePackageId(id: string) {
   return id;
 }
 
-/** Découpe `<banc>/<paquet>` avec les mêmes règles que l'archivage : tout paquet écrit sur le disque reste lisible. */
-export function reportPackagePath(packagePath: string): { testId: string; id: string } {
-  const [testId, id, ...extra] = packagePath.split('/');
-  if (extra.length || !testId || !id) throw new Error('Chemin de rapport invalide');
-  return { testId: validateTestId(testId), id: validatePackageId(id) };
-}
-
 function mediaExtension(mime: string) {
   return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg' } as Record<string, string>)[mime] ?? 'bin';
 }
