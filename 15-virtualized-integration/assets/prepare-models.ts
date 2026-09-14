@@ -57,7 +57,7 @@ function createProgress(id: string, index: number, total: number) {
   const started = performance.now();
   let frame = 0;
   let primitives = 0;
-  let label = 'manifeste source, nettoyage du dossier dérivé';
+  let label = 'manifeste source';
   let ratio: number | null = null;
   let lastPlain = '';
   let plainKey = '';
@@ -69,7 +69,10 @@ function createProgress(id: string, index: number, total: number) {
     return ` [${'█'.repeat(filled)}${'░'.repeat(width - filled)}] ${Math.round(ratio * 100).toString().padStart(3)}%`;
   };
   const draw = () => {
-    const line = `${spinner[frame++ % spinner.length]} ${index + 1}/${total} ${id}  ${label}${bar()}  ${elapsed()}`;
+    const full = `${spinner[frame++ % spinner.length]} ${index + 1}/${total} ${id}  ${label}${bar()}  ${elapsed()}`;
+    // Une ligne plus large que le terminal passerait à la ligne et le retour chariot ne l'effacerait plus.
+    const width = Math.max(20, (process.stderr.columns ?? 80) - 1);
+    const line = [...full].length > width ? `${[...full].slice(0, width - 1).join('')}…` : full;
     if (tty) process.stderr.write(`\r\x1b[K${line}`);
     else if (plainKey !== lastPlain) { process.stderr.write(`${line}\n`); lastPlain = plainKey; }
   };
