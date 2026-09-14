@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { createExplorer, exactPagesBackend, webgpuPagesBackend, detectCapabilities } from '@web-geometry/sdk/browser';
-import type { Explorer, BackendFactory } from '@web-geometry/sdk/browser';
+import type { CameraPose, Explorer, BackendFactory } from '@web-geometry/sdk/browser';
 import {
   MAX_SHADOWED_LIGHTS_PER_FRAME, defaultConfig,
-  type LightingBenchConfig, type LightingController, type LightingBenchOptions, type LightingFrameStats,
-  type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
+  type LightingBackendId, type LightingBenchConfig, type LightingController, type LightingBenchOptions,
+  type LightingFrameStats, type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
 } from '../contracts.ts';
 import { detectEngineCapabilities } from '../implementation/engineCapabilities.ts';
 import { createHouseAnimatedNodes, carHeadlightPoses, autoLightOnOff, buildAutoLights, type AnimatedNode } from '../implementation/sceneAnimations.ts';
@@ -19,6 +19,7 @@ const MANIFEST_URLS: Record<SceneId, string> = {
 const emptyStats = (): LightingFrameStats => ({
   fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null,
   gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null,
+  frame: null, cameraPose: null,
 });
 
 /** Compose un THREE.Matrix4 dans un tampon Float32Array(16) réutilisé (aucune allocation par image). */
@@ -61,13 +62,13 @@ function boxSize(canvas: HTMLCanvasElement): { width: number; height: number } {
 /** Le contrat de lampes (addLight/setLight/removeLight/setEnvironment/setTransform) n'est rendu
  * visible que par le backend WebGPU (webgpuPagesBackend) ; exact-cluster-pages (WebGL2) reste la
  * valeur sûre partout ailleurs. On préfère WebGPU dès qu'un adaptateur existe, sans jamais l'exiger. */
-async function pickBackend(): Promise<BackendFactory> {
+async function pickBackend(): Promise<{ factory: BackendFactory; id: LightingBackendId }> {
   try {
     const probe = document.createElement('canvas');
     const detected = await detectCapabilities('webgpu', probe);
-    if (detected.adapter) return webgpuPagesBackend;
+    if (detected.adapter) return { factory: webgpuPagesBackend, id: 'webgpu-page-raster' };
   } catch { /* WebGPU indisponible sur ce navigateur ou cet appareil : repli WebGL2 silencieux. */ }
-  return exactPagesBackend;
+  return { factory: exactPagesBackend, id: 'exact-cluster-pages' };
 }
 
 export async function createLightingBench(
@@ -79,7 +80,7 @@ export async function createLightingBench(
   const backend = await pickBackend();
   const explorer = await createExplorer(canvas, {
     manifestUrl: MANIFEST_URLS[scene], scope: 'full', signal, preload: 'all', width, height,
-    backends: [backend], onPreparation: event => onProgress?.(event.message),
+    backends: [backend.factory], onPreparation: event => onProgress?.(event.message),
   });
   const capabilities = detectEngineCapabilities(explorer);
 
@@ -101,6 +102,18 @@ export async function createLightingBench(
   const nodeBuffers = new Map<string, { matrix: THREE.Matrix4; buffer: Float32Array }>();
   for (const nodeEntry of houseNodes) nodeBuffers.set(nodeEntry.name, { matrix: new THREE.Matrix4(), buffer: new Float32Array(16) });
   const unitScale = new THREE.Vector3(1, 1, 1);
+  // Cible reconstruite depuis la direction de vue, comme ModelLab.tsx (banc 15) : un mètre devant
+  // l'œil. Vecteur réutilisé d'une image à l'autre pour ne rien allouer dans la boucle de rendu.
+  const lookAhead = new THREE.Vector3();
+  const readCameraPose = (): CameraPose => {
+    const camera = explorer.camera;
+    camera.getWorldDirection(lookAhead).add(camera.position);
+    return {
+      position: camera.position.toArray() as CameraPose['position'],
+      target: lookAhead.toArray() as CameraPose['target'],
+      fov: camera.fov, near: camera.near, far: camera.far,
+    };
+  };
   const failedNodes = new Set<string>();
 
   let config: LightingBenchConfig = defaultConfig(scene);
@@ -171,12 +184,15 @@ export async function createLightingBench(
       gpuLightingMs: metrics.gpuLightingMs ?? null,
       drawCalls: metrics.drawCalls ?? null,
       triangles: metrics.triangles ?? null,
+      frame: metrics,
+      cameraPose: readCameraPose(),
     };
     rafHandle = requestAnimationFrame(tick);
   };
   rafHandle = requestAnimationFrame(tick);
 
   return {
+    backend: backend.id,
     getConfig: () => ({ ...config, lights: config.lights.map(light => ({ ...light })) }),
     getCapabilities: () => ({ ...capabilities }),
     getStats: () => stats,

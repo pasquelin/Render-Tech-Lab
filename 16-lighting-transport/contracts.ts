@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 
 export type Vec3 = [number, number, number];
 export type SceneId = 'house' | 'emerald-night';
@@ -78,6 +79,9 @@ export function defaultConfig(scene: SceneId): LightingBenchConfig {
   return { scene, night: scene === 'emerald-night', shadows: true, autoLightCount: 6, lights: defaultAdjustableLights(scene), animationPaused: false, animationSpeed: 1 };
 }
 
+/** Backend réellement retenu au démarrage ; mêmes identifiants que le catalogue de moteurs du Lab. */
+export type LightingBackendId = 'exact-cluster-pages' | 'webgpu-page-raster';
+
 export interface LightingFrameStats {
   fps: number | null;
   cpuFrameMs: number | null;
@@ -89,6 +93,11 @@ export interface LightingFrameStats {
   gpuLightingMs: number | null;
   drawCalls: number | null;
   triangles: number | null;
+  /** Compteurs bruts publiés par le moteur pour cette image : ils alimentent le panneau de métriques
+   *  commun au banc 15, sans être recopiés ni recalculés ici. */
+  frame: FrameMetrics | null;
+  /** Pose de la caméra active, pour le bloc « Caméra active » du même panneau commun. */
+  cameraPose: CameraPose | null;
 }
 
 /** Ce que le runner tient à jour chaque image et libère à dispose() ; peu importe qui la construit. */
@@ -120,6 +129,7 @@ export interface LightingBenchOptions {
 }
 
 export interface LightingController {
+  readonly backend: LightingBackendId;
   getConfig(): LightingBenchConfig;
   getCapabilities(): EngineCapabilities;
   getStats(): LightingFrameStats;

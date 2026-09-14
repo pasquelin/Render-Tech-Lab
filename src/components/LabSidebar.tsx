@@ -167,14 +167,16 @@ export function LabSidebar({ chartRef }: LabSidebarProps) {
           )}
         </LabSection>}
 
-        {!model || showModelMetrics ? <LabSection id="lab-metrics-card" number={model && !showModelLiveControls ? 2 : 3} title="Métriques en direct" badge={model ? undefined : '350ms MA'}>
-          {model ? <ModelMetricsBody /> : (
+        {/* Un banc qui fournit panels.metrics (banc 16) possède tout le corps du panneau : il y place
+            déjà ModelMetricsBody, dont les quatre compteurs d'en-tête remplacent LabStats. */}
+        {!model || showModelMetrics ? <LabSection id="lab-metrics-card" number={model && !showModelLiveControls ? 2 : 3} title="Métriques en direct" badge={model || panels?.metrics ? undefined : '350ms MA'}>
+          {model ? <ModelMetricsBody /> : panels?.metrics ?? (
             <>
               <LabStats stats={state.stats} />
-              {panels?.metrics ?? <MetricGrid label="Contexte de soumission" items={[
+              <MetricGrid label="Contexte de soumission" items={[
                 { id: 'stat-mode', label: 'Pipeline', value: state.stats.modeLabel },
                 { id: 'stat-objects', label: 'Objets', value: state.stats.objects },
-              ]} />}
+              ]} />
             </>
           )}
         </LabSection> : null}

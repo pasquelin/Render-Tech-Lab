@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig } from '../../16-lighting-transport/index.ts';
-import type { LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import type { LightingBackendId, LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
 import { parseMarkdownToHtml } from '../lab/markdown.ts';
@@ -11,6 +11,7 @@ import { loadMarkdownReport } from '../lab/reportReader.ts';
 import { createNavigationControls } from '../../15-virtualized-integration/implementation/navigationControls.ts';
 import { loadNavigationWorld } from '../../15-virtualized-integration/implementation/navigationSource.ts';
 import { LabContext } from './LabContext.tsx';
+import { ModelMetricsBody, type ModelMetricsSource } from './ModelMetricsBody.tsx';
 import { LabShell } from './LabShell.tsx';
 import { Input } from './ui/Input.tsx';
 import { Button } from './ui/Button.tsx';
@@ -21,6 +22,18 @@ type Status = 'idle' | 'loading' | 'running' | 'stopped' | 'error';
 const moduleId = '16-lighting-transport';
 const baseSnapshot = initialSnapshot(moduleId);
 const number = (value: number | null | undefined, unit = '') => (value == null || !Number.isFinite(value) ? 'Non mesuré' : value.toFixed(unit === ' ms' ? 2 : 0) + unit);
+/** Les bornes de position des lampes sont des mètres monde (SCENE_LIGHT_BOUNDS). */
+const metres = (value: number) => value.toFixed(1) + ' m';
+
+/** Coût d'une étape du rendu : une ligne par étape, colonnes CPU et GPU, quantiles p50 et p95.
+ *  `null` signifie « non mesuré » et reste distinct de 0, qui serait une étape mesurée à coût nul.
+ *  Le contrat moteur arrive dans un lot séparé : ici seul l'emplacement est posé. */
+export interface StageCostQuantiles { readonly p50: number | null; readonly p95: number | null }
+export interface StageCost { readonly stage: string; readonly cpuMs: StageCostQuantiles; readonly gpuMs: StageCostQuantiles }
+const quantiles = (value: StageCostQuantiles) =>
+  value.p50 == null && value.p95 == null ? 'Non mesuré' : number(value.p50, ' ms') + ' / ' + number(value.p95, ' ms');
+/** Tant que le moteur ne publie rien, la liste reste vide et le bloc affiche « Non mesuré ». */
+const STAGE_COSTS: readonly StageCost[] = [];
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
@@ -33,10 +46,10 @@ function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; 
       <h3 className="text-xs font-semibold">{light.id}</h3>
       <div className="grid grid-cols-2 gap-2">
         <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event => onChange({ color: linearColor(event.target.value) })} />
-        <Input id={prefix + '-intensity'} label={'Intensité · ' + light.intensity.toFixed(1)} type="range" min={0} max={20} step={0.5} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
-        <Input id={prefix + '-x'} label="X" type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
-        <Input id={prefix + '-y'} label="Y" type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
-        <Input id={prefix + '-z'} label="Z" type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
+        <Input id={prefix + '-intensity'} label={'Intensité · ' + light.intensity.toFixed(1)} help="Échelle du moteur, sans unité physique." type="range" min={0} max={20} step={0.5} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <Input id={prefix + '-x'} label={'X · ' + metres(light.position[0])} type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
+        <Input id={prefix + '-y'} label={'Y · ' + metres(light.position[1])} type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
+        <Input id={prefix + '-z'} label={'Z · ' + metres(light.position[2])} type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
         <Input id={prefix + '-shadow'} label="Ombre" type="checkbox" checked={light.castsShadow} disabled={disabled} onChange={event => onChange({ castsShadow: event.target.checked })} />
       </div>
     </div>
@@ -56,7 +69,11 @@ export function LightingLab() {
   const [message, setMessage] = useState('Prêt à ouvrir une scène.');
   const [config, setConfig] = useState<LightingBenchConfig>(() => defaultConfig('house'));
   const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(null);
-  const [stats, setStats] = useState<LightingFrameStats>({ fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null, gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null });
+  const [stats, setStats] = useState<LightingFrameStats>({ fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null, gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null, frame: null, cameraPose: null });
+  const [backend, setBackend] = useState<LightingBackendId | null>(null);
+  // Les commandes réelles : jeu à la première personne quand celles du banc 15 ont pu être construites,
+  // orbite de l'Explorer sinon. Le panneau « Caméra active » annonce ce qui est branché, pas l'intention.
+  const [cameraMode, setCameraMode] = useState<'orbit' | 'game'>('orbit');
   const [modal, setModal] = useState(baseSnapshot.reportModal);
   const active = status === 'loading' || status === 'running';
 
@@ -68,11 +85,11 @@ export function LightingLab() {
   const stop = () => {
     if (!busy.current) return;
     abortRef.current?.abort(); release(); busy.current = false;
-    setStatus('stopped'); setMessage('Exploration arrêtée. Les ressources de rendu ont été libérées.'); setCapabilities(null);
+    setStatus('stopped'); setMessage('Exploration arrêtée. Les ressources de rendu ont été libérées.'); setCapabilities(null); setBackend(null);
   };
   const launch = () => {
     if (busy.current) return;
-    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null);
+    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null); setBackend(null); setCameraMode('orbit');
     const abort = new AbortController(); abortRef.current = abort;
     const owner = ++generation.current;
     setConfig(defaultConfig(sceneId));
@@ -90,6 +107,7 @@ export function LightingLab() {
           if (sceneId === 'house') {
             try {
               const world = await loadNavigationWorld(context.manifestUrl, context.sourceKey, context.bounds, 1, abort.signal);
+              if (generation.current === owner) setCameraMode('game');
               return createNavigationControls(context.canvas, context.camera, world, 'game', 0);
             } catch (error) {
               console.warn('[16-lighting-transport] navigation à la première personne (banc 15) indisponible, repli orbite :', error);
@@ -104,6 +122,7 @@ export function LightingLab() {
         if (generation.current !== owner || abort.signal.aborted) { controller.dispose(); return; }
         controllerRef.current = controller;
         setCapabilities(controller.getCapabilities());
+        setBackend(controller.backend);
         setStatus('running'); setMessage('Scène active. Cliquez dans la vue pour capturer la souris (WASD, Espace pour sauter, Maj pour courir, Échap pour libérer).');
         const tick = () => {
           if (generation.current !== owner || !controllerRef.current) return;
@@ -155,6 +174,18 @@ export function LightingLab() {
     newExecution: () => { if (!active) { generation.current++; setStatus('idle'); setMessage('Prêt à ouvrir une scène.'); } },
   };
   const stats4 = { submit: 'Non mesuré', cpuFrame: number(stats.cpuFrameMs, ' ms'), fps: number(stats.fps, ' FPS'), drawCalls: number(stats.drawCalls) };
+  // Ce que le banc 16 sait remplir du panneau commun : le reste s'affiche « Non mesuré », jamais 0.
+  const metricsSource: ModelMetricsSource = {
+    metrics: stats.frame, frameIntervalMs: stats.fps ? 1000 / stats.fps : null, cameraPose: stats.cameraPose,
+    availableTriangles: null, engine: backend ?? 'Non mesuré', diagnostic: 'beauty', camera: cameraMode,
+  };
+  // Une ligne par étape, colonne CPU puis colonne GPU ; sans donnée moteur, une seule case « Non mesuré ».
+  const stageItems = STAGE_COSTS.length === 0
+    ? [{ id: 'lighting-stage-cost', label: 'Étapes du rendu', value: 'Non mesuré', provenance: 'Le moteur ne publie pas encore le coût par étape ; son contrat arrive dans un lot séparé.' }]
+    : STAGE_COSTS.flatMap(cost => [
+        { id: 'lighting-stage-' + cost.stage + '-cpu', label: cost.stage + ' · CPU', value: quantiles(cost.cpuMs), provenance: 'p50 / p95' },
+        { id: 'lighting-stage-' + cost.stage + '-gpu', label: cost.stage + ' · GPU', value: quantiles(cost.gpuMs), provenance: 'p50 / p95' },
+      ]);
   const contextState = {
     ...baseSnapshot, running: active, framePresented: status === 'running', reportModal: modal, showWebgl: active,
     stats: { ...baseSnapshot.stats, ...stats4 },
@@ -184,15 +215,22 @@ export function LightingLab() {
         ) : <p className="text-xs text-base-content/60">{SCENES.find(scene => scene.id === sceneId)?.description}</p>}
       </>
     ),
+    // Le panneau commun du banc 15, tel quel, pour que les deux rapports se lisent de la même façon ;
+    // les blocs propres à la lumière viennent à la suite par son point d'extension.
     metrics: (
-      <MetricGrid label="Éclairage" items={[
-        { id: 'lighting-gpu', label: 'GPU (passe)', value: number(stats.gpuMs, ' ms') },
-        { id: 'lighting-lights-active', label: 'Lampes actives', value: number(stats.lightsActive) },
-        { id: 'lighting-shadows-updated', label: 'Ombres mises à jour', value: number(stats.shadowsUpdated) },
-        { id: 'lighting-gpu-lightlists', label: 'GPU listes de lampes', value: number(stats.gpuLightListsMs, ' ms') },
-        { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
-        { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
-      ]} />
+      <ModelMetricsBody source={metricsSource} extra={
+        <>
+          <MetricGrid label="Éclairage" items={[
+            { id: 'lighting-gpu', label: 'GPU (passe)', value: number(stats.gpuMs, ' ms') },
+            { id: 'lighting-lights-active', label: 'Lampes actives', value: number(stats.lightsActive) },
+            { id: 'lighting-shadows-updated', label: 'Ombres mises à jour', value: number(stats.shadowsUpdated) },
+            { id: 'lighting-gpu-lightlists', label: 'GPU listes de lampes', value: number(stats.gpuLightListsMs, ' ms') },
+            { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
+            { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
+          ]} />
+          <MetricGrid label="Coût par étape" items={stageItems} />
+        </>
+      } />
     ),
   };
 
