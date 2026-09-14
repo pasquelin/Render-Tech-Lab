@@ -1,4 +1,6 @@
 import { createModelAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
+import { createLightingAssetsPlugin } from './16-lighting-transport/assets/vite.ts';
+import { createLightingArchivePlugin } from './16-lighting-transport/assets/archive.ts';
 import { createIntegrationArchivePlugin } from './shared/archive/integration.ts';
 import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
@@ -299,7 +301,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createLightingAssetsPlugin(),createLightingArchivePlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',
@@ -310,7 +312,7 @@ export default defineConfig({
       // Les campagnes écrivent leurs rapports dans l'arborescence surveillée.
       // Sans cette exclusion, /api/save-report déclenche un rechargement complet
       // à la fin de chaque benchmark et efface les résultats tout juste mesurés.
-      ignored: ['**/results/**', '**/reports/**', '**/public/benchmark-assets/**'],
+      ignored: ['**/results/**', '**/reports/**', '**/benchmark-runs/**', '**/public/benchmark-assets/**'],
     },
   },
   build: {

@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-test('idle routes 01–14 mount no canvas and keep bench 04 controls isolated', async () => {
+test('idle routes through 16 mount no canvas and keep bench controls isolated', async () => {
   const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' });
   try {
     const { LabShell } = await server.ssrLoadModule('/src/components/LabShell.tsx');
@@ -15,6 +15,10 @@ test('idle routes 01–14 mount no canvas and keep bench 04 controls isolated', 
     for (const { id: moduleId } of MODULE_NAV.filter(({ id }: { id: string }) => id !== '00-baseline' && id !== '15-virtualized-integration')) {
       const html = renderToStaticMarkup(createElement(LabContext.Provider, { value: { state: initialSnapshot(moduleId), actions } }, createElement(LabShell, { webglRef: { current: null }, webgpuRef: { current: null }, chartRef: { current: null } })));
       assert.equal((html.match(/<canvas/g) ?? []).length, 0, `${moduleId}: canvas at rest`);
+      if (moduleId === '16-lighting-transport') {
+        assert.match(html, /16 · Lumière/);
+        assert.doesNotMatch(html, /Bistro|Emerald|quartiers|id="model-(?:scene|engine|extent|detail)"/, 'lighting has no controls or content from the world and model benches');
+      }
       if (moduleId !== '04-gpu-lod') {
         for (const foreign of ['Même rendu natif', 'sélection LOD', 'A · Calcul CPU', 'B · Calcul GPU', 'Comparaison native']) assert.doesNotMatch(html, new RegExp(foreign, 'i'), `${moduleId}: leaked ${foreign}`);
       }

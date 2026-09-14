@@ -10,17 +10,18 @@ try {
   await page.getByRole('heading', { name: 'Dashboard' }).waitFor();
   assert.equal(await page.locator('canvas').count(), 0);
   assert.equal(await page.locator('#btn-benchmark').count(), 0);
-  assert.equal(await page.locator('[data-bench-access]').count(), 15);
+  assert.equal(await page.locator('[data-bench-access]').count(), 16);
   assert.equal(await page.locator('#dashboard-benches-card ul').evaluate(node => getComputedStyle(node).display), 'grid');
   assert.equal(await page.locator('#dashboard-benches-card ul').evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length), 2);
   const widths = await page.locator('[data-bench-access]').evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().width)));
   assert.equal(new Set(widths).size, 1, `Les accès n’ont pas la même largeur : ${widths.join(', ')}`);
   assert.equal(await page.locator('[data-bench-access="15-virtualized-integration"]').evaluate(node => Math.round(node.getBoundingClientRect().width)), widths[0]);
+  assert.equal(await page.locator('[data-bench-access="16-lighting-transport"]').getAttribute('title'), 'Ouvrir 16 · Lumière');
   assert.ok(await page.locator('main #dashboard-reports').getByText('Derniers rapports vérifiés').isVisible());
   assert.equal(await page.locator('#sidebar #dashboard-reports').count(), 0);
   assert.equal(await page.locator('main [data-bench-access]').count(), 0);
   await page.locator('main #dashboard-reports [aria-busy="false"]').waitFor();
-  assert.equal(await page.locator('main #dashboard-reports li').count(), 15);
+  assert.equal(await page.locator('main #dashboard-reports li').count(), 16);
   const reportGrid = page.locator('main #dashboard-reports ul');
   assert.equal(await reportGrid.evaluate(node => getComputedStyle(node).display), 'grid');
   assert.equal(await reportGrid.evaluate(node => getComputedStyle(node).gridTemplateColumns.split(' ').length), 2);
@@ -36,7 +37,7 @@ try {
   assert.ok(reportWidths[0] > reportGridWidth * 0.45, `Les cartes ne remplissent pas leur cellule : ${reportWidths[0]} / ${reportGridWidth}`);
   const [reportsWidth, viewportWidth] = await page.locator('#dashboard-reports').evaluate(node => [node.getBoundingClientRect().width, node.parentElement?.getBoundingClientRect().width ?? 0]);
   assert.ok(reportsWidth > viewportWidth * 0.95, `Le panneau des rapports reste contraint : ${reportsWidth} / ${viewportWidth}`);
-  assert.equal(await page.getByText('Aucun rapport vérifié').count() < 15, true, 'aucun rapport réel reconnu');
+  assert.equal(await page.getByText('Aucun rapport vérifié').count() < 16, true, 'aucun rapport réel reconnu');
   for (const id of await page.locator('[data-bench-access]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-bench-access')))) {
     await page.goto(`${origin}/?test=00-baseline`);
     await page.locator(`[data-bench-access="${id}"]`).click();

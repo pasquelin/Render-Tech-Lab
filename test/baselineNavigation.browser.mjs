@@ -11,7 +11,7 @@ try {
   assert.equal(await page.locator('canvas').count(), 0);
   assert.doesNotMatch(await page.locator('main').innerText(), /Aucune campagne mesurée|Configuration interne|Mesures de référence/);
   const ids = await page.locator('[data-bench-access]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-bench-access')));
-  assert.deepEqual(ids.map(id => id.slice(0, 2)), Array.from({ length: 15 }, (_, index) => String(index + 1).padStart(2, '0')));
+  assert.deepEqual(ids.map(id => id.slice(0, 2)), Array.from({ length: 16 }, (_, index) => String(index + 1).padStart(2, '0')));
   assert.equal(await page.locator('[data-bench-access="15-full-pipeline"]').count(), 0);
   const cardHeights = await page.locator('[data-bench-access]').evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().height)));
   assert.equal(new Set(cardHeights).size, 1, `Hauteurs des accès incohérentes : ${cardHeights.join(', ')}`);
@@ -26,7 +26,7 @@ try {
     await page.locator('#select-module').selectOption('00-baseline');
     await page.waitForFunction(() => document.querySelector('#select-module')?.value === '00-baseline');
     await page.getByRole('heading', { name: 'Dashboard' }).waitFor();
-    assert.equal(await page.locator('[data-bench-access]').count(), 15);
+    assert.equal(await page.locator('[data-bench-access]').count(), 16);
   }
   await page.screenshot({ path: '/tmp/baseline-navigation.png', fullPage: true });
 } finally {

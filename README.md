@@ -21,7 +21,7 @@ Documentation : [méthodologie et preuves du Lab](docs/README.md) · [conception
 
 ## Master Test Plan & Execution Contract
 
-The laboratory contains a Dashboard and 15 experimental benches (`01`–`15`), plus the consultative baseline `00`. [`docs/PRINCIPES_DU_LAB.md`](docs/PRINCIPES_DU_LAB.md) is the canonical policy.
+The laboratory contains a Dashboard and 16 experimental benches (`01`–`16`), plus the consultative baseline `00`. [`docs/PRINCIPES_DU_LAB.md`](docs/PRINCIPES_DU_LAB.md) is the canonical policy.
 
 > **Philosophical Principle :**  
 > The lab determines experimentally which properties make GPU-driven rendering viable in WebGPU / Three.js, using simple, reproducible unit tests.
@@ -86,7 +86,7 @@ The laboratory builds progressively from independently verifiable rendering stag
 
 Bench 15 has separate public packages and a compiled, executed Rust library/CLI preparer with an internal native preparation cache. In Chrome, an Emerald Square slice of 149,998 triangles loaded successfully; two poses passed exact-pixel checks and four measurement blocks completed. Beauty, wireframe, clusters, LOD, error and page diagnostics work on that fixture. The complete city is visible, but its strict A/A control remains unstable, so full-city measurements are blocked and bench 15 is not complete. Injectable ports/stages, general simplification and eviction, native integration, and multiplatform performance CI remain open.
 
-All sixteen benches use the canonical layout and public boundaries described in [the laboratory principles](docs/PRINCIPES_DU_LAB.md#structure-des-bancs-0015). Run `npm run test:structure` to verify the layout, metadata and public imports. No legacy forwarding files remain; HTML routes and existing results are retained.
+All seventeen numbered entries use the canonical layout and public boundaries described in [the laboratory principles](docs/PRINCIPES_DU_LAB.md#structure-des-bancs-0016). Run `npm run test:structure` to verify the layout, metadata and public imports. No legacy forwarding files remain; HTML routes and existing results are retained.
 
 **Cross-cutting:** [`shared/contracts/`](shared/contracts/) holds the shared interfaces and contracts; [`shared/archive/`](shared/archive/) manages report persistence; [`shared/`](shared) holds the neutral, strictly comparable primitives (`gpu`, `scene`, `fixtures`, `benchmark`, `math`) that every bench shares; [`benchmarks/`](benchmarks/README.md) holds the metric harnesses. A real execution creates its self-contained report in `reports/<banc>/campaign-<id>/`.
 
@@ -160,7 +160,7 @@ These subjects are neither rejected nor scheduled. They stay dormant and only op
 
 ## Composants React obligatoires d’un banc
 
-La coque du Lab appartient à `src/components`, jamais à un banc. Toute route 00–15 utilise `LabShell` et `LabSection` pour les quatre panneaux dans l’ordre :
+La coque du Lab appartient à `src/components`, jamais à un banc. Toute route 00–16 utilise `LabShell` et `LabSection` pour les quatre panneaux dans l’ordre :
 1. **Configuration / mode d’exécution**
 2. **Métriques en direct**
 3. **Campagne / comparaison**

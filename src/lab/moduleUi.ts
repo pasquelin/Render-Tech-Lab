@@ -1,4 +1,5 @@
 import { MODULE_DESCRIPTORS } from './modules.ts';
+import { LIGHTING_UI } from '../../16-lighting-transport/index.ts';
 
 export type ModuleUi = {
   category: string;
@@ -45,6 +46,7 @@ const DEFAULT_UI: ModuleUi = {
 };
 
 const MODULE_UI: Record<string, Partial<ModuleUi>> = {
+  '16-lighting-transport': LIGHTING_UI,
   '00-baseline': { category: 'Référence', status: 'Consultation', showChart: false, protocol: 'Consultation : aucune campagne lancée depuis cette page.' },
   '01-indirect-draw': {
     category: 'Rendu indirect', status: 'Mesurable', hasModeChoice: true,

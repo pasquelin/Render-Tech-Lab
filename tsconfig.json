@@ -29,6 +29,7 @@
     "13-full-gpu-driven",
     "14-open-world",
     "15-virtualized-integration",
+    "16-lighting-transport",
     "04-gpu-lod",
     "05-meshlets",
     "03-gpu-scene",

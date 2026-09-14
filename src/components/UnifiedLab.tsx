@@ -1,5 +1,6 @@
 import { IntegrationFixtureLab } from './IntegrationFixtureLab.tsx';
 import { ModelLab } from './ModelLab.tsx';
+import { LightingLab } from './LightingLab.tsx';
 import type { IntegrationScene } from '../lab/modelView.ts';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { parseMarkdownToHtml } from '../lab/markdown.ts';
@@ -18,7 +19,7 @@ const idleActions: LabActions = {
 };
 
 export function UnifiedLab({ test, native }: { test: string; native: boolean }) {
-  return test === '15-virtualized-integration' ? <IntegrationLab /> : <StandardLab test={test} native={native} />;
+  return test === '16-lighting-transport' ? <LightingLab /> : test === '15-virtualized-integration' ? <IntegrationLab /> : <StandardLab test={test} native={native} />;
 }
 function IntegrationLab() {
   const [scene, setScene] = useState<IntegrationScene>('model');
@@ -57,7 +58,7 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
         });
         const unsubscribe = session.subscribe(setState);
         dispose = () => { unsubscribe(); session.dispose(); };
-        setActions({...session.actions,switchModule:id=>{if(id==='15-virtualized-integration'||test==='15-virtualized-integration')navigateLabRoute(id);else session.actions.switchModule(id);}});
+        setActions({...session.actions,switchModule:id=>{if(id==='15-virtualized-integration'||id==='16-lighting-transport'||test==='15-virtualized-integration')navigateLabRoute(id);else session.actions.switchModule(id);}});
         await session.start();
         return;
       }

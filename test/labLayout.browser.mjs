@@ -8,7 +8,7 @@ try {
  await page.getByRole('heading',{name:'Dashboard'}).waitFor();
  assert.equal(await page.locator('#btn-benchmark').isVisible(),false);
  assert.equal(await page.locator('#lab-metrics-card').count(),0);
- assert.equal(await page.locator('#dashboard-benches-card [data-bench-access]').count(),15);
+ assert.equal(await page.locator('#dashboard-benches-card [data-bench-access]').count(),16);
  assert.doesNotMatch(await page.locator('main').innerText(),/Aucune campagne|Configuration interne|Mesures de référence/);
  assert.equal(await page.locator('#canvas-chart').isVisible(),false);
  assert.equal(await page.locator('canvas').count(),0);

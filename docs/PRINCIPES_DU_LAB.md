@@ -24,10 +24,10 @@ Le préparateur Rust existe comme bibliothèque et CLI compilées et exécutées
 
 Les formats et exigences des rapports sont définis dans [`CONTRATS_DONNEES_ET_TESTS.md`](CONTRATS_DONNEES_ET_TESTS.md#9-contrat-des-résultats).
 
-## Structure des bancs 00–15
+## Structure des bancs 00–16
 
 Chaque banc expose `index.ts` et un `manifest.ts` de métadonnées sans initialisation de moteur. Ses contrats résident dans `contracts.ts`, les scénarios dans `scenarios/`, l’exécution dans `runner/`, les internes dans `implementation/`, la documentation dans `docs/` et les tests dans `tests/`. Les fixtures et outils d’assets occupent `fixtures/` et `assets/` lorsqu’ils existent. Les pages HTML à la racine conservent les routes. Les reporters et charts spécifiques restent dans `runner/` lorsqu’un banc en possède.
 
-Le registre `src/lab/manifests.ts` couvre exactement 00–15. Les imports de `src/lab` et les dépendances entre bancs passent par les entrées publiques. Les contrats communs, l’orchestration et les archives résident respectivement dans `shared/contracts`, `shared/benchmark` et `shared/archive`. Aucun relais de compatibilité ni ancien dossier `benchmark/`, `baseline/` ou `common/` ne subsiste dans un banc. `npm run test:structure` protège ces règles et charge les seize API publiques sans navigateur.
+Le registre `src/lab/manifests.ts` couvre exactement 00–16. Les imports de `src/lab` et les dépendances entre bancs passent par les entrées publiques. Les contrats communs, l’orchestration et les archives résident respectivement dans `shared/contracts`, `shared/benchmark` et `shared/archive`. Aucun relais de compatibilité ni ancien dossier `benchmark/`, `baseline/` ou `common/` ne subsiste dans un banc. `npm run test:structure` protège ces règles et charge les dix-sept API publiques sans navigateur.
 
 Les résultats et archives existants restent à leurs emplacements. Un `latest.json` créé faute de fichier historique indique explicitement `not-run` et ne remplace pas les résultats comparatifs existants. La migration structurelle ne constitue aucune nouvelle preuve de performance.

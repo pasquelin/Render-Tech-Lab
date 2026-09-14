@@ -17,6 +17,7 @@ export const MODULE_NAV = [
   { id: '13-full-gpu-driven', label: '13 · Full GPU-Driven Architecture' },
   { id: '14-open-world', label: '14 · Monde ouvert sous pression' },
   { id: '15-virtualized-integration', label: '15 · Pipeline de géométrie virtualisée' },
+  { id: '16-lighting-transport', label: '16 · Lumière' },
 ] as const;
 
 export const HINT_BASE = 'text-[10px] text-center font-mono truncate';

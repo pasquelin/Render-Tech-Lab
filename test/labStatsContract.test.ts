@@ -38,7 +38,7 @@ test('banks put campaign controls first and show reports only outside a running 
         assert.match(html, /id="dashboard-intro-card"/);
         assert.match(html, /id="dashboard-benches-card"/);
         assert.match(html, /grid grid-cols-2 gap-2/);
-        assert.equal((html.match(/data-bench-access=/g) ?? []).length, 15);
+        assert.equal((html.match(/data-bench-access=/g) ?? []).length, 16);
         assert.doesNotMatch(html, /lab-metrics-card|CPU submit|CPU frame|Draw calls/);
         continue;
       }
