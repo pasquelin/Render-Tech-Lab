@@ -42,7 +42,7 @@ export function PreparationStation({presentation,controls,children,footer}:{pres
       try {
         if (state.moduleId !== '04-gpu-lod' && state.moduleId !== '14-open-world') {
           const saved = await fetch(`/api/get-latest?testId=${encodeURIComponent(state.moduleId)}`, { signal: abort.signal });
-          if (saved.ok) {
+          if (saved.ok && saved.status !== 204) {
             const summary = campaignSummary(await saved.json());
             if (!abort.signal.aborted) setHistory({ moduleId: state.moduleId, summary });
           }
