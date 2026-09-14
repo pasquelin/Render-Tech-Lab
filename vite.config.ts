@@ -8,8 +8,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { writeReportArchive, writeStreamedReportArchive } from './shared/archive/index.ts';
-import { readSdkProvenance, sdkCheckoutFromLink, sdkDistPath } from './shared/campaign/sdkProvenance.ts';
-import { readMachineLoad, machineLoadForReport } from './shared/campaign/machineLoad.ts';
 
 async function streamedReportRequest(req: NodeJS.ReadableStream) {
   const iterator = req[Symbol.asyncIterator]();
@@ -27,32 +25,10 @@ async function streamedReportRequest(req: NodeJS.ReadableStream) {
     header = header.subarray(0, newline);
     break;
   }
-  const metadata = JSON.parse(header.toString('utf8')) as { testId?: unknown; markdown?: unknown; id?: unknown; truth?: unknown };
+  const metadata = JSON.parse(header.toString('utf8')) as { testId?: unknown; markdown?: unknown };
   if (typeof metadata.testId !== 'string' || typeof metadata.markdown !== 'string') throw new Error('En-tête de rapport invalide.');
   async function* body() { if (rest?.byteLength) yield rest; for (;;) { const next = await iterator.next(); if (next.done) return; yield Buffer.from(next.value); } }
-  return { header: { testId: metadata.testId, humanMarkdown: metadata.markdown, id: typeof metadata.id === 'string' ? metadata.id : undefined, truth: metadata.truth ?? undefined }, result: Readable.from(body()) };
-}
-
-/**
- * Provenance du SDK injectée au démarrage dans `__SDK_PROVENANCE__` : commit du checkout dont
- * vient `dist/` (ou `SDK_DIST`), drapeau dirty et hash de contenu du SDK. La charge machine du
- * bloc est servie à l'interface, qui n'y a pas accès depuis le navigateur.
- */
-function campaignProvenancePlugin(): Plugin {
-  return {
-    name: 'campaign-provenance',
-    async config(config) {
-      const root = config.root ?? process.cwd();
-      const provenance = await readSdkProvenance(sdkDistPath(process.env, sdkCheckoutFromLink(root)));
-      return { define: { __SDK_PROVENANCE__: JSON.stringify(provenance) } };
-    },
-    configureServer(server) {
-      server.middlewares.use('/api/machine-load', (_req, res) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(machineLoadForReport(readMachineLoad())));
-      });
-    },
-  };
+  return { header: { testId: metadata.testId, humanMarkdown: metadata.markdown }, result: Readable.from(body()) };
 }
 
 function saveReportPlugin(): Plugin {
@@ -310,7 +286,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), campaignProvenancePlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',

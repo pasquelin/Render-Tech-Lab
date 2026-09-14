@@ -2,19 +2,11 @@ import { INTEGRATION_SCENE_OPTIONS, type IntegrationScene } from '../lab/modelVi
 import type { ModelConfig } from '../lab/modelCampaign.ts';
 import { useModelPanel } from './useModelPanel.ts';
 import { Select } from './ui/Select.tsx';
-import { Input } from './ui/Input.tsx';
 import { RadioBoard } from './ui/RadioBoard.tsx';
-import { campaignFolderName } from '../../shared/campaign/truthReport.ts';
 import { LOD_QUALITY } from '@web-geometry/sdk';
 import { benchmarkModels } from '../../15-virtualized-integration/index.ts';
 import { defaultModelId } from '../lab/modelAvailability.ts';
 import { BENCH_ENGINES } from '../../15-virtualized-integration/implementation/engines.ts';
-
-/** Message d'erreur du champ « Nom de campagne », tiré de la règle de nommage des archives. */
-function campaignNameError(name: string) {
-  try { campaignFolderName(name); return undefined; }
-  catch (error) { return error instanceof Error ? error.message : String(error); }
-}
 
 export function ModelLaunchFields() {
   const { view, config, onIntegrationScene, state } = useModelPanel();
@@ -53,31 +45,6 @@ export function ModelLaunchFields() {
           { value: 'path', title: 'Parcours reproductible (4 moteurs)', detail: 'THREE.js basic → THREE.js LOD → WebGeometry WebGL → WebGeometry WebGPU. Une photo par segment.' },
         ]}
       />
-      {config.mode === 'path' && (
-        <div className="space-y-4 min-w-0">
-          <div className="grid grid-cols-2 gap-3 min-w-0">
-            <Input id="model-measure-width" label="Largeur de mesure (px CSS)" type="number" min={320} step={1} value={config.measureWidth} disabled={frozen} onChange={event => set('measureWidth', Number(event.target.value))} />
-            <Input id="model-measure-height" label="Hauteur de mesure (px CSS)" type="number" min={240} step={1} value={config.measureHeight} disabled={frozen} onChange={event => set('measureHeight', Number(event.target.value))} />
-          </div>
-          <Select id="model-pixel-ratio" label="Pixels physiques par pixel CSS" help="Le canvas physique mesure la résolution CSS multipliée par ce facteur." value={config.pixelRatio} disabled={frozen} onChange={event => set('pixelRatio', Number(event.target.value))}>
-            <option value={1}>DPR 1</option>
-            <option value={2}>DPR 2</option>
-          </Select>
-          <Select id="model-engine-order" label="Sens des moteurs" help="Un bloc complet enchaîne le sens direct puis le sens inverse ; les deux passes sont conservées." value={config.engineOrder} disabled={frozen} onChange={event => set('engineOrder', event.target.value as ModelConfig['engineOrder'])}>
-            <option value="direct">Aller · ordre du protocole</option>
-            <option value="reverse">Retour · ordre inversé</option>
-          </Select>
-          <Input
-            id="model-campaign-name"
-            label="Nom de campagne"
-            help="Dossier d'archive sous reports/15-virtualized-integration/. Lettres, chiffres et tirets ; le préfixe « campaign- » est réservé à la rétention à deux campagnes."
-            error={campaignNameError(config.campaignName)}
-            value={config.campaignName}
-            disabled={frozen}
-            onChange={event => set('campaignName', event.target.value.replace(/[^A-Za-z0-9-]/g, '-'))}
-          />
-        </div>
-      )}
       {config.mode === 'explore' && (
         <RadioBoard
           id="model-start-engine"

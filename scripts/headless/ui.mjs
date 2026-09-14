@@ -1,35 +1,21 @@
-// Pilotage de l'interface réelle du Lab : lancement puis bascule de moteur.
-// Usage : node ui.mjs
-import { launch, URL_BASE } from './lib.mjs';
-
-const { browser } = await launch({ headless: true });
+import { chromium, BASE_FLAGS, URL_BASE } from './lib.mjs';
+const engine = process.argv[2] ?? 'webgpu-page-raster';
+const browser = await chromium.launch({ headless: true, executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', args: [...BASE_FLAGS, '--enable-unsafe-webgpu'] });
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 400)); });
 page.on('pageerror', e => errors.push('PAGEERROR ' + (e.stack || e.message).slice(0, 600)));
 await page.goto(URL_BASE + '/?test=15-virtualized-integration', { waitUntil: 'load' });
 await page.waitForTimeout(1500);
-const selectWebgpu = async () => {
-  for (const select of await page.locator('select').all()) {
-    const labels = await select.locator('option').allTextContents();
-    const target = labels.find(text => /WebGPU/i.test(text));
-    if (target) { await select.selectOption({ label: target }); console.log('select ->', target); return; }
-  }
-};
-await selectWebgpu();
-const button = page.locator('button', { hasText: /Lancer|Démarrer|Explorer|exploration|Start/i }).first();
-console.log('bouton:', await button.textContent());
-await button.click();
+const selects = await page.locator('select').all();
+for (const s of selects) { const opts = await s.locator('option').allTextContents(); if (opts.some(t => /WebGPU/i.test(t))) { await s.selectOption({ label: opts.find(t => /WebGPU/i.test(t)) }); console.log('select ->', opts.find(t => /WebGPU/i.test(t))); break; } }
+const btn = page.locator('button', { hasText: /Lancer|Démarrer|Explorer|exploration|Start/i }).first();
+console.log('bouton:', await btn.textContent());
+await btn.click();
 await page.waitForTimeout(8000);
-await selectWebgpu();
-for (let i = 0; i < 40; i++) {
-  await page.waitForTimeout(1000);
-  const text = await page.locator('body').innerText();
-  const found = text.match(/Chargement interrompu[^\n]*|Moteur affiché : [^\n]*|Rapport archivé[^\n]*/g);
-  if (found && found.some(line => /interrompu|archivé/.test(line))) { console.log('STATUS', found.join(' | ')); break; }
-  if (i === 39) console.log('STATUS (fin)', (found ?? []).join(' | '));
-}
-const text = await page.locator('body').innerText();
-console.log('metrics:', (text.match(/Triangles sélectionnés\n[\d ]+/g) ?? []).join(' ; '), text.match(/FPS\n[\d,.]+ FPS/g) ?? '');
+{ const selects = await page.locator('select').all();
+  for (const s of selects) { const opts = await s.locator('option').allTextContents(); if (opts.some(t => /WebGPU/i.test(t))) { await s.selectOption({ label: opts.find(t => /WebGPU/i.test(t)) }); console.log('switch ->', opts.find(t => /WebGPU/i.test(t))); break; } } }
+for (let i = 0; i < 40; i++) { await page.waitForTimeout(1000); const t = await page.locator('body').innerText(); const m = t.match(/Chargement interrompu[^\n]*|Moteur affiché : [^\n]*|Rapport archivé[^\n]*/g); if (m && m.some(x => /interrompu|archivé/.test(x))) { console.log('STATUS', m.join(' | ')); break; } if (i === 39) console.log('STATUS (fin)', (m ?? []).join(' | ')); }
+const t = await page.locator('body').innerText(); const fps = t.match(/FPS\n[\d,.]+ FPS/g); console.log('metrics:', (t.match(/Triangles sélectionnés\n[\d ]+/g) ?? []).join(' ; '), fps ?? '');
 console.log('errors:', errors.slice(0, 6).join('\n'));
 await browser.close();

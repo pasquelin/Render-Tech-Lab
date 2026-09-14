@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import type { Explorer, FrameMetrics, CameraPose } from '@web-geometry/sdk/browser';
 import * as THREE from 'three';
 import type { ModelView, IntegrationScene } from '../lab/modelView.ts';
-import { applyAaControlResult, aaControlReason, defaultModelConfig, modelMeasurementKind, pathQueue, runAaControl, truthFromModelReport, urbanPath, segmentNames, framesPerSegment, warmupFrames, retainReports, pixelErrorFor, pathVersion, stillFromFrame, type ModelConfig, type ModelReport } from '../lab/modelCampaign.ts';
-import { readMachineLoad } from '../lab/machineLoadClient.ts';
+import { applyAaControlResult, aaControlReason, defaultModelConfig, modelMeasurementKind, runAaControl, urbanPath, segmentNames, framesPerSegment, warmupFrames, retainReports, pixelErrorFor, pathVersion, stillFromFrame, type ModelConfig, type ModelReport } from '../lab/modelCampaign.ts';
 import { jpegFromRgba } from '../lab/modelCapture.ts';
 import { BENCH_ENGINES, PATH_CAMPAIGN_ENGINES, engineFactories, needsResidentPages, selectableBackend, type BenchEngineId } from '../../15-virtualized-integration/implementation/engines.ts';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
@@ -16,7 +15,7 @@ import { loadMarkdownReport } from '../lab/reportReader.ts';
 import { clearColorFromSurface } from '../lab/renderSurface.ts';
 const historyKey='render-tech-lab:model-runs:v1';
 const CLUSTER_VIEWS:ReadonlyArray<ModelConfig['diagnostic']>=['clusters','pages','lod','visibility','screen-error'];
-const LAUNCH_KEYS:ReadonlyArray<keyof ModelConfig>=['modelId','cities','detail','lodQuality','mode','debug','measureWidth','measureHeight','pixelRatio','campaignName','engineOrder'];
+const LAUNCH_KEYS:ReadonlyArray<keyof ModelConfig>=['modelId','cities','detail','lodQuality','mode','debug'];
 const PATH_KEYS:ReadonlyArray<keyof ModelConfig>=['engine','diagnostic','camera'];
 function applyLiveConfig(owned:Explorer,next:ModelConfig,previous:ModelConfig,controls:{current:ReturnType<Explorer['controls']>|ReturnType<Explorer['flyControls']>|undefined}){
  const cluster=CLUSTER_VIEWS.includes(next.diagnostic);
@@ -61,11 +60,6 @@ function replaceRenderCanvas(ref:RefObject<HTMLCanvasElement|null>){
  return next;
 }
 function yieldFrame(){return new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));}
-/** Impose la résolution CSS de mesure pendant un parcours ; l'exploration libre reprend la taille du conteneur. */
-function imposeMeasureSize(canvas:HTMLCanvasElement,config:Pick<ModelConfig,'measureWidth'|'measureHeight'>|null){
- canvas.style.width=config?`${config.measureWidth}px`:'';
- canvas.style.height=config?`${config.measureHeight}px`:'';
-}
 export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
  const webglRef=useRef<HTMLCanvasElement>(null),webgpuRef=useRef<HTMLCanvasElement>(null),chartRef=useRef<HTMLCanvasElement>(null);
  const explorerRef=useRef<Explorer|undefined>(undefined),configRef=useRef<ModelConfig>(defaultModelConfig);
@@ -92,19 +86,15 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   if(!enabled||!webglRef.current)return;
   const abort=new AbortController(),started=performance.now();let owned:Explorer|undefined,frame=0,resize:ResizeObserver|undefined,finished=false;
   const pathCampaign=config.mode==='path';
-  // Le protocole impose le journal résumé pendant les fenêtres chronométrées : jamais « trace ».
-  const measurementMode=pathCampaign?'summary':config.debug?'trace':'summary';
-  const queue=pathCampaign?pathQueue(PATH_CAMPAIGN_ENGINES,config.engineOrder):[config.engine];
-  let blockLoad:Awaited<ReturnType<typeof readMachineLoad>>=null,devicePixels:[number,number]|null=null;
- const run:ModelReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.',aaControl:{status:'not-run'},truth:null};
+  const queue=pathCampaign?[...PATH_CAMPAIGN_ENGINES]:[config.engine];
+ const run:ModelReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.',aaControl:{status:'not-run'}};
  const log=(level:ModelReport['engineEvents'][number]['level'],phase:string,message:string,context:Record<string,unknown>={})=>run.engineEvents.push({timestamp:new Date().toISOString(),level,phase,message,context});
  log('info','created','Campagne créée',{modelId:config.modelId||defaultModelId(),engines:queue,resolution:run.resolution,instances:config.cities,debug:!!config.debug,measurementKind:modelMeasurementKind(run.configuration)});
   campaignRef.current=run;
   const drop=()=>{cancelAnimationFrame(frame);resize?.disconnect();resize=undefined;controlsRef.current?.dispose();controlsRef.current=undefined;if(explorerRef.current===owned)explorerRef.current=undefined;owned?.dispose();owned=undefined;THREE.Cache.clear();};
   const finish=(status:ModelReport['status'],error?:string)=>{
    if(finished)return;finished=true;run.status=status;run.error=error??null;
-   run.truth=truthFromModelReport(run,{campaign:config.campaignName,sdk:__SDK_PROVENANCE__,machineLoad:blockLoad,measurementMode,deviceWidth:devicePixels?.[0]??null,deviceHeight:devicePixels?.[1]??null});
-   log(status==='error'?'error':'info','finished',error??`Campagne ${status}`,{samples:run.samples.length,captures:run.captures.length,fallbacks:run.fallbacks,refreshCeilingHz:run.truth.refreshCeiling.hz,sdkCommit:run.truth.sdk.commit,sdkDirty:run.truth.sdk.dirty});
+   log(status==='error'?'error':'info','finished',error??`Campagne ${status}`,{samples:run.samples.length,captures:run.captures.length,fallbacks:run.fallbacks});
    drop();abort.abort();setEnabled(false);setReport(run);
    setHistory(previous=>retainReports(previous,run));
    setDisplay(old=>({...old,status,message:'Parcours terminé. Sauvegarde du rapport en cours…',progress:null,metrics:null,frameIntervalMs:null}));
@@ -113,8 +103,6 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   finishRef.current=finish;
   void(async()=>{try{
    const {createExplorer}=await import('@web-geometry/sdk/browser');
-   blockLoad=await readMachineLoad();
-   log('info','machine-load','Charge machine relevée avant le bloc',{load1:blockLoad?.load1??null,load5:blockLoad?.load5??null,thermal:blockLoad?.thermal??null});
    for(let enginePass=0;enginePass<queue.length;enginePass++){
     if(abort.signal.aborted||finished)return;
     const engineId=queue[enginePass];
@@ -123,10 +111,8 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     if(enginePass>0){drop();await yieldFrame();if(abort.signal.aborted||finished)return;}
     const canvas=enginePass>0?replaceRenderCanvas(webglRef):webglRef.current;
     if(!canvas)throw new Error('Canvas absent');
-    imposeMeasureSize(canvas,pathCampaign?config:null);
     const box=canvas.getBoundingClientRect();
     const width=Math.max(1,Math.round(box.width)),height=Math.max(1,Math.round(box.height));
-    if(pathCampaign&&(width!==config.measureWidth||height!==config.measureHeight))throw new Error(`Résolution de mesure non imposée : canvas ${width} × ${height} au lieu de ${config.measureWidth} × ${config.measureHeight} CSS. Élargissez la fenêtre ou réduisez la résolution demandée.`);
     const surfaceColor=clearColorFromSurface(canvas);
     const clearColor=surfaceColor.value;
     const colorContext={engine:engineId,source:surfaceColor.source,themeColor:surfaceColor.themeColor,computedBackground:surfaceColor.computedBackground,clearColor:surfaceColor.hex};
@@ -134,15 +120,14 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     console.info('[render-tech-lab] couleur de fond transmise au moteur',colorContext);
     if(enginePass===0)run.resolution=[width,height];
     else if(width!==run.resolution[0]||height!==run.resolution[1])throw new Error('La résolution a changé entre les moteurs. Relancez pour conserver un protocole identique.');
-    owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId||defaultModelId()),scope:'full',signal:abort.signal,width,height,pixelRatio:config.pixelRatio,clearColor,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:pathCampaign&&needsResidentPages(engineId,engineId)?'all':'visible',backends:engineFactories([engineId]),comparisonLayout:'single',comparisonPair:[engineId,engineId],diagnosticDetail:measurementMode,onDiagnostic:diagnostic=>run.engineEvents.push({timestamp:new Date(diagnostic.createdAt??Date.now()).toISOString(),level:diagnostic.phase==='diagnostic-loss'?'warn':'info',phase:`engine:${diagnostic.phase}`,message:diagnostic.message,context:{engine:engineId,...diagnostic.context,diagnosticSequence:diagnostic.sequence,diagnosticSession:diagnostic.sessionId,diagnosticCreatedAt:diagnostic.createdAt}}),onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:queue.length});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
+    owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId||defaultModelId()),scope:'full',signal:abort.signal,width,height,clearColor,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:pathCampaign&&needsResidentPages(engineId,engineId)?'all':'visible',backends:engineFactories([engineId]),comparisonLayout:'single',comparisonPair:[engineId,engineId],diagnosticDetail:config.debug?'trace':'summary',onDiagnostic:diagnostic=>run.engineEvents.push({timestamp:new Date(diagnostic.createdAt??Date.now()).toISOString(),level:diagnostic.phase==='diagnostic-loss'?'warn':'info',phase:`engine:${diagnostic.phase}`,message:diagnostic.message,context:{engine:engineId,...diagnostic.context,diagnosticSequence:diagnostic.sequence,diagnosticSession:diagnostic.sessionId,diagnosticCreatedAt:diagnostic.createdAt}}),onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:queue.length});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});
     if(abort.signal.aborted){drop();return;}
     if(!owned)throw new Error('Canvas absent');
     const session=owned;
     explorerRef.current=session;
     setLiveBackends(owned.backends.map(backend=>backend.id));
-    devicePixels=[canvas.width,canvas.height];
     run.preparationMs=(run.preparationMs??0)+owned.preparationMs;run.sourceKey=owned.metadata.key;
-    log('info','engine-ready','Moteur prêt',{engine:engineId,backend:owned.backend,preparationMs:owned.preparationMs,sourceKey:run.sourceKey,cssResolution:[width,height],devicePixels,pixelRatio:config.pixelRatio});
+    log('info','engine-ready','Moteur prêt',{engine:engineId,backend:owned.backend,preparationMs:owned.preparationMs,sourceKey:run.sourceKey});
     if(!owned.backends.some(backend=>backend.id===engineId))throw new Error(engineId==='webgpu-page-raster'?`Le raster WebGPU n’a pas été créé (adaptateur absent, device perdu ou repli silencieux).`:`Le moteur ${engineLabel(engineId)} n’a pas été créé sur son canvas isolé.`);
     owned.select(engineId);owned.setDiagnostic(pathCampaign?'beauty':config.diagnostic);
     if(!pathCampaign&&config.engine==='webgpu-page-raster'&&owned.backend!=='webgpu-page-raster'&&!run.fallbacks.includes('WebGPU page raster unavailable'))run.fallbacks.push('WebGPU page raster unavailable');

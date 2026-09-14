@@ -1,6 +1,5 @@
 import { BENCH_ENGINES } from '../../15-virtualized-integration/index.ts';
 import { aaControlReason, segmentNames, type ModelReport, type ModelStill } from './modelCampaign.ts';
-import type { TruthReport } from '../../shared/campaign/truthReport.ts';
 
 const engineLabel = (id: string) => BENCH_ENGINES.find(engine => engine.id === id)?.label ?? id;
 const value = (number: number | null, digits = 0) => number === null || !Number.isFinite(number) ? 'Non mesuré' : number.toFixed(digits);
@@ -33,30 +32,6 @@ function table(rows: Array<Array<string | number>>) {
   ].join('\n');
 }
 
-/** Écrit `null` littéral : une case vide ou un « non mesuré » ambigu est interdit. */
-const nullable = (number: number | null, digits = 0) => number === null || !Number.isFinite(number) ? 'null' : number.toFixed(digits);
-
-/** Conditions de la campagne. Ce qui n'est pas mesuré est écrit `null`, jamais deviné. */
-function campaignSection(truth: TruthReport | null) {
-  if (!truth) return ['', '## Campagne de vérité', '', '- Rapport de campagne : `null`. Cette campagne n’a pas été close.'];
-  const { resolution: box, sdk, refreshCeiling: ceiling } = truth;
-  const load = truth.passes.find(pass => pass.machineLoad)?.machineLoad ?? null;
-  return [
-    '', '## Campagne de vérité', '',
-    `- Campagne : \`${truth.campaign}\` ; scène : \`${truth.scene}\` ; instances : ${truth.replicaCount ?? 'null'} ; ordre des moteurs : ${truth.engineOrder}.`,
-    `- Mode de mesure : ${truth.measurementMode} ; seuil d’image lente : ${truth.slowFrameThresholdMs.toFixed(3)} ms ; pixelError : ${truth.pixelError ?? 'null'}.`,
-    `- Résolution CSS : ${box.cssWidth ?? 'null'} × ${box.cssHeight ?? 'null'} ; pixels physiques : ${box.deviceWidth ?? 'null'} × ${box.deviceHeight ?? 'null'} ; DPR : ${box.devicePixelRatio ?? 'null'}.`,
-    `- Plafond rAF calibré : ${ceiling.hz ?? 'null'} Hz ; fréquence soutenue la plus rapide : ${ceiling.fastestSustainedHz === null ? 'null' : `${ceiling.fastestSustainedHz.toFixed(1)} Hz`}.`,
-    `- SDK : commit \`${sdk.commit ?? 'null'}\`${sdk.dirty === null ? '' : sdk.dirty ? ' (dépôt sale)' : ' (dépôt propre)'} ; hash de contenu \`${sdk.contentHash ?? 'null'}\` ; dist \`${sdk.distPath ?? 'null'}\`.`,
-    `- Charge machine avant le bloc : load1 ${load?.load1 ?? 'null'} / load5 ${load?.load5 ?? 'null'} / load15 ${load?.load15 ?? 'null'} ; thermique : ${load?.thermal ? load.thermal.replace(/\s+/g, ' ') : 'null'}.`,
-    `- Durée GPU par image et VRAM physique : \`null\`. CPU et GPU ne sont jamais additionnés.`,
-    '',
-    '| Moteur | FPS | p50 (ms) | p95 (ms) | p99 (ms) | Images > seuil | Écart aller/retour |',
-    '|---|---|---|---|---|---|---|',
-    ...truth.aggregates.map(item => `| ${cell(engineLabel(item.engine))} | ${nullable(item.fps, 1)} | ${nullable(item.p50, 2)} | ${nullable(item.p95, 2)} | ${nullable(item.p99, 2)} | ${nullable(item.slowFrames)} | ${item.deltaPct === null ? 'null' : `${item.deltaPct.toFixed(1)} %${item.alert ? ' — alerte' : ''}`} |`),
-  ];
-}
-
 /** Human view; the archive adds links to raw data, the complete journal and capture galleries. */
 export function formatModelDiagnosticReport(report: ModelReport) {
   const engines = report.pathEngines.length ? report.pathEngines : [...new Set(report.captures.map(still => still.engine))];
@@ -64,7 +39,6 @@ export function formatModelDiagnosticReport(report: ModelReport) {
     '# 15-virtualized-integration — rapport de diagnostic',
     '',
     `Date : ${report.timestamp}. Statut : ${report.status}.`,
-    ...campaignSection(report.truth),
     '',
     '## Configuration reproductible',
     '',

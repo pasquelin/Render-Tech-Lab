@@ -2,14 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { formatModelDiagnosticReport } from '../src/lab/modelReportMarkdown.ts';
 import { pathVersion, type ModelReport } from '../src/lab/modelCampaign.ts';
-import { buildTruthReport, canvasResolution, frameDistribution } from '../shared/campaign/truthReport.ts';
 
 const report: ModelReport = {
   version: 1,
   id: 'run-15',
   timestamp: '2026-09-13T09:00:00.000Z',
   status: 'completed',
-  configuration: { cities: 1, detail: 'source', lodQuality: 'high', mode: 'path', camera: 'orbit', diagnostic: 'beauty', layout: 'single', engine: 'exact-cluster-pages', compareEngine: 'three-webgl-reference', wipe: 0.5, measureWidth: 1280, measureHeight: 720, pixelRatio: 2, campaignName: 'verite-report', engineOrder: 'direct' },
+  configuration: { cities: 1, detail: 'source', lodQuality: 'high', mode: 'path', camera: 'orbit', diagnostic: 'beauty', layout: 'single', engine: 'exact-cluster-pages', compareEngine: 'three-webgl-reference', wipe: 0.5 },
   pathEngines: ['three-webgl-reference', 'exact-cluster-pages'],
   sourceKey: 'model-v1',
   availableTriangles: 1000,
@@ -33,19 +32,6 @@ const report: ModelReport = {
   comparison: 'visual-only',
   comparisonReason: 'Ancienne affirmation à ne pas reprendre.',
   aaControl: { status: 'not-run' },
-  truth: buildTruthReport({
-    source: 'ui', campaign: 'verite-report', id: 'run-15', timestamp: '2026-09-13T09:00:00.000Z',
-    scene: 'emerald-square', engines: ['three-webgl-reference', 'exact-cluster-pages'], engineOrder: 'direct',
-    replicaCount: 1, pixelError: 0, measurementMode: 'summary',
-    resolution: canvasResolution({ cssWidth: 1280, cssHeight: 720, devicePixelRatio: 2 }),
-    sdk: { commit: 'b'.repeat(40), dirty: true, checkout: '/c', distPath: '/c/dist', contentHash: 'hash-sdk', generatedAt: null },
-    passes: [{
-      engine: 'exact-cluster-pages', order: 'direct', index: 0,
-      machineLoad: { at: '2026-09-13T09:00:00.000Z', load1: 2.5, load5: 2, load15: 1, thermal: null, chromeProcesses: 1, compilerProcesses: 0, viteProcesses: 1 },
-      raf: frameDistribution([8.33, 8.33, 8.33]), cpuFrameMs: null, cpuSubmitMs: null,
-      gpuMs: null, vramBytes: null, selectedTriangles: 900, triangles: 900, drawCalls: 6, residentPages: 5, shots: null, error: null,
-    }],
-  }),
 };
 
 test('Model archive explains capture-by-capture engine differences without claiming a performance verdict', () => {
@@ -69,20 +55,6 @@ test('Model archive explains capture-by-capture engine differences without claim
   assert.match(markdown, /Pas un verdict de performance/);
   assert.match(markdown, /0 images mesurées, 2 captures, 0 événements moteur/);
   assert.doesNotMatch(markdown, /bloc machine du présent Markdown/);
-});
-
-test('le rapport consigne les conditions de la campagne, la provenance du SDK et la charge machine', () => {
-  const markdown = formatModelDiagnosticReport(report);
-  assert.match(markdown, /## Campagne de vérité/);
-  assert.match(markdown, /Campagne : `verite-report`/);
-  assert.match(markdown, /Mode de mesure : summary/);
-  assert.match(markdown, /Résolution CSS : 1280 × 720 ; pixels physiques : 2560 × 1440 ; DPR : 2/);
-  assert.match(markdown, /Plafond rAF calibré : 120 Hz/);
-  assert.match(markdown, new RegExp(`commit \`${'b'.repeat(40)}\` \\(dépôt sale\\)`));
-  assert.match(markdown, /hash de contenu `hash-sdk`/);
-  assert.match(markdown, /load1 2\.5 \/ load5 2 \/ load15 1/);
-  assert.match(markdown, /Durée GPU par image et VRAM physique : `null`/);
-  assert.match(markdown, /\| WebGeometry WebGL \| 120\.0 \|/);
 });
 
 test('Model archive renders the explicit A/A outcome and still blocks the performance verdict', () => {

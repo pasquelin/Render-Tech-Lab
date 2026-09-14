@@ -1,45 +1,32 @@
-// Banc 15 — bibliothèque commune des scripts headless.
+// Campagne A — bibliothèque commune. SCRATCHPAD UNIQUEMENT.
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import http from 'node:http';
 import zlib from 'node:zlib';
-import { buildTruthReport, canvasResolution, parseCampaignOptions, frameDistribution } from '../../shared/campaign/truthReport.ts';
-import { readSdkProvenance, sdkCheckoutFromLink, sdkDistPath } from '../../shared/campaign/sdkProvenance.ts';
-import { readMachineLoad, machineLoadForReport } from '../../shared/campaign/machineLoad.ts';
 
-export const LAB = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const SDK = sdkCheckoutFromLink(LAB);
-export const SDK_DIST = sdkDistPath(process.env, SDK);
-export const TEST_ID = '15-virtualized-integration';
-export const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+export const LAB = '/Users/pasquelin/Applications/render-tech-lab';
+export const SDK = '/Users/pasquelin/Applications/webGeometry';
+export const URL_BASE = process.env.LAB_URL ?? 'http://127.0.0.1:5175';
 export const OUT = process.env.OUT_DIR ?? '/tmp/wg-headless';
 export const { chromium } = createRequire(resolve(LAB, 'package.json'))('playwright');
 
-/** Ordre figé du protocole : A référence Three.js, B LOD Three.js, C WebGeometry WebGL, D WebGeometry WebGPU. */
-export const ALL_ENGINES = ['three-webgl-reference', 'three-lod', 'exact-cluster-pages', 'webgpu-page-raster'];
-export const ALL_SCENES = ['emerald-square', 'drive-for-speed-map', 'bistro-exterior', 'low-poly-city', 'new-york', 'new-york-manhattan', 'skibidi-toilet-77-map', 'accucities-london'];
+export const ALL_ENGINES = ['three-webgl-reference', 'exact-cluster-pages', 'webgpu-page-raster', 'three-lod'];
+// ABBA : A=three ref, B=WG WebGL, C=WG WebGPU, D=three LOD  ->  A B C D D C B A
+export const abba = e => [...e, ...[...e].reverse()];
 
-/**
- * Drapeaux Chrome de toutes les mesures. `--disable-frame-rate-limit` et `--disable-gpu-vsync`
- * lèvent le plafond 60 Hz : sans eux aucun FPS mesuré ne peut dépasser 60.
- */
 export const BASE_FLAGS = [
   '--disable-backgrounding-occluded-windows',
   '--disable-renderer-backgrounding',
   '--disable-background-timer-throttling',
   '--enable-gpu-benchmarking',
-  '--disable-frame-rate-limit',
-  '--disable-gpu-vsync',
-  '--enable-unsafe-webgpu',
 ];
+export const NOVSYNC_FLAGS = ['--disable-frame-rate-limit', '--disable-gpu-vsync'];
 
-export const options = parseCampaignOptions(process.env, { scenes: ALL_SCENES.slice(0, 1), engines: ALL_ENGINES });
-export const URL_BASE = options.labUrl;
-export const sdkUrl = '/@fs' + join(SDK_DIST, 'sdk-browser/index.js');
+export const sdkUrl = '/@fs' + resolve(SDK, 'dist/sdk-browser/index.js');
 export const manifestUrlFor = scene => `/benchmark-assets/${scene}-derived/native/full/manifest.json`;
 
 // ---------------------------------------------------------------- empreintes
@@ -49,11 +36,11 @@ export function clustersPathFor(scene) {
   const pointer = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
   return join(dir, pointer.url);
 }
-/** Empreinte de contenu d'un cache de scène. Lit le fichier de clusters entier : coûteux sur les grosses scènes. */
-export function fingerprints(scenes = ['low-poly-city']) {
+export function fingerprints(scenes = ['low-poly-city', 'emerald-square']) {
   const fp = {
-    'dist/sdk-browser/index.js': sha(join(SDK_DIST, 'sdk-browser/index.js')),
-    'dist/sdk-core/contracts.js': sha(join(SDK_DIST, 'sdk-core/contracts.js')),
+    commit: execFileSync('git', ['-C', SDK, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+    'dist/sdk-browser/index.js': sha(join(SDK, 'dist/sdk-browser/index.js')),
+    'dist/sdk-core/contracts.js': sha(join(SDK, 'dist/sdk-core/contracts.js')),
   };
   for (const s of scenes) {
     const p = clustersPathFor(s);
@@ -65,17 +52,41 @@ export function fingerprints(scenes = ['low-poly-city']) {
 }
 
 // ---------------------------------------------------------------- interférence
-export { readMachineLoad as machineLoad, machineLoadForReport };
+export function machineLoad() {
+  const up = execFileSync('uptime', { encoding: 'utf8' }).trim();
+  const m = up.match(/load averages?:\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
+  const ps = execFileSync('/bin/sh', ['-c',
+    "ps -Ao pid,pcpu,comm | grep -Ei 'Google Chrome|web-geometry-compiler|cargo|vite|node' | grep -v grep || true"],
+    { encoding: 'utf8' });
+  const lines = ps.trim().split('\n').filter(Boolean);
+  const strangers = lines.filter(l => !/\s\d+\.\d+\s+node$/.test(l));
+  return {
+    at: new Date().toISOString(), uptime: up,
+    load1: m ? Number(m[1]) : null, load5: m ? Number(m[2]) : null, load15: m ? Number(m[3]) : null,
+    chromeProcesses: lines.filter(l => /Google Chrome/i.test(l)).length,
+    compilerProcesses: lines.filter(l => /web-geometry-compiler|cargo/i.test(l)).length,
+    viteProcesses: lines.filter(l => /vite/i.test(l)).length,
+    processes: strangers.slice(0, 40),
+  };
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 /** Attend jusqu'à `maxMs` que le load 1-min passe sous `target`. Renvoie le relevé retenu. */
 export async function waitForQuiet(target = 8, maxMs = 180000) {
-  const start = Date.now(); const trace = []; let last = readMachineLoad();
+  const start = Date.now(); const trace = []; let last = machineLoad();
   trace.push({ t: 0, load1: last.load1 });
   while (last.load1 !== null && last.load1 > target && Date.now() - start < maxMs) {
-    await sleep(10000); last = readMachineLoad();
+    await sleep(10000); last = machineLoad();
     trace.push({ t: Math.round((Date.now() - start) / 1000), load1: last.load1 });
   }
   return { ...last, waitedMs: Date.now() - start, waitTrace: trace, interference: !(last.load1 !== null && last.load1 <= target) };
+}
+
+// ---------------------------------------------------------------- statistiques
+const q = (s, p) => s[Math.min(s.length - 1, Math.ceil(s.length * p) - 1)];
+export function dist(values) {
+  const s = [...values].filter(v => Number.isFinite(v) && v >= 0).sort((a, b) => a - b);
+  if (!s.length) return null;
+  return { n: s.length, p50: q(s, .5), p95: q(s, .95), p99: q(s, .99), max: s.at(-1), min: s[0], mean: s.reduce((a, b) => a + b, 0) / s.length };
 }
 
 // ---------------------------------------------------------------- PNG
@@ -128,17 +139,10 @@ export async function captureSink(port = 5199) {
 }
 
 // ---------------------------------------------------------------- Chrome
-export async function launch({ headless = true, extra = [] } = {}) {
-  const args = [...BASE_FLAGS, ...extra];
-  const browser = await chromium.launch({ executablePath: CHROME, headless, args });
+export async function launch({ headless, noVsync, extra = [] }) {
+  const args = [...BASE_FLAGS, ...(noVsync ? NOVSYNC_FLAGS : []), ...extra];
+  const browser = await chromium.launch({ channel: 'chrome', headless, args });
   return { browser, args };
-}
-/** Page dimensionnée en pixels CSS avec le DPR demandé : le canvas physique vaut CSS × DPR. */
-export async function measurePage(browser, { cssWidth, cssHeight, devicePixelRatio }) {
-  const page = await browser.newPage({ viewport: { width: cssWidth, height: cssHeight }, deviceScaleFactor: devicePixelRatio });
-  page.on('pageerror', e => console.log('PAGEERROR', e.message));
-  await page.goto(URL_BASE + '/', { waitUntil: 'load' });
-  return page;
 }
 export async function gpuInfo(browser) {
   const s = await browser.newBrowserCDPSession();
@@ -155,61 +159,6 @@ export async function gpuInfo(browser) {
     software: /swiftshader|llvmpipe|lavapipe/i.test(text),
     metal: /metal|apple/i.test(text),
   };
-}
-
-// ---------------------------------------------------------------- rapport de campagne
-/** Passe de mesure au schéma du rapport, à partir des séries brutes remontées par la page. */
-export function passFromSeries({ engine, order, index, load, series, metrics, shots = null, error = null }) {
-  const threshold = options.slowFrameThresholdMs;
-  return {
-    engine, order, index,
-    machineLoad: load ? machineLoadForReport(load) : null,
-    raf: frameDistribution(series.rafIntervalMs ?? [], threshold),
-    cpuFrameMs: frameDistribution(series.cpuFrameMs ?? [], threshold),
-    cpuSubmitMs: frameDistribution(series.cpuSubmitMs ?? [], threshold),
-    gpuMs: null,
-    vramBytes: null,
-    selectedTriangles: metrics?.selectedTriangles ?? null,
-    triangles: metrics?.triangles ?? null,
-    drawCalls: metrics?.drawCalls ?? null,
-    residentPages: metrics?.residentPages ?? null,
-    shots,
-    error,
-  };
-}
-
-/** Assemble le rapport de campagne headless : même schéma que celui de l'interface. */
-export async function truthReport({ scene, engines, engineOrder, passes, id, environment = null, pixelError = options.pixelError }) {
-  return buildTruthReport({
-    source: 'headless',
-    campaign: options.campaign,
-    id,
-    timestamp: new Date().toISOString(),
-    scene,
-    engines,
-    engineOrder,
-    replicaCount: options.replicaCount,
-    pixelError,
-    measurementMode: options.measurementMode,
-    resolution: canvasResolution({ cssWidth: options.cssWidth, cssHeight: options.cssHeight, devicePixelRatio: options.devicePixelRatio }),
-    sdk: await readSdkProvenance(SDK_DIST),
-    slowFrameThresholdMs: options.slowFrameThresholdMs,
-    passes,
-    environment,
-  });
-}
-
-/**
- * Écrit le rapport dans le dossier de campagne nommé et met son index `latest.json` à jour.
- * Le nom refusant le préfixe « campaign- », le dossier échappe à la rétention à deux campagnes.
- */
-export async function writeTruthReport(report) {
-  const directory = join(LAB, 'reports', TEST_ID, report.campaign);
-  mkdirSync(directory, { recursive: true });
-  const file = join(directory, `${report.id}.json`);
-  await writeFile(file, JSON.stringify(report, null, 1) + '\n');
-  await writeFile(join(directory, 'latest.json'), JSON.stringify({ archivedAt: report.timestamp, report: `${report.id}.json` }, null, 1) + '\n');
-  return file;
 }
 
 export async function save(name, data) {

@@ -1,6 +1,5 @@
 import { formatModelDiagnosticReport } from './modelReportMarkdown.ts';
 import type { ModelReport } from './modelCampaign.ts';
-import { campaignPackageId } from '../../shared/campaign/truthReport.ts';
 
 export const MODEL_REPORT_TEST_ID = '15-virtualized-integration';
 export const STREAMED_REPORT_CONTENT_TYPE = 'application/x-rtl-streamed-report';
@@ -107,10 +106,7 @@ export async function archiveModelReport(report: ModelReport, fetcher: FetchLike
   const pending = (async () => {
     const markdown = formatModelDiagnosticReport(report);
     const reportJson = await modelReportBlob(report);
-    // Le dossier porte le nom de campagne : il échappe ainsi à la rétention à deux campagnes,
-    // qui ne balaie que le préfixe « campaign- ».
-    const id = report.truth ? campaignPackageId(report.truth.campaign, report.id) : undefined;
-    const header = new TextEncoder().encode(`${JSON.stringify({ testId: MODEL_REPORT_TEST_ID, markdown, id, truth: report.truth })}\n`);
+    const header = new TextEncoder().encode(`${JSON.stringify({ testId: MODEL_REPORT_TEST_ID, markdown })}\n`);
     const body = new Blob([header as unknown as BlobPart, reportJson], { type: STREAMED_REPORT_CONTENT_TYPE });
     const response = await fetcher('/api/save-report', {
       method: 'POST',
