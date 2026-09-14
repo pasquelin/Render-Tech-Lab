@@ -1,10 +1,12 @@
+import {distribution} from '../../shared/benchmark/report.ts';
 import type {LightingReport,LightingVariant} from '../contracts.ts';
 
-const median=(values:Array<number|null>)=>{
-  const sorted=values.filter((v):v is number=>v!==null&&Number.isFinite(v)).sort((a,b)=>a-b);
-  return sorted.length?sorted[Math.floor(sorted.length/2)]:null;
-};
+const median=(values:Array<number|null>)=>distribution(values).median;
 const display=(value:number|null)=>value===null?'Non mesuré':value.toFixed(2);
+
+/** Isolated GPU samples in the shape the dashboard summary reads. */
+export const lightingRecords=(report:LightingReport)=>
+  report.blocks.filter(block=>block.kind==='gpu-isolated').flatMap(block=>block.frames.map(frame=>({variant:block.variant,cpuMs:null,gpuMs:frame.gpuMs})));
 export function formatLightingReport(report:LightingReport):string{
   const variants:LightingVariant[]=['brute','bvh'];
   const incomplete=report.provenance.initialization==='failed'||report.provenance.initialization==='stopped';

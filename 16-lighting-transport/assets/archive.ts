@@ -2,9 +2,9 @@ import type {Plugin} from 'vite';
 import {randomUUID} from 'node:crypto';
 import {readFile,rm} from 'node:fs/promises';
 import {join} from 'node:path';
-import {atomicWrite,writeReportPackage} from '../../shared/archive/index.ts';
+import {atomicWrite,readLegacyJson,writeReportPackage} from '../../shared/archive/index.ts';
 import type {LightingArchiveEntry,LightingArchiveHistory,LightingReport} from '../contracts.ts';
-import {formatLightingReport} from '../implementation/report.ts';
+import {formatLightingReport,lightingRecords} from '../implementation/report.ts';
 
 const testId='16-lighting-transport';
 const packagePattern=/^campaign-[a-zA-Z0-9-]+$/;
@@ -29,10 +29,7 @@ function validateReport(value:unknown):LightingReport {
 export function createLightingArchiveStore(root:string){
   const directory=join(root,'reports',testId),historyPath=join(directory,'history.json');
   let queue=Promise.resolve();
-  const history=async():Promise<LightingArchiveHistory>=>{
-    try{return JSON.parse(await readFile(historyPath,'utf8')) as LightingArchiveHistory;}
-    catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return emptyHistory();throw error;}
-  };
+  const history=async()=>await readLegacyJson<LightingArchiveHistory>(historyPath)??emptyHistory();
   const read=async(packageId:string)=>{
     if(!packagePattern.test(packageId)||(await history()).attempts.every(entry=>entry.package!==packageId))throw Error('Rapport Lumière absent');
     return readFile(join(directory,packageId,'REPORT.md'),'utf8');
@@ -54,8 +51,7 @@ export function createLightingArchiveStore(root:string){
       const current=recent.find(item=>item.package===latestValid)??entry;
       await atomicWrite(join(directory,'latest.json'),json({archivedAt:current.timestamp,reportPackage:current.package}));
       if(valid){
-        const records=report.blocks.filter(block=>block.kind==='gpu-isolated').flatMap(block=>block.frames.map(frame=>({variant:block.variant,cpuMs:null,gpuMs:frame.gpuMs})));
-        await atomicWrite(join(root,testId,'results/latest.json'),json({test:testId,timestamp:report.timestamp,status:'measured',records}));
+        await atomicWrite(join(root,testId,'results/latest.json'),json({test:testId,timestamp:report.timestamp,status:'measured',records:lightingRecords(report)}));
       }
       const retained=new Set(recent.map(item=>item.package));
       for(const old of previous.attempts)if(!retained.has(old.package)&&packagePattern.test(old.package))await rm(join(directory,old.package),{recursive:true,force:true});

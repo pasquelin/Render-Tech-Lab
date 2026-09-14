@@ -1,11 +1,11 @@
 import type {Plugin} from 'vite';
-import {createReadStream} from 'node:fs';
-import {mkdir, readFile, writeFile, realpath, stat, readdir} from 'node:fs/promises';
-import {dirname, extname, join, resolve, sep} from 'node:path';
+import {mkdir, readFile, writeFile, readdir} from 'node:fs/promises';
+import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import os from 'node:os';
+import {GLTF_TYPES, serveDirectory} from '../../shared/dev/serveDirectory.ts';
 
 const hash = (value: Uint8Array|string) => createHash('sha256').update(value).digest('hex');
 const revision = (root:string) => execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
@@ -35,9 +35,9 @@ export function createLightingAssetsPlugin(): Plugin {
         const input=join(root,fixtureKey,'input'),cache=join(root,fixtureKey,'cache');
         await mkdir(input,{recursive:true});await mkdir(cache,{recursive:true});
         await writeFile(join(input,'scene.gltf'),gltfBytes);await writeFile(join(input,'scene.bin'),binary);
-        await writeFile(join(input,'manifest.json'),JSON.stringify({status:'ready',formatVersion:1,runtime:{file:'scene.gltf',sha256:hash(gltfBytes),sidecars:[{file:'scene.bin',sha256:hash(binary)}],trianglesAcrossNodes:triangles,meshNodes:meshes.length}}));
         const start=performance.now();
-        const prepared=await prepare(input,cache,'full',triangles,{resourceBaseUrl:`/lighting-data/${fixtureKey}/input/`,threads:2,ramBudgetMb:256,simplification:'none',executable:native,signal:abort.signal});
+        // The SDK derives the source manifest from the glTF file itself, as prepare:models does for bench 15.
+        const prepared=await prepare(join(input,'scene.gltf'),cache,'full',triangles,{resourceBaseUrl:`/lighting-data/${fixtureKey}/input/`,threads:2,ramBudgetMb:256,simplification:'none',executable:native,signal:abort.signal});
         if(prepared.status!=='ready')throw Error('Lighting fixture preparation failed');
         const preparationMs=performance.now()-start;
         const sourceHashes:Record<string,string>={};
@@ -60,21 +60,6 @@ export function createLightingAssetsPlugin(): Plugin {
         res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));
       })().catch(error=>{if(!res.writableEnded){res.statusCode=500;res.end(JSON.stringify({error:String(error)}));}}).finally(()=>{preparing=false;});
     });
-    server.middlewares.use('/lighting-data',(req,res)=>{
-      void(async()=>{
-        if(req.method!=='GET'&&req.method!=='HEAD'){res.statusCode=405;res.end();return;}
-        const relative=decodeURIComponent((req.url??'').split('?')[0]);
-        const candidate=resolve(root,'.'+relative);
-        if(!candidate.startsWith(root+sep)){res.statusCode=403;res.end();return;}
-        const target=await realpath(candidate),base=await realpath(root);
-        if(!target.startsWith(base+sep)){res.statusCode=403;res.end();return;}
-        const info=await stat(target);
-        const type:Record<string,string>={'.json':'application/json','.gltf':'model/gltf+json','.bin':'application/octet-stream','.glb':'model/gltf-binary'};
-        if(!info.isFile()||!type[extname(target)]){res.statusCode=404;res.end();return;}
-        res.setHeader('Content-Type',type[extname(target)]);res.setHeader('Content-Length',info.size);res.setHeader('Cache-Control','no-cache');
-        if(req.method==='HEAD'){res.end();return;}
-        const stream=createReadStream(target);res.once('close',()=>stream.destroy());stream.on('error',()=>res.destroy());stream.pipe(res);
-      })().catch(()=>{res.statusCode=404;res.end('Lighting resource unavailable');});
-    });
+    server.middlewares.use('/lighting-data',serveDirectory(root,GLTF_TYPES,'Lighting resource unavailable'));
   }};
 }

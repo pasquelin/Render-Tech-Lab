@@ -3,10 +3,11 @@ import {advancePlayer, startPosition, walkDirection, type NavigationWorld} from 
 
 export type NavigationMode = 'free' | 'game';
 
+const HANDLED_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'KeyF', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
 /** Controls are owned by one explorer canvas and removed on engine switch or stop. */
-export function createNavigationControls(canvas: HTMLCanvasElement, camera: THREE.PerspectiveCamera, bounds: THREE.Box3, world: NavigationWorld, cities: 1 | 4 | 9 | 12, mode: NavigationMode, initialCity: number) {
+export function createNavigationControls(canvas: HTMLCanvasElement, camera: THREE.PerspectiveCamera, world: NavigationWorld, mode: NavigationMode, initialCity: number) {
   const keys = new Set<string>();
-  const direction = new THREE.Vector3();
   const movement = new THREE.Vector3();
   const look = camera.getWorldDirection(new THREE.Vector3());
   let yaw = Math.atan2(-look.x, -look.z);
@@ -15,7 +16,7 @@ export function createNavigationControls(canvas: HTMLCanvasElement, camera: THRE
   let lastX = 0, lastY = 0, velocityY = 0, jumpPendingUntil = 0;
   const lastSafePosition = new THREE.Vector3();
   const reset = (city: number) => {
-    camera.position.copy(startPosition(world, bounds, cities, city));
+    camera.position.copy(startPosition(world, city));
     lastSafePosition.copy(camera.position);
     yaw = 0; pitch = 0; velocityY = 0; jumpPendingUntil = 0;
     camera.rotation.set(0, yaw, 0, 'YXZ');
@@ -25,7 +26,7 @@ export function createNavigationControls(canvas: HTMLCanvasElement, camera: THRE
   const active = () => document.pointerLockElement === canvas || document.activeElement === canvas;
   const keyDown = (event: KeyboardEvent) => {
     if (!active()) return;
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'KeyF', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+    if (HANDLED_KEYS.has(event.code)) event.preventDefault();
     if (mode === 'game' && event.code === 'Space' && !keys.has('Space')) jumpPendingUntil = performance.now() + 500;
     keys.add(event.code);
   };
@@ -64,19 +65,17 @@ export function createNavigationControls(canvas: HTMLCanvasElement, camera: THRE
       if (!dt || !active()) return;
       const forward = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
       const right = Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
-      direction.copy(walkDirection(yaw, forward, right));
       const speed = mode === 'game'
         ? Math.max(3.8, Math.min(world.cityWidth, world.cityDepth) * 0.018)
         : Math.max(3, Math.min(world.cityWidth, world.cityDepth) * 0.045);
-      movement.copy(direction).multiplyScalar(speed * (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 1.8 : 1));
+      walkDirection(movement, yaw, forward, right).multiplyScalar(speed * (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 1.8 : 1));
       if (mode === 'game') {
         const jump = jumpPendingUntil > performance.now();
         const next = advancePlayer(world, camera.position, velocityY, movement, dt, jump);
         camera.position.copy(next.position);
         velocityY = next.velocityY;
         if (next.jumped) jumpPendingUntil = 0;
-        const support = world.floorAt(camera.position.x, camera.position.z, camera.position.y - world.height);
-        if (support !== null && Math.abs(camera.position.y - world.height - support) < world.height * 0.03)
+        if (next.support !== null && Math.abs(camera.position.y - world.height - next.support) < world.height * 0.03)
           lastSafePosition.copy(camera.position);
         if (camera.position.y < lastSafePosition.y - world.height * 3) {
           camera.position.copy(lastSafePosition);

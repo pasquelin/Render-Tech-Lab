@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {buildTriangleWorld} from './navigation.ts';
+import {buildTriangleWorld, type Cities} from './navigation.ts';
 
 /** The sidecar contains quantized triangles taken from opaque source geometry, without textures. */
-export function navigationWorldFromBinary(buffer: ArrayBuffer, bounds: THREE.Box3, cities: 1 | 4 | 9 | 12) {
+function navigationWorldFromBinary(buffer: ArrayBuffer, bounds: THREE.Box3, cities: Cities) {
   const header = new DataView(buffer);
   if (buffer.byteLength < 36 || header.getUint8(0) !== 78 || header.getUint8(1) !== 65 ||
       header.getUint8(2) !== 86 || header.getUint8(3) !== 71 || header.getUint32(4, true) !== 1)
@@ -20,7 +20,7 @@ export function navigationWorldFromBinary(buffer: ArrayBuffer, bounds: THREE.Box
   return buildTriangleWorld(triangles, new THREE.Box3(min, min.clone().add(extent)), bounds, cities);
 }
 
-export async function loadNavigationWorld(manifestUrl: string, sourceKey: string, bounds: THREE.Box3, cities: 1 | 4 | 9 | 12, signal: AbortSignal) {
+export async function loadNavigationWorld(manifestUrl: string, sourceKey: string, bounds: THREE.Box3, cities: Cities, signal: AbortSignal) {
   if (!/^[a-f0-9]{64}$/i.test(sourceKey)) throw new Error('Clé de source de navigation invalide');
   const url = new URL(`${sourceKey}/navigation.bin`, new URL(manifestUrl, window.location.origin));
   const response = await fetch(url, {signal});

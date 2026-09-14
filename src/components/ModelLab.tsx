@@ -20,15 +20,17 @@ const historyKey='render-tech-lab:model-runs:v1';
 const CLUSTER_VIEWS:ReadonlyArray<ModelConfig['diagnostic']>=['clusters','pages','lod','visibility','screen-error'];
 const LAUNCH_KEYS:ReadonlyArray<keyof ModelConfig>=['modelId','cities','detail','lodQuality','mode','debug'];
 const PATH_KEYS:ReadonlyArray<keyof ModelConfig>=['engine','diagnostic','camera'];
+const NAVIGATION_MISSING='Géométrie de navigation absente. Préparez ce modèle pour utiliser la caméra à pied.';
 type ModelControls={update(delta:number):void;dispose():void;reset?(city:number):void};
 function makeControls(owned:Explorer,config:ModelConfig,world:NavigationWorld|undefined):ModelControls{
  if(config.camera==='orbit')return owned.controls();
- if(!world)throw new Error('Collisions de navigation indisponibles');
- return createNavigationControls(owned.canvas,owned.camera,owned.bounds,world,config.cities,config.camera,config.startCity??0);
+ if(!world)throw new Error(NAVIGATION_MISSING);
+ return createNavigationControls(owned.canvas,owned.camera,world,config.camera,config.startCity??0);
 }
 function applyLiveConfig(owned:Explorer,next:ModelConfig,previous:ModelConfig,controls:{current:ModelControls|undefined},world:NavigationWorld|undefined){
+ // Checked before touching the explorer: on failure the caller keeps the previous config.
  if(next.mode==='explore'&&next.camera!==previous.camera&&next.camera!=='orbit'&&!world)
-  throw new Error('Géométrie de navigation absente. Préparez ce modèle pour utiliser la caméra à pied.');
+  throw new Error(NAVIGATION_MISSING);
  const cluster=CLUSTER_VIEWS.includes(next.diagnostic);
  let engine=next.engine,diagnostic=next.diagnostic;
  if(cluster&&engine==='three-webgl-reference'){
@@ -45,8 +47,9 @@ function applyLiveConfig(owned:Explorer,next:ModelConfig,previous:ModelConfig,co
  }
  owned.setComparison('single',[engine,engine],0,0);
  if(next.mode==='explore'&&next.camera!==previous.camera){
+  const replacement=makeControls(owned,next,world);
   controls.current?.dispose();
-  controls.current=makeControls(owned,next,world);
+  controls.current=replacement;
  }
  if(next.mode==='explore'&&next.startCity!==previous.startCity&&next.camera!=='orbit')controls.current?.reset?.(next.startCity??0);
  return {...next,engine,diagnostic,layout:'single' as const};
@@ -99,10 +102,11 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
   if(!enabled||!webglRef.current)return;
   const abort=new AbortController(),started=performance.now();let owned:Explorer|undefined,frame=0,resize:ResizeObserver|undefined,finished=false;
   const pathCampaign=config.mode==='path';
+  const modelId=config.modelId||defaultModelId(),manifestUrl=modelManifestUrl(modelId);
   const queue=pathCampaign?[...PATH_CAMPAIGN_ENGINES]:[config.engine];
  const run:ModelReport={version:1,id:crypto.randomUUID(),timestamp:new Date().toISOString(),status:'stopped',configuration:{...config,diagnostic:pathCampaign?'beauty':config.diagnostic},pathEngines:queue,sourceKey:'unavailable',availableTriangles:availableTriangles*config.cities,sharedGeometry:true,multipliedInstances:config.cities,resolution:[webglRef.current.clientWidth,webglRef.current.clientHeight],firstImageMs:null,preparationMs:null,warmupFrames:0,samples:[],captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:navigator.userAgent,pathVersion,comparison:'visual-only',comparisonReason:'A/A non vérifié pour cette campagne. Le verdict de performance reste bloqué sans validation réelle.',aaControl:{status:'not-run'}};
  const log=(level:ModelReport['engineEvents'][number]['level'],phase:string,message:string,context:Record<string,unknown>={})=>run.engineEvents.push({timestamp:new Date().toISOString(),level,phase,message,context});
- log('info','created','Campagne créée',{modelId:config.modelId||defaultModelId(),engines:queue,resolution:run.resolution,instances:config.cities,debug:!!config.debug,measurementKind:modelMeasurementKind(run.configuration)});
+ log('info','created','Campagne créée',{modelId,engines:queue,resolution:run.resolution,instances:config.cities,debug:!!config.debug,measurementKind:modelMeasurementKind(run.configuration)});
   campaignRef.current=run;
   const drop=()=>{cancelAnimationFrame(frame);resize?.disconnect();resize=undefined;controlsRef.current?.dispose();controlsRef.current=undefined;navigationWorldRef.current=undefined;if(explorerRef.current===owned)explorerRef.current=undefined;owned?.dispose();owned=undefined;THREE.Cache.clear();};
   const finish=(status:ModelReport['status'],error?:string)=>{
@@ -133,7 +137,7 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
     console.info('[render-tech-lab] couleur de fond transmise au moteur',colorContext);
     if(enginePass===0)run.resolution=[width,height];
     else if(width!==run.resolution[0]||height!==run.resolution[1])throw new Error('La résolution a changé entre les moteurs. Relancez pour conserver un protocole identique.');
-    try{owned=await createExplorer(canvas,{manifestUrl:modelManifestUrl(config.modelId||defaultModelId()),scope:'full',signal:abort.signal,width,height,clearColor,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:pathCampaign&&needsResidentPages(engineId,engineId)?'all':'visible',backends:engineFactories([engineId]),comparisonLayout:'single',comparisonPair:[engineId,engineId],diagnosticDetail:config.debug?'trace':'summary',onDiagnostic:diagnostic=>run.engineEvents.push({timestamp:new Date(diagnostic.createdAt??Date.now()).toISOString(),level:diagnostic.phase==='diagnostic-loss'?'warn':'info',phase:`engine:${diagnostic.phase}`,message:diagnostic.message,context:{engine:engineId,...diagnostic.context,diagnosticSequence:diagnostic.sequence,diagnosticSession:diagnostic.sessionId,diagnosticCreatedAt:diagnostic.createdAt}}),onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:queue.length});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});}catch(error){if(engineId==='webgpu-page-raster'&&String(error).includes('No backend'))throw new Error('WebGPU indisponible sur ce navigateur ou cet appareil. Choisissez WebGeometry WebGL pour explorer.');throw error;}
+    try{owned=await createExplorer(canvas,{manifestUrl,scope:'full',signal:abort.signal,width,height,clearColor,replicaCount:config.cities,detail:config.detail,pixelError:pixelErrorFor(config),lodAdaptive:config.lodQuality==='adaptive',maxResidentPages:100000,preload:pathCampaign&&needsResidentPages(engineId,engineId)?'all':'visible',backends:engineFactories([engineId]),comparisonLayout:'single',comparisonPair:[engineId,engineId],diagnosticDetail:config.debug?'trace':'summary',onDiagnostic:diagnostic=>run.engineEvents.push({timestamp:new Date(diagnostic.createdAt??Date.now()).toISOString(),level:diagnostic.phase==='diagnostic-loss'?'warn':'info',phase:`engine:${diagnostic.phase}`,message:diagnostic.message,context:{engine:engineId,...diagnostic.context,diagnosticSequence:diagnostic.sequence,diagnosticSession:diagnostic.sessionId,diagnosticCreatedAt:diagnostic.createdAt}}),onPreparation:progress=>{log('debug','preparation',progress.message,{engine:engineId,completed:progress.completed,total:queue.length});if(!abort.signal.aborted)setDisplay(old=>({...old,status:'loading',message:pathCampaign?`${engineLabel(engineId)} · canvas isolé · ${progress.message}`:progress.message,progress:pathCampaign?{completed:enginePass,total:queue.length}:progress,metrics:null}));}});}catch(error){if(engineId==='webgpu-page-raster'&&String(error).includes('No backend'))throw new Error('WebGPU indisponible sur ce navigateur ou cet appareil. Choisissez WebGeometry WebGL pour explorer.');throw error;}
     if(abort.signal.aborted){drop();return;}
     if(!owned)throw new Error('Canvas absent');
     const session=owned;
@@ -152,7 +156,7 @@ export function ModelLab({onScene}:{onScene:(scene:IntegrationScene)=>void}){
      const collisionStarted=performance.now();
      setDisplay(old=>({...old,status:'loading',message:'Indexation des obstacles de navigation…'}));
      try{
-      navigationWorldRef.current=await loadNavigationWorld(modelManifestUrl(config.modelId||defaultModelId()),owned.metadata.key,owned.bounds,config.cities,abort.signal);
+      navigationWorldRef.current=await loadNavigationWorld(manifestUrl,owned.metadata.key,owned.bounds,config.cities,abort.signal);
      }catch(error){
       if(config.camera!=='orbit')throw error;
       log('warn','navigation-collision','Triangles de navigation indisponibles pour Orbite',{error:String(error)});

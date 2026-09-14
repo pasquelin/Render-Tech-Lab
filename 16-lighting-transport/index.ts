@@ -1,8 +1,8 @@
 export { manifest } from './manifest.ts';
-export { LIGHTING_PROTOCOL, LIGHTING_LIGHT_CONTROLS } from './contracts.ts';
+export { LIGHTING_PROTOCOL, LIGHTING_LIGHT_CONTROLS, copyLightingConfig } from './contracts.ts';
 export type * from './contracts.ts';
 export { LIGHTING_MODULE, LIGHTING_UI } from './implementation/presentation.ts';
-export { formatLightingReport } from './implementation/report.ts';
+export { formatLightingReport, lightingRecords } from './implementation/report.ts';
 export { scenarios, scenarioIds } from './scenarios/index.ts';
 import type { LightingBenchOptions, LightingController, LightingReport } from './contracts.ts';
 

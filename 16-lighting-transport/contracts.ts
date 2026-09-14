@@ -35,6 +35,10 @@ export interface LightingConfig {
   lightIntensity: number;
 }
 
+/** Deep copy: light colours and positions are arrays the caller may mutate. */
+export const copyLightingConfig = (config: LightingConfig): LightingConfig =>
+  ({ ...config, lights: config.lights.map(light => ({ ...light, color: [...light.color], position: [...light.position] })) });
+
 export const LIGHTING_PROTOCOL = Object.freeze({
   formatVersion: 1,
   width: 1280,
@@ -70,12 +74,6 @@ export interface LightingFrame {
   bvhRefitMs: number | null;
   bvhNodeCount: number | null;
   bvhNodeBytes: number | null;
-}
-
-export interface LightingCapture {
-  width: number;
-  height: number;
-  dataUrl: string;
 }
 
 export interface LightingCaptureCheck {
@@ -134,7 +132,6 @@ export interface LightingController {
   update(patch: Partial<LightingConfig>): Promise<LightingFrame>;
   render(): LightingFrame;
   resize(width: number, height: number): void;
-  capture(): LightingCapture;
   getConfig(): LightingConfig;
   dispose(): void;
 }

@@ -71,23 +71,14 @@ function StandardLab({ test, native, onScene }: { test: string; native: boolean;
         ...(test === '14-open-world' ? { scenarioVal: '9', scenarioOptions: worldOptions, stats: { ...initial.stats, objects: '9 quartiers' } } : {}) });
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       if (cancelled) return;
-      if (test === '14-open-world') {
-        const { mountWorldWorkbench } = await import('../../14-open-world/implementation/worldPage.ts');
-        const controller = mountWorldWorkbench(patch);
-        if (cancelled) return controller.dispose();
-        dispose = controller.dispose;
-        nativeReportsRef.current = controller.mountReports;
-        const reset = () => patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
-        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report, refreshReport: controller.report, openFinder: controller.openFinder, copyReport: controller.copyReport, closeReport: controller.closeReport });
-      } else {
-        const { mountNativeLodWorkbench } = await import('../../04-gpu-lod/runner/nativePage.ts');
-        const controller = mountNativeLodWorkbench(parseMarkdownToHtml, patch);
-        if (cancelled) return controller.dispose();
-        dispose = controller.dispose;
-        nativeReportsRef.current = controller.mountReports;
-        const reset = () => patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
-        setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report, refreshReport: controller.report, openFinder: controller.openFinder, copyReport: controller.copyReport, closeReport: controller.closeReport });
-      }
+      const controller = test === '14-open-world'
+        ? (await import('../../14-open-world/implementation/worldPage.ts')).mountWorldWorkbench(patch)
+        : (await import('../../04-gpu-lod/runner/nativePage.ts')).mountNativeLodWorkbench(parseMarkdownToHtml, patch);
+      if (cancelled) return controller.dispose();
+      dispose = controller.dispose;
+      nativeReportsRef.current = controller.mountReports;
+      const reset = () => patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
+      setActions({ ...idleActions, newExecution: reset, setMode: controller.setMode, setScenario: controller.setScenario, runBenchmark: controller.run, runPain: controller.stop, stopBenchmark: controller.stop, openReport: controller.report, refreshReport: controller.report, openFinder: controller.openFinder, copyReport: controller.copyReport, closeReport: controller.closeReport });
       patch({ running: false, execution: { status: 'idle', phase: '', lastCampaign: null } });
     })();
     return () => { cancelled = true; nativeReportsRef.current = undefined; dispose?.(); };

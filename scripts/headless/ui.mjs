@@ -1,11 +1,8 @@
-import { chromium, BASE_FLAGS, URL_BASE } from './lib.mjs';
-const engine = process.argv[2] ?? 'webgpu-page-raster';
-const browser = await chromium.launch({ headless: true, executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', args: [...BASE_FLAGS, '--enable-unsafe-webgpu'] });
-const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+import { openLabPage } from './lib.mjs';
+const { browser, page } = await openLabPage({ path: '/?test=15-virtualized-integration', viewport: { width: 1600, height: 1000 } });
 const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 400)); });
 page.on('pageerror', e => errors.push('PAGEERROR ' + (e.stack || e.message).slice(0, 600)));
-await page.goto(URL_BASE + '/?test=15-virtualized-integration', { waitUntil: 'load' });
 await page.waitForTimeout(1500);
 const selects = await page.locator('select').all();
 for (const s of selects) { const opts = await s.locator('option').allTextContents(); if (opts.some(t => /WebGPU/i.test(t))) { await s.selectOption({ label: opts.find(t => /WebGPU/i.test(t)) }); console.log('select ->', opts.find(t => /WebGPU/i.test(t))); break; } }

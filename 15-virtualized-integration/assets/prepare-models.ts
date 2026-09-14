@@ -1,9 +1,9 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { totalmem } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { prepare, createTerminalProgress } from '@web-geometry/sdk/node';
 import { benchmarkModels } from './modelCatalog.ts';
+import { prepareNavigationMesh } from './prepare-navigation-mesh.ts';
 
 // Le SDK prépare le rendu et son cache ; le banc ajoute ensuite des triangles de navigation
 // dérivés du source.gltf préparé, sans modifier les géométries des moteurs de rendu.
@@ -25,8 +25,8 @@ for (const [index, model] of selected.entries()) {
     ramBudgetMb,
     resourceBaseUrl: `/${model.sourceDirectory.replace(/^public\//, '')}/`,
     simplification: 'qem-endpoints',
-    onProgress: (event: Parameters<ReturnType<typeof createTerminalProgress>['event']>[0]) => progress.event(event),
+    onProgress: event => progress.event(event),
   }).catch(error => { progress.fail(String(error.message ?? error)); throw error; });
   if (result.status !== 'ready') { progress.fail(`préparation incomplète (${result.status})`); throw new Error(`${model.id} : préparation incomplète (${result.status})`); }
-  execFileSync(process.execPath, ['--experimental-strip-types', fileURLToPath(new URL('./prepare-navigation-mesh.ts', import.meta.url)), model.id], { stdio: 'inherit' });
+  await prepareNavigationMesh(model.id);
 }

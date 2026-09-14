@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE} from '../../16-lighting-transport/index.ts';
+import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,copyLightingConfig,createLightingBench,lightingRecords,runLightingComparison} from '../../16-lighting-transport/index.ts';
 import type {LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector} from '../../16-lighting-transport/index.ts';
 import {initialSnapshot,type LabActions} from '../lab/labState.ts';
 import {campaignSummary} from '../lab/campaignSummary.ts';
@@ -15,8 +15,8 @@ import {MetricGrid} from './ui/MetricGrid.tsx';
 type Status='idle'|'loading'|'running'|'completed'|'stopped'|'error';
 type RunKind='interactive'|'comparison';
 const moduleId='16-lighting-transport';
+const baseSnapshot=initialSnapshot(moduleId);
 const number=(value:number|null|undefined,unit='')=>value==null||!Number.isFinite(value)?'Non mesuré':value.toFixed(unit===' ms'?2:0)+unit;
-const copyConfig=(config:LightingConfig):LightingConfig=>({...config,lights:config.lights.map(light=>({...light,color:[...light.color],position:[...light.position]}))});
 const displayColor=(color:LightingVector)=>'#'+color.map(value=>{
   const x=Math.min(1,Math.max(0,value));
   return Math.round(255*(x<=.0031308?12.92*x:1.055*x**(1/2.4)-.055)).toString(16).padStart(2,'0');
@@ -63,7 +63,7 @@ export function LightingLab() {
   const [config,setConfig]=useState<LightingConfig|null>(null),[frame,setFrame]=useState<LightingFrame|null>(null);
   const [report,setReport]=useState<LightingReport|null>(null);
   const reportRequest=useRef<AbortController|null>(null);
-  const [modal,setModal]=useState(()=>initialSnapshot(moduleId).reportModal);
+  const [modal,setModal]=useState(baseSnapshot.reportModal);
   const active=status==='loading'||status==='running';
   const liveControls=status==='running'&&kind==='interactive';
   const launchLabel=kind==='comparison'?'Comparer brut / BVH':LIGHTING_MODULE.benchLabel;
@@ -105,13 +105,11 @@ export function LightingLab() {
     failRef.current=fail;
     void(async()=>{
       try {
-        const runner=await import('../../16-lighting-transport/index.ts');
-        if(!current())return;
         const canvas=canvasRef.current;
         if(!canvas)throw new Error('La surface de rendu est indisponible.');
         const options={signal:abort.signal,onProgress:(value:string)=>{if(current()){setMessage(value);if(request.kind==='comparison'&&value.startsWith('Images identiques'))setStatus('running');}}};
         if(request.kind==='comparison') {
-          const result=await runner.runLightingComparison(canvas,options);
+          const result=await runLightingComparison(canvas,options);
           if(generation.current!==request.id)return;
           setReport(result);window.__lightingBench16Report=result;
           const stopped=abort.signal.aborted||result.status==='stopped';
@@ -120,14 +118,14 @@ export function LightingLab() {
           release();busy.current=false;
           return;
         }
-        const controller=await runner.createLightingBench(canvas,options);
+        const controller=await createLightingBench(canvas,options);
         if(!current()){controller.dispose();return;}
         controllerRef.current=controller;
         const resize=()=>{const box=canvas.getBoundingClientRect();if(box.width>0&&box.height>0){controller.resize(Math.round(box.width),Math.round(box.height));previousRaf.current=null;}};
         resize();resizeRef.current=new ResizeObserver(resize);resizeRef.current.observe(canvas);
-        const initial=copyConfig(controller.getConfig());configRef.current=initial;setConfig(initial);
+        const initial=controller.getConfig();configRef.current=initial;setConfig(initial);
         setStatus('running');setMessage('Scène active. Déplacez la porte ou modifiez les lampes.');
-        const hook={snapshot:()=>({status:'running' as const,config:copyConfig(controller.getConfig()),frame:frameRef.current?{...frameRef.current}:null})};
+        const hook={snapshot:()=>({status:'running' as const,config:controller.getConfig(),frame:frameRef.current?{...frameRef.current}:null})};
         window.lightingBench16=hook;
         let published=-Infinity;
         const tick=(time:number)=>{
@@ -151,7 +149,7 @@ export function LightingLab() {
   const change=(patch:Partial<LightingConfig>)=>{
     const controller=controllerRef.current,currentConfig=configRef.current;
     if(!liveControls||!controller||!currentConfig)return;
-    const next=copyConfig({...currentConfig,...patch});configRef.current=next;setConfig(next);pending.current=next;
+    const next=copyLightingConfig({...currentConfig,...patch});configRef.current=next;setConfig(next);pending.current=next;
     if(updating.current)return;
     const owner=generation.current;updating.current=true;
     void(async()=>{
@@ -192,11 +190,11 @@ export function LightingLab() {
   const stats={submit:number(frame?.cpuSubmitMs,' ms'),cpuFrame:number(frame?.cpuFrameMs,' ms'),fps:number(frame?.fps,' FPS'),drawCalls:number(frame?.drawCalls)};
   const lastCampaign=useMemo(()=>report?.status==='measured'&&report.quality.passed===true?campaignSummary({
     test:moduleId,timestamp:report.timestamp,status:report.status,
-    records:report.blocks.filter(block=>block.kind==='gpu-isolated').flatMap(block=>block.frames.map(value=>({variant:block.variant,cpuMs:null,gpuMs:value.gpuMs}))),
+    records:lightingRecords(report),
   }):null,[report]);
-  const contextState={...initialSnapshot(moduleId),mode:'classic' as const,running:active,framePresented:status==='running'&&(kind==='comparison'||!!frame),reportModal:modal,
+  const contextState={...baseSnapshot,mode:'classic' as const,running:active,framePresented:status==='running'&&(kind==='comparison'||!!frame),reportModal:modal,
     benchLabel:launchLabel,benchStatus:message,showPain:false,showWebgl:active,showWebgpu:false,
-    stats:{...initialSnapshot(moduleId).stats,...stats},
+    stats:{...baseSnapshot.stats,...stats},
     execution:{kind:(request?.kind??kind)==='interactive'?'exploration' as const:'campaign' as const,status:status==='loading'?'running' as const:status,phase:message,lastCampaign}};
   const panels={
     configuration:<>

@@ -1,20 +1,17 @@
 import {createLightingScene,createDefaultLightingSceneLights,createTransport,compareImages} from '@web-geometry/sdk';
 import {createExplorer,createLightingExperimentBackend,type LightingExperimentRenderState} from '@web-geometry/sdk/browser';
-import {LIGHTING_PROTOCOL,type LightingConfig,type LightingFrame,type LightingController,type LightingReport,type LightingBenchOptions,type LightingVariant} from '../contracts.ts';
+import {nextFrame} from '../../shared/benchmark/frame.ts';
+import {distribution} from '../../shared/benchmark/report.ts';
+import {LIGHTING_PROTOCOL,copyLightingConfig as copyConfig,type LightingConfig,type LightingFrame,type LightingController,type LightingReport,type LightingBenchOptions,type LightingVariant} from '../contracts.ts';
 
-const copyConfig=(config:LightingConfig):LightingConfig=>({...config,lights:config.lights.map(light=>({...light,color:[...light.color],position:[...light.position]}))});
 const defaults=():LightingConfig=>({variant:'brute',lights:createDefaultLightingSceneLights(),doorAngle:Math.PI/2,roughness:.25,cameraT:0,lightIntensity:1});
 const pose=(t:number)=>({position:[2.8+.15*Math.sin(t*Math.PI*2),1.5,2.5-.3*Math.sin(t*Math.PI)] as [number,number,number],target:[-1,1.2,-1] as [number,number,number],fov:66,near:.025,far:50});
-const nextFrame=(signal:AbortSignal)=>new Promise<number>((resolve,reject)=>{
-  signal.throwIfAborted();
-  const cancelled=()=>{cancelAnimationFrame(id);reject(signal.reason);};
-  const id=requestAnimationFrame(time=>{signal.removeEventListener('abort',cancelled);resolve(time);});
-  signal.addEventListener('abort',cancelled,{once:true});
-});
 
+// One encoder canvas for the whole run: each comparison encodes two captures per stage.
+let encoder:{canvas:HTMLCanvasElement;context:CanvasRenderingContext2D}|undefined;
 function png(pixels:Uint8Array,width:number,height:number){
-  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
-  const context=canvas.getContext('2d');if(!context)throw Error('PNG capture unavailable');
+  if(!encoder){const canvas=document.createElement('canvas');const context=canvas.getContext('2d');if(!context)throw Error('PNG capture unavailable');encoder={canvas,context};}
+  const {canvas,context}=encoder;canvas.width=width;canvas.height=height;
   const image=context.createImageData(width,height),stride=width*4;
   for(let y=0;y<height;y++)image.data.set(pixels.subarray((height-y-1)*stride,(height-y)*stride),y*stride);
   context.putImageData(image,0,0);return canvas.toDataURL('image/png');
@@ -70,8 +67,8 @@ async function createRuntime(canvas:HTMLCanvasElement,options:LightingBenchOptio
       const start=performance.now(),cpuTransportMs=setConfig(patch),frame=render();
       return {...frame,cpuTransportMs,cpuFrameMs:performance.now()-start};
     };
-    const capturePixels=()=>{check();explorer.setPose(pose(config.cameraT));state.rayTraversal=config.variant;return explorer.capture().slice();};
-    const capture=()=>({width:canvas.width,height:canvas.height,dataUrl:png(capturePixels(),canvas.width,canvas.height)});
+    // The SDK rotates three capture buffers, so the a / aa / b triple of one stage stays valid without copying.
+    const capturePixels=()=>{check();explorer.setPose(pose(config.cameraT));state.rayTraversal=config.variant;return explorer.capture();};
     const waitGpu=async()=>{
       check();const fence=gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE,0);if(!fence)throw Error('GPU fence unavailable');gl.flush();
       const start=performance.now();
@@ -96,7 +93,7 @@ async function createRuntime(canvas:HTMLCanvasElement,options:LightingBenchOptio
         return {...frame,gpuMs:Number(gl.getQueryParameter(query,gl.QUERY_RESULT))/1e6};
       }finally{gl.deleteQuery(query);}
     };
-    const controller:LightingController={update,render,resize:(width,height)=>{check();explorer.resize(width,height);},capture,getConfig:()=>copyConfig(config),dispose:drop};
+    const controller:LightingController={update,render,resize:(width,height)=>{check();explorer.resize(width,height);},getConfig:()=>copyConfig(config),dispose:drop};
     return {controller,signal,setConfig,capturePixels,isolatedFrame,waitGpu,prepared,
       environment:{userAgent:navigator.userAgent,devicePixelRatio:devicePixelRatio,logicalCpus:navigator.hardwareConcurrency,renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):null,vendor:debug?gl.getParameter(debug.UNMASKED_VENDOR_WEBGL):null,gpuTimerAvailable:!!timer,webglVersion:gl.getParameter(gl.VERSION),visibility:document.visibilityState},
       geometry:{surfaces:initial.surfaces.length,patches:initial.patches.length,triangles:explorer.metadata.selectedTriangles}};
@@ -156,7 +153,7 @@ export async function runLightingComparison(canvas:HTMLCanvasElement,options:Lig
       runtime.setConfig(config);await runtime.waitGpu();
       const idle:number[]=[];let previous=await nextFrame(signal);
       for(let i=0;i<20;i++){const now=await nextFrame(signal);idle.push(now-previous);previous=now;}
-      const sorted=idle.sort((a,b)=>a-b);report.observedRafCeilingHz=1000/sorted[Math.floor(sorted.length/2)];
+      const idleMedian=distribution(idle).median;report.observedRafCeilingHz=idleMedian?1000/idleMedian:null;
       const order:LightingVariant[]=['brute','bvh','bvh','brute'];
       for(const variant of order){
         options.onProgress?.(`Cadence à qualité constante · ${variant==='brute'?'référence':'arbre d’obstacles'}`);
