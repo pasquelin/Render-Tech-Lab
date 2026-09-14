@@ -37,7 +37,9 @@
     "bench:15": "npm run build && node bench/run_integration.mjs",
     "test:world": "node --experimental-strip-types --test 14-open-world/tests/*.test.ts",
     "test:structure": "node --experimental-strip-types --test [01][0-9]-*/tests/contract.test.ts [01][0-9]-*/tests/structure.test.ts test/labArchitecture.test.ts",
-    "prepare:models": "node --experimental-strip-types 15-virtualized-integration/assets/prepare-models.ts"
+    "prepare:models": "node --experimental-strip-types 15-virtualized-integration/assets/prepare-models.ts",
+    "prepare:house": "node --experimental-strip-types 16-lighting-transport/assets/house.ts && node --experimental-strip-types 16-lighting-transport/assets/prepareHouse.ts && node --experimental-strip-types 16-lighting-transport/assets/prepareHouseNavigation.ts",
+    "prepare:car": "node --experimental-strip-types 16-lighting-transport/assets/car.ts && node --experimental-strip-types 16-lighting-transport/assets/prepareCar.ts"
   },
   "dependencies": {
     "lucide-react": "^1.44.0",
