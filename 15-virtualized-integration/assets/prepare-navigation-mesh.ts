@@ -150,4 +150,3 @@ try {
   for (let axis = 0; axis < 3; axis++) {header.writeFloatLE(min[axis], 12 + axis * 4); header.writeFloatLE(extent[axis], 24 + axis * 4);}
   writeSync(fd, header, 0, header.length, 0);
 } finally {closeSync(fd);}
-console.log(`${model.id}: ${triangleCount.toLocaleString()} triangles de collision préparés, ${sourceTriangles.toLocaleString()} triangles source uniques → ${output}`);
