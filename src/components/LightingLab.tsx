@@ -1,226 +1,200 @@
-import {useEffect,useMemo,useRef,useState} from 'react';
-import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,copyLightingConfig,createLightingBench,lightingRecords,runLightingComparison} from '../../16-lighting-transport/index.ts';
-import type {LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector} from '../../16-lighting-transport/index.ts';
-import {initialSnapshot,type LabActions} from '../lab/labState.ts';
-import {campaignSummary} from '../lab/campaignSummary.ts';
-import {navigateLabRoute} from '../lab/navigation.ts';
-import {parseMarkdownToHtml} from '../lab/markdown.ts';
-import {loadMarkdownReport} from '../lab/reportReader.ts';
-import {LabContext} from './LabContext.tsx';
-import {LabShell} from './LabShell.tsx';
-import {Input} from './ui/Input.tsx';
-import {Select} from './ui/Select.tsx';
-import {MetricGrid} from './ui/MetricGrid.tsx';
+import { useEffect, useRef, useState } from 'react';
+import { SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig } from '../../16-lighting-transport/index.ts';
+import type { LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import { initialSnapshot, type LabActions } from '../lab/labState.ts';
+import { navigateLabRoute } from '../lab/navigation.ts';
+import { parseMarkdownToHtml } from '../lab/markdown.ts';
+import { loadMarkdownReport } from '../lab/reportReader.ts';
+// Caméra à la première personne : le composant existant du banc 15 (WASD, souris, saut, collisions
+// sur la géométrie), branché tel quel — jamais copié ni réécrit. src/components/ est la seule couche
+// autorisée à importer les fichiers internes d'un autre banc (voir test/labArchitecture.test.ts).
+import { createNavigationControls } from '../../15-virtualized-integration/implementation/navigationControls.ts';
+import { loadNavigationWorld } from '../../15-virtualized-integration/implementation/navigationSource.ts';
+import { LabContext } from './LabContext.tsx';
+import { LabShell } from './LabShell.tsx';
+import { Input } from './ui/Input.tsx';
+import { Button } from './ui/Button.tsx';
+import { MetricGrid } from './ui/MetricGrid.tsx';
+import { SegmentedControl } from './ui/SegmentedControl.tsx';
 
-type Status='idle'|'loading'|'running'|'completed'|'stopped'|'error';
-type RunKind='interactive'|'comparison';
-const moduleId='16-lighting-transport';
-const baseSnapshot=initialSnapshot(moduleId);
-const number=(value:number|null|undefined,unit='')=>value==null||!Number.isFinite(value)?'Non mesuré':value.toFixed(unit===' ms'?2:0)+unit;
-const displayColor=(color:LightingVector)=>'#'+color.map(value=>{
-  const x=Math.min(1,Math.max(0,value));
-  return Math.round(255*(x<=.0031308?12.92*x:1.055*x**(1/2.4)-.055)).toString(16).padStart(2,'0');
-}).join('');
-const linearColor=(hex:string):LightingVector=>[1,3,5].map(offset=>{
-  const x=parseInt(hex.slice(offset,offset+2),16)/255;
-  return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;
-}) as LightingVector;
+type Status = 'idle' | 'loading' | 'running' | 'stopped' | 'error';
+const moduleId = '16-lighting-transport';
+const baseSnapshot = initialSnapshot(moduleId);
+const number = (value: number | null | undefined, unit = '') => (value == null || !Number.isFinite(value) ? 'Non mesuré' : value.toFixed(unit === ' ms' ? 2 : 0) + unit);
+const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
+const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
-declare global {
-  interface Window {
-    lightingBench16?: {snapshot:()=>{status:'running';config:LightingConfig;frame:LightingFrame|null}};
-    __lightingBench16Report?: LightingReport;
-  }
-}
-
-function LightFields({light,disabled,onChange}:{light:LightingLight;disabled:boolean;onChange:(patch:Partial<LightingLight>)=>void}) {
-  const prefix='lighting-'+light.id;
-  const controls=LIGHTING_LIGHT_CONTROLS[light.id];
-  if(!controls)return <p className="text-xs text-base-content/60">Réglages indisponibles pour {light.id}.</p>;
-  const move=(axis:0|2,value:number)=>{const position:LightingVector=[...light.position];position[axis]=value;onChange({position});};
-  return <div className="space-y-2" data-light-id={light.id}>
-    <h3 className="text-xs font-semibold">{controls.label}</h3>
-    <div className="grid grid-cols-2 gap-2">
-      <Input id={prefix+'-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event=>onChange({color:linearColor(event.target.value)})}/>
-      <Input id={prefix+'-intensity'} label={'Intensité · '+light.intensity.toFixed(2)} type="range" min={0} max={controls.maxIntensity} step={.01} value={light.intensity} disabled={disabled} onChange={event=>onChange({intensity:Number(event.target.value)})}/>
-      <Input id={prefix+'-x'} label="Gauche / droite" type="range" min={controls.minX} max={controls.maxX} step={.02} value={light.position[0]} disabled={disabled} onChange={event=>move(0,Number(event.target.value))}/>
-      <Input id={prefix+'-z'} label="Avant / arrière" type="range" min={controls.minZ} max={controls.maxZ} step={.02} value={light.position[2]} disabled={disabled} onChange={event=>move(2,Number(event.target.value))}/>
+function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; scene: SceneId; disabled: boolean; onChange: (patch: Partial<SceneLight>) => void }) {
+  const bounds = SCENE_LIGHT_BOUNDS[scene];
+  const prefix = 'lighting-' + light.id;
+  const move = (axis: 0 | 1 | 2, value: number) => { const position: Vec3 = [...light.position]; position[axis] = value; onChange({ position }); };
+  return (
+    <div className="space-y-2" data-light-id={light.id}>
+      <h3 className="text-xs font-semibold">{light.id}</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event => onChange({ color: linearColor(event.target.value) })} />
+        <Input id={prefix + '-intensity'} label={'Intensité · ' + light.intensity.toFixed(1)} type="range" min={0} max={20} step={0.5} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <Input id={prefix + '-x'} label="X" type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
+        <Input id={prefix + '-y'} label="Y" type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
+        <Input id={prefix + '-z'} label="Z" type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
+        <Input id={prefix + '-shadow'} label="Ombre" type="checkbox" checked={light.castsShadow} disabled={disabled} onChange={event => onChange({ castsShadow: event.target.checked })} />
+      </div>
     </div>
-  </div>;
+  );
 }
 
-/** React owns lifecycle and controls; all scene, transport and measurement work stays in the public runner. */
+/** React possède le cycle de vie et les commandes ; la scène, le rendu et les mesures restent dans le
+ * runner public. La fiche commune (LabShell/LabSidebar/PreparationStation) fournit sections, canvas
+ * et états idle/chargement/arrêt ; ce composant ne fournit que l'état et le contenu de ses panneaux. */
 export function LightingLab() {
-  const canvasRef=useRef<HTMLCanvasElement>(null),unusedGpu=useRef<HTMLCanvasElement>(null),unusedChart=useRef<HTMLCanvasElement>(null);
-  const controllerRef=useRef<LightingController|null>(null),abortRef=useRef<AbortController|null>(null);
-  const frameRef=useRef<LightingFrame|null>(null),configRef=useRef<LightingConfig|null>(null);
-  const generation=useRef(0),raf=useRef(0),busy=useRef(false),updating=useRef(false);
-  const previousRaf=useRef<number|null>(null),resizeRef=useRef<ResizeObserver|null>(null);
-  const pending=useRef<LightingConfig|null>(null),failRef=useRef<(error:unknown)=>void>(()=>{});
-  const [status,setStatus]=useState<Status>('idle'),[kind,setKind]=useState<RunKind>('interactive');
-  const [request,setRequest]=useState<{id:number;kind:RunKind}|null>(null);
-  const [message,setMessage]=useState('Prêt à lancer la scène.');
-  const [config,setConfig]=useState<LightingConfig|null>(null),[frame,setFrame]=useState<LightingFrame|null>(null);
-  const [report,setReport]=useState<LightingReport|null>(null);
-  const reportRequest=useRef<AbortController|null>(null);
-  const [modal,setModal]=useState(baseSnapshot.reportModal);
-  const active=status==='loading'||status==='running';
-  const liveControls=status==='running'&&kind==='interactive';
-  const launchLabel=kind==='comparison'?'Comparer brut / BVH':LIGHTING_MODULE.benchLabel;
+  const canvasRef = useRef<HTMLCanvasElement>(null), unusedGpu = useRef<HTMLCanvasElement>(null), unusedChart = useRef<HTMLCanvasElement>(null);
+  const controllerRef = useRef<LightingController | null>(null), abortRef = useRef<AbortController | null>(null);
+  const generation = useRef(0), poll = useRef(0), busy = useRef(false);
+  const reportRequest = useRef<AbortController | null>(null);
+  const [sceneId, setSceneId] = useState<SceneId>('house');
+  const [status, setStatus] = useState<Status>('idle');
+  const [message, setMessage] = useState('Prêt à ouvrir une scène.');
+  const [config, setConfig] = useState<LightingBenchConfig>(() => defaultConfig('house'));
+  const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(null);
+  const [stats, setStats] = useState<LightingFrameStats>({ fps: null, cpuFrameMs: null, gpuMs: null, lightsActive: null, shadowsUpdated: null, gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, drawCalls: null, triangles: null });
+  const [modal, setModal] = useState(baseSnapshot.reportModal);
+  const active = status === 'loading' || status === 'running';
 
-  const release=()=>{
-    cancelAnimationFrame(raf.current);
-    resizeRef.current?.disconnect();resizeRef.current=null;
-    controllerRef.current?.dispose();controllerRef.current=null;
-    pending.current=null;updating.current=false;previousRaf.current=null;
-    delete window.lightingBench16;
+  const release = () => {
+    cancelAnimationFrame(poll.current);
+    controllerRef.current?.dispose();
+    controllerRef.current = null;
   };
-  const stop=()=>{
-    if(!busy.current)return;
-    abortRef.current?.abort();release();busy.current=false;
-    setStatus('stopped');setMessage(request?.kind==='interactive'?'Exploration arrêtée.':'Comparaison arrêtée.');
+  const stop = () => {
+    if (!busy.current) return;
+    abortRef.current?.abort(); release(); busy.current = false;
+    setStatus('stopped'); setMessage('Exploration arrêtée. Les ressources de rendu ont été libérées.'); setCapabilities(null);
   };
-  const launch=()=>{
-    if(busy.current)return;
-    busy.current=true;frameRef.current=null;setFrame(null);setReport(null);setStatus('loading');setMessage('Chargement du banc Lumière…');
-    setModal(old=>({...old,open:false}));
-    if(kind==='comparison')delete window.__lightingBench16Report;
-    setRequest({id:++generation.current,kind});
-  };
-
-  useEffect(()=>{
-    document.title='16 · Lumière — render-tech-lab';
-    return()=>{generation.current++;abortRef.current?.abort();reportRequest.current?.abort();release();};
-  },[]);
-
-  useEffect(()=>{
-    if(!request)return;
-    const abort=new AbortController();abortRef.current=abort;
-    const current=()=>generation.current===request.id&&!abort.signal.aborted;
-    const fail=(error:unknown)=>{
-      if(!current())return;
-      generation.current++;abort.abort();
-      release();busy.current=false;setStatus('error');setMessage(error instanceof Error?error.message:String(error));
-    };
-    failRef.current=fail;
-    void(async()=>{
+  const launch = () => {
+    if (busy.current) return;
+    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null);
+    const abort = new AbortController(); abortRef.current = abort;
+    const owner = ++generation.current;
+    setConfig(defaultConfig(sceneId));
+    void (async () => {
       try {
-        const canvas=canvasRef.current;
-        if(!canvas)throw new Error('La surface de rendu est indisponible.');
-        const options={signal:abort.signal,onProgress:(value:string)=>{if(current()){setMessage(value);if(request.kind==='comparison'&&value.startsWith('Images identiques'))setStatus('running');}}};
-        if(request.kind==='comparison') {
-          const result=await runLightingComparison(canvas,options);
-          if(generation.current!==request.id)return;
-          setReport(result);window.__lightingBench16Report=result;
-          const stopped=abort.signal.aborted||result.status==='stopped';
-          setStatus(stopped?'stopped':result.status==='error'?'error':'completed');
-          setMessage(stopped?'Comparaison arrêtée.':result.status==='error'?result.error??'La comparaison a rencontré une erreur.':result.status==='measured'?'Comparaison terminée. Consultez ses mesures et ses limites.':'Comparaison rejetée par le contrôle des images.');
-          release();busy.current=false;
-          return;
-        }
-        const controller=await createLightingBench(canvas,options);
-        if(!current()){controller.dispose();return;}
-        controllerRef.current=controller;
-        const resize=()=>{const box=canvas.getBoundingClientRect();if(box.width>0&&box.height>0){controller.resize(Math.round(box.width),Math.round(box.height));previousRaf.current=null;}};
-        resize();resizeRef.current=new ResizeObserver(resize);resizeRef.current.observe(canvas);
-        const initial=controller.getConfig();configRef.current=initial;setConfig(initial);
-        setStatus('running');setMessage('Scène active. Déplacez la porte ou modifiez les lampes.');
-        const hook={snapshot:()=>({status:'running' as const,config:controller.getConfig(),frame:frameRef.current?{...frameRef.current}:null})};
-        window.lightingBench16=hook;
-        let published=-Infinity;
-        const tick=(time:number)=>{
-          if(!current())return;
-          try {
-            if(!updating.current) {
-              const interval=previousRaf.current===null?null:time-previousRaf.current;
-              const next={...controller.render(),rafDeltaMs:interval,fps:interval!==null&&interval>0?1000/interval:null};
-              previousRaf.current=time;frameRef.current=next;
-              if(time-published>=200){setFrame({...next});published=time;}
-            }else previousRaf.current=null;
-            raf.current=requestAnimationFrame(tick);
-          } catch(error){fail(error);}
+        const runner = await import('../../16-lighting-transport/index.ts');
+        if (generation.current !== owner || abort.signal.aborted) return;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('La surface de rendu est indisponible.');
+        // Maison : navigation à pied du banc 15 (WASD, saut, collisions sur les murs/le sol générés
+        // par assets/house.ts + assets/prepareHouseNavigation.ts). Emerald : le cache du Lab principal
+        // est en lecture seule, donc aucun navigation.bin n'est généré pour lui ; repli sur les vraies
+        // orbit controls de l'Explorer (pas une commande maison) — à signaler, pas à réimplémenter.
+        const createControls = async (context: ControlsContext): Promise<LightingControlsHandle> => {
+          if (sceneId === 'house') {
+            try {
+              const world = await loadNavigationWorld(context.manifestUrl, context.sourceKey, context.bounds, 1, abort.signal);
+              return createNavigationControls(context.canvas, context.camera, world, 'game', 0);
+            } catch (error) {
+              console.warn('[16-lighting-transport] navigation à la première personne (banc 15) indisponible, repli orbite :', error);
+            }
+          }
+          const orbit = context.orbitControls();
+          return { update: () => orbit.update(), dispose: () => orbit.dispose() };
         };
-        raf.current=requestAnimationFrame(tick);
-      } catch(error){fail(error);}
+        const controller = await runner.createLightingBench(canvas, sceneId, {
+          signal: abort.signal, onProgress: value => { if (generation.current === owner) setMessage(value); }, createControls,
+        });
+        if (generation.current !== owner || abort.signal.aborted) { controller.dispose(); return; }
+        controllerRef.current = controller;
+        setCapabilities(controller.getCapabilities());
+        setStatus('running'); setMessage('Scène active. Cliquez dans la vue pour capturer la souris (WASD, Espace pour sauter, Maj pour courir, Échap pour libérer).');
+        const tick = () => {
+          if (generation.current !== owner || !controllerRef.current) return;
+          setStats(controllerRef.current.getStats());
+          poll.current = requestAnimationFrame(tick);
+        };
+        poll.current = requestAnimationFrame(tick);
+      } catch (error) {
+        if (generation.current !== owner) return;
+        release(); busy.current = false; setStatus('error'); setMessage(error instanceof Error ? error.message : String(error));
+      }
     })();
-    return()=>{abort.abort();release();};
-  },[request]);
+  };
 
-  const change=(patch:Partial<LightingConfig>)=>{
-    const controller=controllerRef.current,currentConfig=configRef.current;
-    if(!liveControls||!controller||!currentConfig)return;
-    const next=copyLightingConfig({...currentConfig,...patch});configRef.current=next;setConfig(next);pending.current=next;
-    if(updating.current)return;
-    const owner=generation.current;updating.current=true;
-    void(async()=>{
-      try {
-        while(pending.current&&generation.current===owner&&controllerRef.current===controller) {
-          const nextConfig=pending.current;pending.current=null;
-          const nextFrame=await controller.update(nextConfig);
-          if(generation.current!==owner||controllerRef.current!==controller)return;
-          previousRaf.current=null;frameRef.current=nextFrame;setFrame({...nextFrame});
-        }
-      } catch(error){if(generation.current===owner&&controllerRef.current===controller)failRef.current(error);}
-      finally{if(generation.current===owner)updating.current=false;}
-    })();
+  useEffect(() => {
+    document.title = '16 · Lumière — render-tech-lab';
+    return () => { generation.current++; abortRef.current?.abort(); reportRequest.current?.abort(); release(); };
+  }, []);
+
+  const change = (patch: Partial<LightingBenchConfig>) => {
+    if (!controllerRef.current) return;
+    setConfig(previous => ({ ...previous, ...patch })); controllerRef.current.update(patch);
   };
-  const changeLight=(id:string,patch:Partial<LightingLight>)=>{
-    const current=configRef.current;if(!current)return;
-    change({lights:current.lights.map(light=>light.id===id?{...light,...patch}:light)});
+  const changeLight = (id: string, patch: Partial<SceneLight>) => {
+    change({ lights: config.lights.map(light => (light.id === id ? { ...light, ...patch } : light)) });
   };
-  const openReport=()=>{
-    if(active)return;
+
+  const openReport = () => {
     reportRequest.current?.abort();
-    const abort=new AbortController();reportRequest.current=abort;
-    setModal({open:true,title:'Rapport · 16 Lumière',path:'reports/'+moduleId+'/',raw:'',html:'Chargement du rapport…',feedback:''});
-    void loadMarkdownReport(url=>fetch(url,{signal:abort.signal}),moduleId).then(result=>{
-      if(!abort.signal.aborted)setModal(old=>({...old,raw:result.ok?result.raw:'',html:result.ok?parseMarkdownToHtml(result.raw):result.raw,feedback:result.feedback}));
-    }).catch(error=>{if(!abort.signal.aborted)setModal(old=>({...old,html:error instanceof Error?error.message:String(error),feedback:'Le rapport n’a pas pu être chargé.'}));});
+    const abort = new AbortController(); reportRequest.current = abort;
+    setModal({ open: true, title: 'Rapport · 16 Lumière', path: 'reports/' + moduleId + '/', raw: '', html: 'Chargement du rapport…', feedback: '' });
+    void loadMarkdownReport(fetch, moduleId).then(result => {
+      if (!abort.signal.aborted) setModal(old => ({ ...old, raw: result.ok ? result.raw : '', html: result.ok ? parseMarkdownToHtml(result.raw) : result.raw, feedback: result.feedback }));
+    }).catch(error => { if (!abort.signal.aborted) setModal(old => ({ ...old, html: error instanceof Error ? error.message : String(error), feedback: 'Le rapport n’a pas pu être chargé.' })); });
   };
-  const actions:LabActions={
-    switchModule:id=>{if(!busy.current)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},
-    runBenchmark:launch,runPain:stop,stopBenchmark:stop,openReport,
-    newExecution:()=>{if(!active){generation.current++;setRequest(null);setStatus('idle');setFrame(null);setMessage('Prêt à lancer la scène.');}},
-    closeReport:()=>setModal(old=>({...old,open:false})),refreshReport:openReport,
-    copyReport:()=>{void navigator.clipboard.writeText(modal.raw).then(()=>setModal(old=>({...old,feedback:'Rapport copié.'}))).catch(()=>setModal(old=>({...old,feedback:'Copie indisponible.'})));},
-    openFinder:()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:moduleId,folder:'reports'})})
-      .then(response=>{if(!response.ok)throw new Error('Dossier indisponible');return response.json();})
-      .then(()=>setModal(old=>({...old,feedback:'Dossier des rapports ouvert.'}))).catch(()=>setModal(old=>({...old,feedback:'Rapports : reports/'+moduleId+'/'})));},
+  const openFinder = () => {
+    void fetch('/api/open-folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: moduleId, folder: 'reports' }) })
+      .then(response => { if (!response.ok) throw new Error('Dossier indisponible'); return response.json(); })
+      .then(() => setModal(old => ({ ...old, feedback: 'Dossier des rapports ouvert.' }))).catch(() => setModal(old => ({ ...old, feedback: 'Rapports : reports/' + moduleId + '/' })));
   };
-  const stats={submit:number(frame?.cpuSubmitMs,' ms'),cpuFrame:number(frame?.cpuFrameMs,' ms'),fps:number(frame?.fps,' FPS'),drawCalls:number(frame?.drawCalls)};
-  const lastCampaign=useMemo(()=>report?.status==='measured'&&report.quality.passed===true?campaignSummary({
-    test:moduleId,timestamp:report.timestamp,status:report.status,
-    records:lightingRecords(report),
-  }):null,[report]);
-  const contextState={...baseSnapshot,mode:'classic' as const,running:active,framePresented:status==='running'&&(kind==='comparison'||!!frame),reportModal:modal,
-    benchLabel:launchLabel,benchStatus:message,showPain:false,showWebgl:active,showWebgpu:false,
-    stats:{...baseSnapshot.stats,...stats},
-    execution:{kind:(request?.kind??kind)==='interactive'?'exploration' as const:'campaign' as const,status:status==='loading'?'running' as const:status,phase:message,lastCampaign}};
-  const panels={
-    configuration:<>
-      <Select id="lighting-run-kind" label="Exécution" value={kind} disabled={active} onChange={event=>setKind(event.target.value as RunKind)}>
-        <option value="interactive">Explorer la lumière</option><option value="comparison">Comparer brut / BVH</option>
-      </Select>
-      {liveControls&&config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
-        <option value="brute">Brut · tous les obstacles</option><option value="bvh">BVH · hiérarchie spatiale</option>
-      </Select>
-      <Input id="lighting-door" label={'Ouverture de la porte · '+Math.round(config.doorAngle*180/Math.PI)+'°'} type="range" min={0} max={90} step={1} value={config.doorAngle*180/Math.PI} disabled={!liveControls} onChange={event=>change({doorAngle:Number(event.target.value)*Math.PI/180})}/>
-      <Input id="lighting-camera" label="Position de la caméra" type="range" min={0} max={1} step={.01} value={config.cameraT} disabled={!liveControls} onChange={event=>change({cameraT:Number(event.target.value)})}/>
-      <Input id="lighting-lights-on" label="Éclairage allumé" type="checkbox" checked={config.lightIntensity>0} disabled={!liveControls} onChange={event=>change({lightIntensity:event.target.checked?1:0})}/>
-      {config.lights.map(light=><LightFields key={light.id} light={light} disabled={!liveControls} onChange={patch=>changeLight(light.id,patch)}/>)}</>:<p className="text-xs text-base-content/60">Les commandes de la porte, de la caméra et des trois lampes apparaissent après le lancement de l’exploration.</p>}
-    </>,
-    metrics:<>
+  const copyReport = () => {
+    void navigator.clipboard.writeText(modal.raw).then(() => setModal(old => ({ ...old, feedback: 'Rapport copié.' }))).catch(() => setModal(old => ({ ...old, feedback: 'Copie indisponible.' })));
+  };
+
+  const actions: LabActions = {
+    switchModule: id => { if (!busy.current) navigateLabRoute(id); }, setMode: () => {}, setScenario: () => {},
+    runBenchmark: launch, runPain: stop, stopBenchmark: stop,
+    openReport, closeReport: () => setModal(old => ({ ...old, open: false })), copyReport, refreshReport: openReport, openFinder,
+    newExecution: () => { if (!active) { generation.current++; setStatus('idle'); setMessage('Prêt à ouvrir une scène.'); } },
+  };
+  const stats4 = { submit: 'Non mesuré', cpuFrame: number(stats.cpuFrameMs, ' ms'), fps: number(stats.fps, ' FPS'), drawCalls: number(stats.drawCalls) };
+  const contextState = {
+    ...baseSnapshot, running: active, framePresented: status === 'running', reportModal: modal, showWebgl: active,
+    stats: { ...baseSnapshot.stats, ...stats4 },
+    execution: { kind: 'exploration' as const, status: status === 'loading' ? ('running' as const) : status, phase: message, lastCampaign: null },
+  };
+
+  const panels = {
+    configuration: (
+      <>
+        <SegmentedControl label="Scène" disabled={active} value={sceneId} onChange={value => setSceneId(value)} options={SCENES.map(scene => ({ value: scene.id, label: scene.title }))} />
+        {active ? (
+          <>
+            <p className="text-xs text-base-content/65">{sceneId === 'house' ? 'Jeu à la première personne (banc 15) : clic pour capturer la souris, WASD, Espace pour sauter, Maj pour courir, Échap pour libérer.' : 'Orbite (Explorer) : glisser pour tourner, molette pour zoomer — aucun navigation.bin pour un cache en lecture seule.'}</p>
+            <Input id="lighting-night" label="Mode nuit" type="checkbox" checked={config.night} disabled={!capabilities?.setEnvironment} onChange={event => change({ night: event.target.checked })} />
+            <Input id="lighting-shadows" label="Ombres" type="checkbox" checked={config.shadows} onChange={event => change({ shadows: event.target.checked })} />
+            <Input id="lighting-auto-count" label={'Lampes automatiques · ' + config.autoLightCount} type="range" min={AUTO_LIGHT_MIN} max={AUTO_LIGHT_MAX} step={1} value={config.autoLightCount} disabled={!capabilities?.addLight} onChange={event => change({ autoLightCount: Number(event.target.value) })} />
+            {ADJUSTABLE_LIGHT_IDS.map(id => {
+              const light = config.lights.find(entry => entry.id === id);
+              return light ? <LightFields key={id} light={light} scene={sceneId} disabled={false} onChange={patch => changeLight(id, patch)} /> : null;
+            })}
+            <Button id="lighting-pause" variant={config.animationPaused ? 'primary' : 'secondary'} onClick={() => change({ animationPaused: !config.animationPaused })}>
+              {config.animationPaused ? 'Reprendre' : 'Mettre en pause'}
+            </Button>
+            <Input id="lighting-speed" label={'Vitesse · ×' + config.animationSpeed.toFixed(1)} type="range" min={0.1} max={4} step={0.1} value={config.animationSpeed} onChange={event => change({ animationSpeed: Number(event.target.value) })} />
+            <p className="text-xs text-base-content/60">Portes, ventilateur, panneau, lampe baladeuse, miroir pivotant{sceneId === 'emerald-night' ? ', phares' : ''} : pilotés par setTransform/setLight à chaque image, sans allocation.</p>
+          </>
+        ) : <p className="text-xs text-base-content/60">{SCENES.find(scene => scene.id === sceneId)?.description}</p>}
+      </>
+    ),
+    metrics: (
       <MetricGrid label="Éclairage" items={[
-        {id:'lighting-cpu-transport',label:'Transport CPU',value:number(frame?.cpuTransportMs,' ms')},
-        {id:'lighting-gpu',label:'Rendu GPU',value:number(frame?.gpuMs,' ms')},
-        {id:'lighting-raf',label:'Intervalle rAF',value:number(frame?.rafDeltaMs,' ms')},
-        {id:'lighting-resolution',label:'Résolution',value:frame&&canvasRef.current?`${canvasRef.current.width} × ${canvasRef.current.height} · DPR 1`:'Non mesurée'},
-        {id:'lighting-triangles',label:'Triangles',value:number(frame?.triangles)},
-        {id:'lighting-refit',label:'Mise à jour BVH CPU',value:number(frame?.bvhRefitMs,' ms')},
-        {id:'lighting-rays',label:'Rayons réutilisés',value:frame?.raysReused==null?'Non mesuré':String(frame.raysReused)+' / '+number(frame.totalRays)},
-      ]}/>
-      {!active&&frame?<p className="text-xs text-base-content/60">Dernière observation de l’exploration arrêtée.</p>:null}
-    </>,
+        { id: 'lighting-gpu', label: 'GPU (passe)', value: number(stats.gpuMs, ' ms') },
+        { id: 'lighting-lights-active', label: 'Lampes actives', value: number(stats.lightsActive) },
+        { id: 'lighting-shadows-updated', label: 'Ombres mises à jour', value: number(stats.shadowsUpdated) },
+        { id: 'lighting-gpu-lightlists', label: 'GPU listes de lampes', value: number(stats.gpuLightListsMs, ' ms') },
+        { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
+        { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
+      ]} />
+    ),
   };
-  return <LabContext.Provider value={{state:contextState,actions,panels}}><LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart}/></LabContext.Provider>;
+
+  return <LabContext.Provider value={{ state: contextState, actions, panels }}><LabShell webglRef={canvasRef} webgpuRef={unusedGpu} chartRef={unusedChart} /></LabContext.Provider>;
 }

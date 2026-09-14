@@ -1,65 +1,27 @@
-import type {Plugin} from 'vite';
-import {mkdir, readFile, writeFile, readdir} from 'node:fs/promises';
-import {dirname, join, resolve} from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {createHash} from 'node:crypto';
-import {execFileSync} from 'node:child_process';
-import os from 'node:os';
-import {GLTF_TYPES, serveDirectory} from '../../shared/dev/serveDirectory.ts';
+import type { Plugin } from 'vite';
+import { resolve } from 'node:path';
+import { GLTF_TYPES, serveDirectory } from '../../shared/dev/serveDirectory.ts';
 
-const hash = (value: Uint8Array|string) => createHash('sha256').update(value).digest('hex');
-const revision = (root:string) => execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+const RESOURCE_TYPES = { ...GLTF_TYPES, '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
 
-/** The host prepares generated inputs through the public SDK, only after the launch CTA. */
+/** Sert le cache local du banc (maison compilée par prepareHouse.ts, voir npm run prepare:house) et,
+ * en lecture seule, le cache Emerald déjà compilé du Lab principal — jamais écrit ici. Le chemin du
+ * Lab principal peut être ajusté via RENDER_TECH_LAB_MAIN_ROOT si besoin sur une autre machine. */
 export function createLightingAssetsPlugin(): Plugin {
-  let preparing = false;
-  return {name:'lighting-bench-assets', configureServer(server) {
-    const labRoot=server.config.root;
-    const root=resolve(labRoot,'benchmark-runs/16-lighting-transport/prepared');
-    server.middlewares.use('/api/lighting-prepare',(req,res)=>{
-      if(req.method!=='POST'){res.statusCode=405;res.end('POST required');return;}
-      if(preparing){res.statusCode=409;res.end('Preparation already running');return;}
-      preparing=true;
-      const abort=new AbortController();
-      res.once('close',()=>{if(!res.writableEnded)abort.abort();});
-      void(async()=>{
-        const {createLightingScene,exportLightingGltf}=await import('@web-geometry/sdk');
-        const {prepare}=await import('@web-geometry/sdk/node');
-        const sdkRoot=dirname(fileURLToPath(import.meta.resolve('@web-geometry/sdk/package.json')));
-        const native=process.env.WEB_GEOMETRY_COMPILER_BIN??join(sdkRoot,'packages/asset-compiler-rust/target/release/web-geometry-compiler');
-        const scene=createLightingScene({doorAngle:Math.PI/2,lightIntensity:1,patchSize:1.2,roughness:.25});
-        const {gltf,binary}=exportLightingGltf(scene),gltfBytes=JSON.stringify(gltf);
-        const meshes=gltf.meshes as Array<{primitives:Array<{indices:number}>}>,accessors=gltf.accessors as Array<{count:number}>;
-        const triangles=meshes.reduce((sum,mesh)=>sum+mesh.primitives.reduce((n,p)=>n+accessors[p.indices].count/3,0),0);
-        const fixtureKey=hash(gltfBytes+hash(binary));
-        const input=join(root,fixtureKey,'input'),cache=join(root,fixtureKey,'cache');
-        await mkdir(input,{recursive:true});await mkdir(cache,{recursive:true});
-        await writeFile(join(input,'scene.gltf'),gltfBytes);await writeFile(join(input,'scene.bin'),binary);
-        const start=performance.now();
-        // The SDK derives the source manifest from the glTF file itself, as prepare:models does for bench 15.
-        const prepared=await prepare(join(input,'scene.gltf'),cache,'full',triangles,{resourceBaseUrl:`/lighting-data/${fixtureKey}/input/`,threads:2,ramBudgetMb:256,simplification:'none',executable:native,signal:abort.signal});
-        if(prepared.status!=='ready')throw Error('Lighting fixture preparation failed');
-        const preparationMs=performance.now()-start;
-        const sourceHashes:Record<string,string>={};
-        const sourceArchive=join('benchmark-runs/16-lighting-transport/provenance',new Date().toISOString().replace(/[:.]/g,'-'));
-        const archiveSource=async(prefix:string,relative:string,source:string)=>{
-          sourceHashes[`${prefix}/${relative}`]=hash(source);
-          const target=join(labRoot,sourceArchive,prefix,relative);await mkdir(dirname(target),{recursive:true});await writeFile(target,source);
-        };
-        for(const directory of ['packages/sdk-core','packages/sdk-browser','dist/sdk-core','dist/sdk-browser']){
-          const sources=(await readdir(join(sdkRoot,directory))).filter(name=>/^lighting.*\.(ts|js)$/.test(name)&&!name.endsWith('.test.ts')&&!name.endsWith('.d.ts')).sort();
-          for(const name of sources){const relative=join(directory,name);await archiveSource('sdk',relative,await readFile(join(sdkRoot,relative),'utf8'));}
-        }
-        await archiveSource('sdk','dist/sdk-browser/buildProvenance.js',await readFile(join(sdkRoot,'dist/sdk-browser/buildProvenance.js'),'utf8'));
-        for(const relative of ['16-lighting-transport/runner/index.ts','16-lighting-transport/contracts.ts','16-lighting-transport/scenarios/fixtures.ts','16-lighting-transport/assets/vite.ts']){
-          await archiveSource('lab',relative,await readFile(join(labRoot,relative),'utf8'));
-        }
-        const result={manifestUrl:`/lighting-data/${fixtureKey}/cache/native/full/manifest.json`,preparationMs,fixtureKey,
-          provenance:{sdkCommit:revision(sdkRoot),labCommit:revision(labRoot),sourceHashes,sourceArchive,compilerSha256:hash(await readFile(native)),inputSha256:{gltf:hash(gltfBytes),binary:hash(binary)},
-          hardware:{platform:os.platform(),architecture:os.arch(),osRelease:os.release(),cpu:os.cpus()[0]?.model??null,logicalCpus:os.cpus().length,totalMemoryBytes:os.totalmem()}}};
-        res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));
-      })().catch(error=>{if(!res.writableEnded){res.statusCode=500;res.end(JSON.stringify({error:String(error)}));}}).finally(()=>{preparing=false;});
-    });
-    server.middlewares.use('/lighting-data',serveDirectory(root,GLTF_TYPES,'Lighting resource unavailable'));
-  }};
+  return {
+    name: 'lighting-bench-cache',
+    configureServer(server) {
+      const houseRoot = resolve(server.config.root, '16-lighting-transport/assets/cache');
+      const mainLabRoot = process.env.RENDER_TECH_LAB_MAIN_ROOT ?? '/Users/pasquelin/Applications/render-tech-lab';
+      const emeraldRoot = resolve(mainLabRoot, 'public/benchmark-assets/emerald-square-derived');
+      // Le glTF source du cache compilé référence ses textures par une URL absolue
+      // /benchmark-assets/emerald-square/... (resourceBaseUrl figé à la compilation, côté Lab
+      // principal). Ce banc n'a pas de dossier public/ : on ressert ces textures en lecture seule
+      // depuis le Lab principal, sans jamais les modifier.
+      const emeraldSourceRoot = resolve(mainLabRoot, 'public/benchmark-assets/emerald-square');
+      server.middlewares.use('/16-lighting-cache', serveDirectory(houseRoot, RESOURCE_TYPES, 'House cache resource missing; run npm run prepare:house'));
+      server.middlewares.use('/emerald-night-cache', serveDirectory(emeraldRoot, RESOURCE_TYPES, 'Emerald cache resource missing in the main Lab'));
+      server.middlewares.use('/benchmark-assets/emerald-square', serveDirectory(emeraldSourceRoot, RESOURCE_TYPES, 'Emerald source texture missing in the main Lab'));
+    },
+  };
 }
