@@ -1,5 +1,5 @@
 # Dependencies
-node_modules/
+node_modules
 
 # Production build
 dist/
@@ -25,4 +25,6 @@ benchmark-runs/
 .agents/
 
 /files_local/
-/public/benchmark-assets/
+/public/benchmark-assets
+/reports/
+/scripts/headless/shots/
