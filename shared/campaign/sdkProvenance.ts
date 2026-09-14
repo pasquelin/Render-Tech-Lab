@@ -8,6 +8,8 @@
  * « dirty » veut dire : des fichiers suivis par git sont modifiés, donc le commit consigné ne
  * décrit plus la source mesurée. Les fichiers non suivis ne comptent pas : un checkout du moteur
  * porte des dossiers de travail (orchestration/, sorties de build) qui ne changent pas une mesure.
+ * Les fichiers suivis sous `orchestration/` et `docs/` ne comptent pas non plus : le journal
+ * d'orchestration y est écrit en continu et ces dossiers ne participent pas à `dist/`.
  */
 
 import { execFile } from 'node:child_process';
@@ -38,11 +40,24 @@ export function sdkDistPath(env: Record<string, string | undefined>, linkedCheck
   return env.SDK_DIST ? path.resolve(env.SDK_DIST) : path.join(path.resolve(linkedCheckout), 'dist');
 }
 
+/** Chemin d'une entrée `git status --porcelain` (code à 2 lettres puis espace ; suit un `->` de renommage). */
+function statusEntryPath(line: string): string {
+  const entry = line.slice(3);
+  const arrow = entry.indexOf(' -> ');
+  return arrow < 0 ? entry : entry.slice(arrow + 4);
+}
+
+/** Un chemin sous `orchestration/` ou `docs/` ne rend pas le checkout dirty (voir doc de fichier). */
+function countsTowardDirty(path: string): boolean {
+  return !path.startsWith('orchestration/') && !path.startsWith('docs/');
+}
+
 async function gitCommit(checkout: string) {
   try {
     const head = await run('git', ['-C', checkout, 'rev-parse', 'HEAD']);
     const status = await run('git', ['-C', checkout, 'status', '--porcelain', '--untracked-files=no']);
-    return { commit: head.stdout.trim() || null, dirty: status.stdout.trim().length > 0 };
+    const dirty = status.stdout.split('\n').filter(line => line.length > 0).map(statusEntryPath).some(countsTowardDirty);
+    return { commit: head.stdout.trim() || null, dirty };
   } catch {
     return { commit: null, dirty: null };
   }

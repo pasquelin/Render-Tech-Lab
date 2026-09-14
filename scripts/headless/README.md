@@ -3,7 +3,14 @@
 Pré-requis : `pnpm dev` lancé dans le Lab — il sert sur **5174**, port visé par défaut
 (`LAB_URL` pour un autre port) ; caches présents dans `public/benchmark-assets/<scene>-derived`.
 Le SDK est lu depuis `/Users/pasquelin/Applications/webGeometry/dist` (`SDK_DIST` pour un autre
-`dist/`). Les scripts sont exécutés par Node directement : ils importent des modules TypeScript de
+`dist/`) : posée avant `pnpm dev`, la même variable fait aussi servir ce `dist/` par le serveur
+(import `@web-geometry/sdk`, provenance rapportée) — scripts et interface voient alors le même SDK.
+Pour comparer avant/après avec deux `dist/` : soit deux serveurs sur deux ports — `server.port` du
+Lab est fixe, donc le second passe par `--port` en ligne de commande, pas par une variable
+d'environnement — `SDK_DIST=<avant> pnpm dev` puis `SDK_DIST=<après> pnpm dev -- --port 5175`, et
+`LAB_URL=http://127.0.0.1:5175` pour la campagne qui vise le second ; soit un seul serveur,
+redémarré avec l'autre `SDK_DIST` entre les deux campagnes.
+Les scripts sont exécutés par Node directement : ils importent des modules TypeScript de
 `shared/campaign/`, dont Node retire les types.
 
 Tous les scripts lancent Chrome avec les mêmes `BASE_FLAGS`, dont `--disable-frame-rate-limit` et
@@ -39,7 +46,7 @@ Les arguments positionnels de `walk.mjs` et `shots.mjs` prennent le pas sur `PIX
 | `MAX_PAGES` | `100000` | plafond de pages résidentes |
 | `TAG` | vide | préfixe des noms de fichiers PNG de `shots.mjs` |
 | `LAB_URL` | `http://127.0.0.1:5174` | serveur du Lab |
-| `SDK_DIST` | `<webGeometry>/dist` | autre `dist/` du SDK |
+| `SDK_DIST` | `<webGeometry>/dist` | autre `dist/` du SDK — lu par les scripts et, posée avant `pnpm dev`, par le serveur |
 | `OUT_DIR` | `/tmp/wg-headless` | sortie de `save()` et de `captureSink()` |
 
 Une valeur illisible fait échouer le script plutôt que dégrader silencieusement la mesure.
@@ -54,8 +61,11 @@ nommé échappe à la rétention à deux campagnes, qui ne balaie que le préfix
 Le rapport porte le schéma `banc15-truth-campaign/v1`, identique à celui produit par l'interface
 (`shared/campaign/truthReport.ts`) : campagne, scène, moteurs, ordre, `replicaCount`, `pixelError`,
 mode de mesure, résolution CSS et physique avec le DPR effectif, plafond rAF calibré, provenance du
-SDK (commit du checkout dont vient `dist/`, drapeau dirty, hash de contenu de `buildProvenance`),
-puis une passe par moteur et par sens avec la charge machine relevée avant le bloc, les
+SDK (commit du checkout dont vient `dist/` — celui de `SDK_DIST` s'il est posé, donc un worktree
+d'agent y compris son propre commit et son propre état —, drapeau dirty, hash de contenu de
+`buildProvenance` — le drapeau dirty ignore les fichiers suivis sous `orchestration/` et `docs/` du
+dépôt moteur, écrits en continu et étrangers à `dist/`), puis une passe par moteur et par sens avec
+la charge machine relevée avant le bloc, les
 distributions rAF, CPU frame et CPU submit (FPS médian, p50, p95, p99, images au-delà du seuil),
 `gpuMs` et `vramBytes` à `null`. CPU et GPU ne sont jamais additionnés.
 
