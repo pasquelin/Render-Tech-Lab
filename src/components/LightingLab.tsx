@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
-import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,LIGHTING_PROTOCOL,LIGHTING_UI} from '../../16-lighting-transport/index.ts';
-import type {LightingArchiveEntry,LightingArchiveHistory,LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector} from '../../16-lighting-transport/index.ts';
+import {LIGHTING_LIGHT_CONTROLS,LIGHTING_MODULE,LIGHTING_PROTOCOL,LIGHTING_UI,LIGHTING_DELAY_PROTOCOL,LIGHTING_DELAY_EVENTS,LIGHTING_DELAY_MS} from '../../16-lighting-transport/index.ts';
+import type {LightingArchiveEntry,LightingArchiveHistory,LightingConfig,LightingController,LightingFrame,LightingLight,LightingReport,LightingVector,LightingDelayArchiveEntry,LightingDelayArchiveHistory,LightingDelayReport} from '../../16-lighting-transport/index.ts';
 import {initialSnapshot,type LabActions} from '../lab/labState.ts';
 import {navigateLabRoute} from '../lab/navigation.ts';
 import {parseMarkdownToHtml} from '../lab/markdown.ts';
@@ -21,7 +21,7 @@ import {ReportSummary} from './ui/ReportSummary.tsx';
 import {ActionBar} from './ui/ActionBar.tsx';
 
 type Status='idle'|'loading'|'running'|'completed'|'stopped'|'error';
-type RunKind='interactive'|'comparison';
+type RunKind='interactive'|'comparison'|'delay';
 const moduleId='16-lighting-transport';
 const number=(value:number|null|undefined,unit='')=>value==null||!Number.isFinite(value)?'Non mesuré':value.toFixed(unit===' ms'?2:0)+unit;
 const copyConfig=(config:LightingConfig):LightingConfig=>({...config,lights:config.lights.map(light=>({...light,color:[...light.color],position:[...light.position]}))});
@@ -38,6 +38,7 @@ declare global {
   interface Window {
     lightingBench16?: {snapshot:()=>{status:'running';config:LightingConfig;frame:LightingFrame|null}};
     __lightingBench16Report?: LightingReport;
+    __lightingBench16DelayReport?: LightingDelayReport;
   }
 }
 
@@ -70,15 +71,20 @@ export function LightingLab() {
   const [message,setMessage]=useState('Prêt à lancer la scène.');
   const [config,setConfig]=useState<LightingConfig|null>(null),[frame,setFrame]=useState<LightingFrame|null>(null);
   const [report,setReport]=useState<LightingReport|null>(null);
+  const [delayReport,setDelayReport]=useState<LightingDelayReport|null>(null);
   const [archives,setArchives]=useState<LightingArchiveHistory>({formatVersion:1,latestAttempt:null,latestValid:null,attempts:[]});
+  const [delayArchives,setDelayArchives]=useState<LightingDelayArchiveHistory>({formatVersion:1,latestAttempt:null,attempts:[]});
   const [selectedPackage,setSelectedPackage]=useState(''),[archiveMessage,setArchiveMessage]=useState('Lecture des archives…');
+  const [selectedDelayPackage,setSelectedDelayPackage]=useState(''),[delayArchiveMessage,setDelayArchiveMessage]=useState('Lecture des archives…');
   const reportRequest=useRef<AbortController|null>(null);
   const archivedReport=archives.attempts.find(entry=>entry.package===selectedPackage);
+  const archivedDelayReport=delayArchives.attempts.find(entry=>entry.package===selectedDelayPackage);
   const reportLabel=(entry:LightingArchiveEntry)=>entry.status==='measured'?'Comparaison mesurée':entry.status==='rejected'?'Comparaison rejetée':entry.status==='error'?'Comparaison en erreur':'Comparaison arrêtée';
+  const delayReportLabel=(entry:LightingDelayArchiveEntry)=>entry.status==='measured'?'Campagne mesurée':entry.status==='error'?'Campagne en erreur':'Campagne arrêtée';
   const [modal,setModal]=useState(()=>initialSnapshot(moduleId).reportModal);
   const active=status==='loading'||status==='running';
   const liveControls=status==='running'&&kind==='interactive';
-  const launchLabel=kind==='comparison'?'Comparer brut / BVH':LIGHTING_MODULE.benchLabel;
+  const launchLabel=kind==='comparison'?'Comparer brut / BVH':kind==='delay'?'Lancer le retard de réponse':LIGHTING_MODULE.benchLabel;
 
   const release=()=>{
     cancelAnimationFrame(raf.current);
@@ -96,6 +102,7 @@ export function LightingLab() {
     busy.current=true;frameRef.current=null;setFrame(null);setStatus('loading');setMessage('Chargement du banc Lumière…');
     setModal(old=>({...old,open:false}));
     if(kind==='comparison')delete window.__lightingBench16Report;
+    if(kind==='delay')delete window.__lightingBench16DelayReport;
     setRequest({id:++generation.current,kind});
   };
 
@@ -117,6 +124,20 @@ export function LightingLab() {
     }).catch(error=>{if(!abort.signal.aborted)setArchiveMessage(error instanceof Error?error.message:String(error));});
     return()=>abort.abort();
   },[active,report?.id]);
+
+  useEffect(()=>{
+    if(active)return;
+    const abort=new AbortController();
+    void fetch('/api/lighting-delay-report',{signal:abort.signal}).then(async response=>{
+      if(!response.ok)throw Error('Archives indisponibles.');
+      const history=await response.json() as LightingDelayArchiveHistory;
+      if(abort.signal.aborted)return;
+      setDelayArchives(history);setDelayArchiveMessage(history.attempts.length?'':'Aucune campagne archivée pour ce scénario.');
+      setSelectedDelayPackage(previous=>history.attempts.find(entry=>entry.id===delayReport?.id)?.package??
+        (history.attempts.some(entry=>entry.package===previous)?previous:history.latestAttempt??''));
+    }).catch(error=>{if(!abort.signal.aborted)setDelayArchiveMessage(error instanceof Error?error.message:String(error));});
+    return()=>abort.abort();
+  },[active,delayReport?.id]);
 
   useEffect(()=>{
     if(!request)return;
@@ -143,6 +164,17 @@ export function LightingLab() {
           const stopped=abort.signal.aborted||result.status==='stopped';
           setStatus(stopped?'stopped':result.status==='error'?'error':'completed');
           setMessage(stopped?'Comparaison arrêtée.':result.status==='error'?result.error??'La comparaison a rencontré une erreur.':result.status==='measured'?'Comparaison terminée. Consultez ses mesures et ses limites.':'Comparaison rejetée par le contrôle des images.');
+          release();busy.current=false;
+          return;
+        }
+        if(request.kind==='delay') {
+          setStatus('running');
+          const result=await runner.runLightingDelayScenario(canvas,options);
+          if(generation.current!==request.id)return;
+          setDelayReport(result);window.__lightingBench16DelayReport=result;
+          const stopped=abort.signal.aborted||result.status==='stopped';
+          setStatus(stopped?'stopped':result.status==='error'?'error':'completed');
+          setMessage(stopped?'Campagne arrêtée.':result.status==='error'?result.error??'La campagne a rencontré une erreur.':'Campagne terminée. Consultez les vidéos et le rapport pour juger chaque retard.');
           release();busy.current=false;
           return;
         }
@@ -211,10 +243,28 @@ export function LightingLab() {
     link.href='/api/report-artifact?package='+encodeURIComponent(moduleId+'/'+archivedReport.package)+'&file=objects%2Fresult.json.gz';
     link.download='lumiere-'+archivedReport.id+'.json.gz';link.click();
   };
+  const openDelayReport=()=>{
+    if(!archivedDelayReport)return;
+    reportRequest.current?.abort();
+    const abort=new AbortController();reportRequest.current=abort;
+    const path='reports/'+moduleId+'/'+archivedDelayReport.package+'/REPORT.md';
+    setModal({open:true,title:'Rapport · Retard de réponse lumineuse',path,raw:'',html:'Chargement du rapport…',feedback:''});
+    void fetch('/api/lighting-delay-report?package='+encodeURIComponent(archivedDelayReport.package),{signal:abort.signal}).then(async response=>{
+      if(!response.ok)throw Error('Lecture du rapport archivé impossible.');
+      const raw=await response.text();
+      if(!abort.signal.aborted)setModal(old=>({...old,raw,html:parseMarkdownToHtml(raw)}));
+    }).catch(error=>{if(!abort.signal.aborted)setModal(old=>({...old,html:error instanceof Error?error.message:String(error),feedback:'Le rapport n’a pas pu être chargé.'}));});
+  };
+  const downloadDelayReport=()=>{
+    if(!archivedDelayReport)return;
+    const link=document.createElement('a');
+    link.href='/api/report-artifact?package='+encodeURIComponent(moduleId+'/'+archivedDelayReport.package)+'&file=objects%2Fresult.json.gz';
+    link.download='lumiere-retard-'+archivedDelayReport.id+'.json.gz';link.click();
+  };
   const actions:LabActions={
     switchModule:id=>{if(!busy.current)navigateLabRoute(id);},setMode:()=>{},setScenario:()=>{},
-    runBenchmark:launch,runPain:stop,stopBenchmark:stop,openReport,
-    closeReport:()=>setModal(old=>({...old,open:false})),refreshReport:openReport,
+    runBenchmark:launch,runPain:stop,stopBenchmark:stop,openReport:kind==='delay'?openDelayReport:openReport,
+    closeReport:()=>setModal(old=>({...old,open:false})),refreshReport:kind==='delay'?openDelayReport:openReport,
     copyReport:()=>{void navigator.clipboard.writeText(modal.raw).then(()=>setModal(old=>({...old,feedback:'Rapport copié.'}))).catch(()=>setModal(old=>({...old,feedback:'Copie indisponible.'})));},
     openFinder:()=>{void fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({testId:moduleId,folder:'reports'})})
       .then(response=>{if(!response.ok)throw new Error('Dossier indisponible');return response.json();})
@@ -225,12 +275,20 @@ export function LightingLab() {
     stats:{...initialSnapshot(moduleId).stats,...stats},
     execution:{status:status==='loading'?'running' as const:status,phase:message,lastCampaign:null}};
   const reportActions=archivedReport?<ActionBar><Button id="lighting-open-report" variant="secondary" disabled={active} onClick={openReport}>Lire le rapport</Button><Button variant="outline" disabled={active} onClick={downloadReport}>Exporter les données</Button></ActionBar>:null;
+  const delayReportActions=archivedDelayReport?<ActionBar><Button id="lighting-delay-open-report" variant="secondary" disabled={active} onClick={openDelayReport}>Lire le rapport</Button><Button variant="outline" disabled={active} onClick={downloadDelayReport}>Exporter les données</Button></ActionBar>:null;
   const sidebar=<>
     <LabSection id="lab-mode-card" number={1} title="Configuration / mode d’exécution" help={LIGHTING_UI.modeHint}>
       <Select id="lighting-run-kind" label="Exécution" value={kind} disabled={active} onChange={event=>setKind(event.target.value as RunKind)}>
         <option value="interactive">Explorer la lumière</option><option value="comparison">Comparer brut / BVH</option>
+        <option value="delay">Retard de réponse lumineuse</option>
       </Select>
-      {config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
+      {kind==='delay'?<div className="space-y-1 text-xs text-base-content/70">
+        <p>Caméra fixe · pose « {LIGHTING_DELAY_PROTOCOL.cameraLabel} ». Pas de temps simulé 1/{LIGHTING_DELAY_PROTOCOL.fps} s · {LIGHTING_DELAY_PROTOCOL.preRollFrames} images avant t0 · {LIGHTING_DELAY_PROTOCOL.postRollFrames} images après (≈ {((LIGHTING_DELAY_PROTOCOL.preRollFrames+LIGHTING_DELAY_PROTOCOL.postRollFrames)/LIGHTING_DELAY_PROTOCOL.fps).toFixed(1)} s de vidéo par retard).</p>
+        <p>Retards testés : {LIGHTING_DELAY_MS.join(' / ')} ms.</p>
+        <p>Événements : {LIGHTING_DELAY_EVENTS.map(event=>event.label).join(' · ')}.</p>
+        <p>Qualité du protocole fixe, identique pour A et B : {LIGHTING_PROTOCOL.raysPerPatch} rayons/patch, {LIGHTING_PROTOCOL.directLightSamples} échantillons directs, {LIGHTING_PROTOCOL.reflectionSamples} échantillons GGX, {LIGHTING_PROTOCOL.width} × {LIGHTING_PROTOCOL.height} DPR {LIGHTING_PROTOCOL.pixelRatio}.</p>
+        <p className="text-base-content/55">Calcul lent (temps simulé, hors temps réel) ; les vidéos sont assemblées après coup à {LIGHTING_DELAY_PROTOCOL.fps} images par seconde réelles.</p>
+      </div>:config?<><Select id="lighting-variant" label="Parcours des obstacles" value={config.variant} disabled={!liveControls} onChange={event=>change({variant:event.target.value as LightingConfig['variant']})}>
         <option value="brute">Brut · tous les obstacles</option><option value="bvh">BVH · hiérarchie spatiale</option>
       </Select>
       <Input id="lighting-door" label={'Ouverture de la porte · '+Math.round(config.doorAngle*180/Math.PI)+'°'} type="range" min={0} max={90} step={1} value={config.doorAngle*180/Math.PI} disabled={!liveControls} onChange={event=>change({doorAngle:Number(event.target.value)*Math.PI/180})}/>
@@ -265,18 +323,26 @@ export function LightingLab() {
         <p className="text-xs">{archivedReport.qualityPassed===true?'Contrôle des images réussi.':archivedReport.qualityPassed===false?'Le contrôle des images a échoué.':'Contrôle des images non terminé.'}</p>
         <p className="text-xs text-base-content/60">{archivedReport.timestamp}</p>
       </ReportSummary>{reportActions}</>:<p className="text-xs text-base-content/60">{archiveMessage}</p>}
-
+      {delayArchives.attempts.length?<Select id="lighting-delay-report-history" label="Campagne de retard archivée" value={selectedDelayPackage} disabled={active} onChange={event=>setSelectedDelayPackage(event.target.value)}>
+        {delayArchives.attempts.map(entry=><option key={entry.package} value={entry.package}>{entry.timestamp+' · '+delayReportLabel(entry)}</option>)}
+      </Select>:null}
+      {archivedDelayReport?<><ReportSummary title={delayReportLabel(archivedDelayReport)}>
+        <p className="text-xs text-base-content/60">{archivedDelayReport.timestamp}</p>
+      </ReportSummary>{delayReportActions}</>:<p className="text-xs text-base-content/60">{delayArchiveMessage}</p>}
     </LabSection>
   </>;
+  const completedTitle=kind==='delay'?'Campagne de retard terminée':'Comparaison terminée';
+  const activeArchivedReport=kind==='delay'?archivedDelayReport:archivedReport;
+  const openActiveReport=kind==='delay'?openDelayReport:openReport;
   const viewport=<main data-lighting-status={status} className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-base-100 flex flex-col">
     {active?<><canvas id="lighting-canvas" ref={canvasRef} aria-label="Deux pièces et trois sources lumineuses" className="block w-full h-full min-h-0 object-contain"/>
       {status==='loading'?<div className="absolute inset-0 flex items-center justify-center bg-base-100"><LoadingState message={message}/></div>:null}
-      {kind==='comparison'?<div className="absolute left-3 right-3 bottom-3"><ProgressPanel message={message}/></div>:null}
+      {kind==='comparison'||kind==='delay'?<div className="absolute left-3 right-3 bottom-3"><ProgressPanel message={message}/></div>:null}
     </>:<div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center">
-      {status==='error'?<ErrorState message={message} action={<Button onClick={launch}>{launchLabel}</Button>}/>:<EmptyState title={status==='idle'?'16 · Lumière':status==='stopped'?'Exécution arrêtée':'Comparaison terminée'}>
+      {status==='error'?<ErrorState message={message} action={<Button onClick={launch}>{launchLabel}</Button>}/>:<EmptyState title={status==='idle'?'16 · Lumière':status==='stopped'?'Exécution arrêtée':completedTitle}>
         <p className="max-w-xl text-sm text-base-content/70">{status==='idle'?LIGHTING_MODULE.description:message}</p>
         <p className="max-w-xl text-xs text-base-content/55">{LIGHTING_UI.idleNote}</p>
-        <ActionBar><Button id="lighting-launch" onClick={launch}>{launchLabel}</Button>{archivedReport?<Button variant="secondary" onClick={openReport}>Lire le rapport</Button>:null}</ActionBar>
+        <ActionBar><Button id="lighting-launch" onClick={launch}>{launchLabel}</Button>{activeArchivedReport?<Button variant="secondary" onClick={openActiveReport}>Lire le rapport</Button>:null}</ActionBar>
       </EmptyState>}
     </div>}
   </main>;

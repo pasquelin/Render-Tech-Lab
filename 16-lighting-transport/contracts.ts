@@ -137,3 +137,73 @@ export interface LightingController {
   getConfig(): LightingConfig;
   dispose(): void;
 }
+
+/** "Retard de réponse lumineuse" : la géométrie change instantanément, l'indirect suit avec un retard D. */
+export type LightingDelayEventId = 'door-closes' | 'door-opens' | 'lamp-off';
+
+export const LIGHTING_DELAY_EVENTS: ReadonlyArray<{ readonly id: LightingDelayEventId; readonly label: string }> = [
+  { id: 'door-closes', label: 'Porte ouverte → fermée' },
+  { id: 'door-opens', label: 'Porte fermée → ouverte' },
+  { id: 'lamp-off', label: 'Extinction de la lampe chaude' },
+];
+
+/** 95 % du chemin vers B est parcouru à t0 + D ; D = 0 est un saut net (fonction de marche). */
+export const LIGHTING_DELAY_MS = [0, 50, 100, 200, 400, 800] as const;
+export type LightingDelayMs = (typeof LIGHTING_DELAY_MS)[number];
+
+export const LIGHTING_DELAY_PROTOCOL = Object.freeze({
+  formatVersion: 1,
+  fps: 60,
+  frameDurationMs: 1000 / 60,
+  preRollFrames: 30,
+  postRollFrames: 90,
+  targetConvergence: 0.95,
+  errorThreshold: 0.05,
+  cameraLabel: 'doorway',
+  cameraPosition: [2.7, 1.6, 1.1] as LightingVector,
+  cameraTarget: [-2, 1.3, 0] as LightingVector,
+  fov: 66,
+  near: 0.025,
+  far: 50,
+  delaysMs: LIGHTING_DELAY_MS,
+  events: LIGHTING_DELAY_EVENTS.map(event => event.id),
+} as const);
+
+export interface LightingDelaySequence {
+  event: LightingDelayEventId;
+  delayMs: number;
+  frameCount: number;
+  /** First simulated instant (ms after t0) where the blended array's max error vs B falls under the threshold. */
+  tau95RadianceMs: number | null;
+  tau95IndirectMs: number | null;
+  videoUrl: string | null;
+  videoBytes: number | null;
+}
+
+export interface LightingDelayReport {
+  formatVersion: 1;
+  id: string;
+  timestamp: string;
+  status: 'measured' | 'stopped' | 'error';
+  protocol: typeof LIGHTING_PROTOCOL;
+  delayProtocol: typeof LIGHTING_DELAY_PROTOCOL;
+  environment: Record<string, unknown>;
+  provenance: Record<string, unknown>;
+  sequences: LightingDelaySequence[];
+  contactSheets: { event: LightingDelayEventId; url: string }[];
+  scope: { shows: string[]; doesNotShow: string[] };
+  limitations: string[];
+  error?: string;
+}
+
+export interface LightingDelayArchiveEntry {
+  package: string;
+  id: string;
+  timestamp: string;
+  status: LightingDelayReport['status'];
+}
+export interface LightingDelayArchiveHistory {
+  formatVersion: 1;
+  latestAttempt: string | null;
+  attempts: LightingDelayArchiveEntry[];
+}

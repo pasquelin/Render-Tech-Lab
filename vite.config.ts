@@ -1,6 +1,7 @@
 import { createModelAssetsPlugin } from './15-virtualized-integration/assets/vite.ts';
 import { createLightingAssetsPlugin } from './16-lighting-transport/assets/vite.ts';
 import { createLightingArchivePlugin } from './16-lighting-transport/assets/archive.ts';
+import { createLightingDelayArchivePlugin } from './16-lighting-transport/assets/delayArchive.ts';
 import { createIntegrationArchivePlugin } from './shared/archive/integration.ts';
 import { createLodComparisonPlugin } from './benchmarks/lodComparisonPlugin.ts';
 import { defineConfig, type Plugin } from 'vite';
@@ -169,12 +170,12 @@ function saveReportPlugin(): Plugin {
           const url = new URL(req.url || '', 'http://localhost');
           const packagePath = String(url.searchParams.get('package') || '');
           const file = String(url.searchParams.get('file') || '');
-          if (!/^\d\d-[a-z0-9-]+\/campaign-[a-z0-9-]+$/.test(packagePath) || !/^(objects|logs|media)\/[a-zA-Z0-9._-]+$/.test(file)) throw new Error('Chemin de rapport invalide');
+          if (!/^\d\d-[a-z0-9-]+\/campaign-[a-z0-9-]+$/.test(packagePath) || !/^(objects|logs|media|captures)\/[a-zA-Z0-9._-]+$/.test(file)) throw new Error('Chemin de rapport invalide');
           const base = path.resolve(server.config.root, 'reports', packagePath);
           const target = path.resolve(base, file);
           if (!target.startsWith(`${base}${path.sep}`) || !fs.statSync(target).isFile()) throw new Error('Artefact absent');
           const extension = path.extname(target).toLowerCase();
-          const types: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.json': 'application/json', '.gz': 'application/gzip', '.jsonl': 'application/x-ndjson' };
+          const types: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.json': 'application/json', '.gz': 'application/gzip', '.jsonl': 'application/x-ndjson', '.webm': 'video/webm' };
           res.statusCode = 200;
           res.setHeader('Content-Type', types[extension] || 'application/octet-stream');
           fs.createReadStream(target).pipe(res);
@@ -301,7 +302,7 @@ function saveReportPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [createLightingAssetsPlugin(),createLightingArchivePlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
+  plugins: [createLightingAssetsPlugin(),createLightingArchivePlugin(),createLightingDelayArchivePlugin(),createModelAssetsPlugin(),createIntegrationArchivePlugin(), react(), tailwindcss(), saveReportPlugin(), createLodComparisonPlugin(), createLodComparisonPlugin({ id: '14-open-world' })],
   resolve: { dedupe: ['three', 'react', 'react-dom'] },
   optimizeDeps: { exclude: ['@web-geometry/sdk'] },
   cacheDir: '.vite',
