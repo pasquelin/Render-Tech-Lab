@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { prepare } from '@web-geometry/sdk/node';
+import { assertCachePointer, assertCacheReady } from '@web-geometry/sdk';
 
 function hash(bytes: Buffer) { return createHash('sha256').update(bytes).digest('hex'); }
 function grid(nx: number, ny: number) {
@@ -19,7 +20,7 @@ function grid(nx: number, ny: number) {
   return { positions, indices, triangles: indices.length / 3 };
 }
 
-test('prepare with qem-endpoints writes coarse LOD pages the lab availability check accepts', async () => {
+test('prepare writes a cache the lab availability check accepts, read only through the SDK', async () => {
   const root = await mkdtemp(join(tmpdir(), 'qem-prepare-'));
   const input = join(root, 'source'), output = join(root, 'cache');
   await mkdir(input);
@@ -53,27 +54,28 @@ test('prepare with qem-endpoints writes coarse LOD pages the lab availability ch
     runtime: { file: 'mesh.gltf', sha256: hash(json), sidecars: [{ file: 'mesh.bin', sha256: hash(bin) }], trianglesAcrossNodes: triangles, meshNodes: 1 },
   }));
   try {
+    // Ce que `prepare` promet à son appelant, sans qu'il ouvre le cache.
     const result = await prepare(input, output, 'full', 150000, {
       threads: 1, ramBudgetMb: 64, resourceBaseUrl: '/assets/', simplification: 'qem-endpoints',
     });
     assert.equal(result.status, 'ready');
     assert.equal(result.simplification, true);
     assert.equal(result.selectedTriangles, triangles);
+
+    // Le format du cache appartient au SDK : le banc lit deux JSON et laisse le SDK juger.
+    // Aucun champ interne (pages, clusters, hiérarchie) n'est touché ici.
     const pointer = JSON.parse(await readFile(join(output, 'native/full/manifest.json'), 'utf8'));
-    const clusters = JSON.parse(await readFile(join(output, 'native/full', pointer.url), 'utf8'));
-    const pages = clusters.primitives[0].pages;
-    const coarse = pages.filter((page: { role?: string }) => page.role === 'coarse');
-    const exact = pages.filter((page: { role?: string }) => page.role !== 'coarse');
-    assert.ok(exact.length >= 2, `expected multiple exact clusters, got ${exact.length}`);
-    assert.ok(coarse.length >= 1, 'expected coarse QEM pages');
-    assert.equal(clusters.simplification, true);
-    assert.ok(clusters.primitives[0].hierarchy.coarsePages?.length >= 1);
+    const cacheUrl = assertCachePointer(pointer, 'full');
+    const manifest = JSON.parse(await readFile(join(output, 'native/full', cacheUrl), 'utf8'));
+    assert.equal(assertCacheReady(manifest, 'full'), triangles);
+
+    // Et le chemin réel du banc, servi par fetch, donne le même compte.
     const { checkModelAvailability, defaultModelId, modelManifestUrl } = await import('../../src/lab/modelAvailability.ts');
     assert.match(modelManifestUrl(defaultModelId()), /native\/full\/manifest\.json$/);
     const trianglesSeen = await checkModelAvailability(defaultModelId(), (async (url: string) => {
       const path = String(url).replace(/^https?:\/\/[^/]+/, '');
-      if (path.endsWith('manifest.json')) return new Response(JSON.stringify(pointer), { headers: { 'content-type': 'application/json' } });
-      return new Response(JSON.stringify(clusters), { headers: { 'content-type': 'application/json' } });
+      const body = path.endsWith('manifest.json') ? pointer : manifest;
+      return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
     }) as typeof fetch);
     assert.equal(trianglesSeen, triangles);
   } finally {

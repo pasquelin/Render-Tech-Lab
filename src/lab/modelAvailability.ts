@@ -1,4 +1,5 @@
 import { modelById, benchmarkModels } from '../../15-virtualized-integration/index.ts';
+import { assertCachePointer, assertCacheReady } from '@web-geometry/sdk';
 
 export function defaultModelId(): string {
   return benchmarkModels[0]?.id ?? '';
@@ -17,15 +18,12 @@ export async function checkModelAvailability(modelId: string, fetcher: typeof fe
     if (!response.headers.get('content-type')?.includes('json')) throw new Error('Cache invalide : réponse JSON attendue. Préparez les modèles puis réessayez.');
     return response.json();
   };
+  // Le format du cache appartient au SDK : l'hôte lit deux JSON, vérifie que l'adresse reste dans son
+  // propre dossier de modèle, et laisse le SDK dire si ce cache est utilisable.
   const manifestUrl = modelManifestUrl(modelId);
-  const pointer = await read(manifestUrl);
-  if (pointer.status !== 'ready' || pointer.scope !== 'full' || typeof pointer.url !== 'string') throw new Error('Manifeste de modèle incomplet. Préparez les modèles puis réessayez.');
+  const pointerUrl = assertCachePointer(await read(manifestUrl), 'full');
   const base = new URL(manifestUrl, 'http://localhost');
-  const target = new URL(pointer.url, base);
+  const target = new URL(pointerUrl, base);
   if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname.replace(/manifest\.json$/, ''))) throw new Error('Adresse du cache de modèle invalide.');
-  const metadata = await read(target.pathname);
-  if (metadata.status !== 'ready' || metadata.scope !== 'full' || metadata.schema !== 1 || !Array.isArray(metadata.primitives) || !Array.isArray(metadata.selectedNodes) || !Number.isFinite(metadata.selectedTriangles) || metadata.selectedTriangles <= 0) throw new Error('Cache de modèle invalide. Préparez les modèles puis réessayez.');
-  if (metadata.simplification !== true) throw new Error('Cache sans pages QEM. Relancez pnpm prepare:models.');
-  if (metadata.errorModel !== 'qem-local-plus-child-max') throw new Error('Cache QEM obsolète. Relancez pnpm prepare:models.');
-  return metadata.selectedTriangles;
+  return assertCacheReady(await read(target.pathname), 'full');
 }

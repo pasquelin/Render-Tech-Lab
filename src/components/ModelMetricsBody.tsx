@@ -29,7 +29,7 @@ export function ModelMetricsBody() {
         { label: 'Pages lues', value: number(metrics?.pageLoads), provenance: 'Lectures vérifiées du cache CPU' },
         { label: 'Pages en cours', value: number(metrics?.pagesLoading) },
         { label: 'Pages attachées', value: exact ? number(metrics?.residentPages) : 'Non mesuré', provenance: 'Pages d’indices dans la scène ; pas VRAM physique' },
-        { label: 'Pages évincées', value: exact ? number(metrics?.pageEvictions) : 'Non mesuré' },
+        { label: 'Pages évincées', value: exact ? number(metrics?.cacheEvictions) : 'Non mesuré' },
         { label: 'Cache hits / misses', value: metrics?.cacheHits==null&&metrics?.cacheMisses==null?'Non mesuré':`${number(metrics?.cacheHits)} / ${number(metrics?.cacheMisses)}` },
         { label: 'Frustum rejeté', value: number(metrics?.frustumRejected) },
         { label: 'Octets de géométrie comptabilisés', value: number(metrics?.geometryAllocationBytes), provenance: 'Tableaux uniques ; pas mémoire GPU physique' },

@@ -19,7 +19,7 @@ function rowsFor(stills: ModelStill[]) {
     ['Pages résidentes', ...stills.map(still => value(still.residentPages))],
     ['Demandes de pages', ...stills.map(still => value(still.pagesRequested))],
     ['Chargements de pages', ...stills.map(still => value(still.pageLoads))],
-    ['Évictions de pages', ...stills.map(still => value(still.pageEvictions))],
+    ['Évictions de pages', ...stills.map(still => value(still.cacheEvictions))],
     ['Rejets frustum', ...stills.map(still => value(still.frustumRejected))],
   ];
 }
