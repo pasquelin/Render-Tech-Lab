@@ -45,9 +45,6 @@ const report: ModelReport = {
       raf: frameDistribution([8.33, 8.33, 8.33]), cpuFrameMs: null, cpuSubmitMs: null,
       gpuMs: null, vramBytes: null, selectedTriangles: 900, triangles: 900, drawCalls: 6, residentPages: 5, shots: null, error: null,
     }],
-    // Le minimum de l'unique passe seul (repli de `buildTruthReport`) est trop court pour
-    // calibrer un plafond : une campagne réelle fournit sa série rAF complète.
-    ceilingIntervalsMs: Array.from({ length: 12 }, () => 8.33),
   }),
 };
 

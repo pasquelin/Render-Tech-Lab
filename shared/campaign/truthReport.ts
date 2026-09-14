@@ -14,26 +14,8 @@ export const DEFAULT_SLOW_FRAME_MS = 1000 / 120;
 /** Les seuls plafonds d'affichage que le banc sait reconnaître. */
 export const SUPPORTED_REFRESH_HZ: readonly number[] = [60, 120];
 
-/** Tolérance relative de la médiane calibrée à un plafond connu. */
-const CEILING_MEDIAN_TOLERANCE = 0.1;
-
-/** Largeur relative de la grappe dominante autour de la médiane calibrée. */
-const CEILING_CLUSTER_BAND = 0.15;
-
-/** Part minimale d'intervalles dans la grappe dominante pour confirmer un rythme. */
-const CEILING_CLUSTER_MIN_SHARE = 0.6;
-
-/** Un intervalle de rattrapage vaut moins de la moitié de la médiane brute : exclu de la calibration. */
-const CEILING_CATCH_UP_FRACTION = 0.5;
-
-/** Sous ce nombre d'intervalles utiles (rattrapages exclus), la calibration ne se prononce pas. */
-const CEILING_MIN_SAMPLES = 10;
-
-/** Chaîne courte décrivant la règle de calibration, publiée dans `refreshCeiling.method`. */
-const CEILING_METHOD =
-  `médiane à ±${Math.round(CEILING_MEDIAN_TOLERANCE * 100)} % d'un plafond connu, confirmée par une grappe ` +
-  `dominante ≥ ${Math.round(CEILING_CLUSTER_MIN_SHARE * 100)} % dans ±${Math.round(CEILING_CLUSTER_BAND * 100)} % de la médiane ` +
-  `(rattrapages < ${Math.round(CEILING_CATCH_UP_FRACTION * 100)} % de la médiane ignorés)`;
+/** Tolérance relative d'accrochage à un plafond connu. */
+const CEILING_TOLERANCE = 0.15;
 
 /** Écart aller/retour au-delà duquel un bloc ABBA déclenche une alerte. */
 export const ABBA_ALERT_PCT = 5;
@@ -56,12 +38,7 @@ export type FrameDistribution = {
 
 export type RefreshCeiling = {
   hz: number | null;
-  /** Chaîne courte décrivant la règle de calibration appliquée. */
-  method: string;
-  /** Médiane des intervalles retenus pour la calibration (rattrapages exclus), en ms. */
-  medianMs: number | null;
-  /** Part des intervalles retenus tombant dans la grappe dominante autour de la médiane. */
-  dominantClusterShare: number | null;
+  fastestSustainedHz: number | null;
   supportedHz: readonly number[];
 };
 
@@ -209,40 +186,15 @@ export function frameDistribution(values: readonly number[], slowFrameThresholdM
 }
 
 /**
- * Plafond réellement atteignable, déduit de la médiane des intervalles rAF et confirmé par sa
- * grappe dominante. Les intervalles de rattrapage (moins de la moitié de la médiane brute — un
- * navigateur qui rattrape une image lente avec un intervalle anormalement court) sont ignorés
- * pour cette calibration, mais restent dans la série brute et dans les percentiles publiés par
- * `frameDistribution` : rien n'est effacé du rapport, seule la calibration du plafond les exclut.
- * `hz` s'accroche à un plafond connu seulement si sa médiane calibrée en est à ±10 % **et** que
- * cette médiane est confirmée par une grappe dominante (≥ 60 % des intervalles retenus à ±15 %
- * d'elle) ; `null` sinon, y compris quand trop peu d'intervalles utiles subsistent pour trancher.
+ * Plafond réellement atteignable, déduit de l'intervalle soutenu le plus court (5e centile).
+ * Sans accrochage à un plafond connu, `hz` vaut `null` : la fréquence mesurée reste publiée.
  */
 export function refreshCeiling(values: readonly number[]): RefreshCeiling {
   const ascending = sorted(values).filter(value => value > 0);
-  if (!ascending.length) {
-    return { hz: null, method: CEILING_METHOD, medianMs: null, dominantClusterShare: null, supportedHz: SUPPORTED_REFRESH_HZ };
-  }
-
-  const rawMedian = median(ascending)!;
-  // Rattrapages ignorés pour la calibration seulement : la série brute et les percentiles publiés
-  // ailleurs (frameDistribution) ne filtrent rien.
-  const calibration = ascending.filter(value => value >= rawMedian * CEILING_CATCH_UP_FRACTION);
-  const calibrationMedian = median(calibration) ?? rawMedian;
-
-  if (calibration.length < CEILING_MIN_SAMPLES) {
-    return { hz: null, method: CEILING_METHOD, medianMs: calibrationMedian, dominantClusterShare: null, supportedHz: SUPPORTED_REFRESH_HZ };
-  }
-
-  const band = calibrationMedian * CEILING_CLUSTER_BAND;
-  const clustered = calibration.filter(value => Math.abs(value - calibrationMedian) <= band).length;
-  const dominantClusterShare = clustered / calibration.length;
-  if (dominantClusterShare < CEILING_CLUSTER_MIN_SHARE) {
-    return { hz: null, method: CEILING_METHOD, medianMs: calibrationMedian, dominantClusterShare, supportedHz: SUPPORTED_REFRESH_HZ };
-  }
-
-  const snapped = SUPPORTED_REFRESH_HZ.find(hz => Math.abs(calibrationMedian - 1000 / hz) / (1000 / hz) <= CEILING_MEDIAN_TOLERANCE) ?? null;
-  return { hz: snapped, method: CEILING_METHOD, medianMs: calibrationMedian, dominantClusterShare, supportedHz: SUPPORTED_REFRESH_HZ };
+  if (!ascending.length) return { hz: null, fastestSustainedHz: null, supportedHz: SUPPORTED_REFRESH_HZ };
+  const fastestSustainedHz = 1000 / percentile(ascending, .05);
+  const snapped = SUPPORTED_REFRESH_HZ.find(hz => Math.abs(fastestSustainedHz - hz) / hz <= CEILING_TOLERANCE) ?? null;
+  return { hz: snapped, fastestSustainedHz, supportedHz: SUPPORTED_REFRESH_HZ };
 }
 
 /** Résolution du canvas en pixels CSS et en pixels physiques. */
