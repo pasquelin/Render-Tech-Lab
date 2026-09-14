@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {defaultModelConfig,modelMeasurementKind,urbanPath,urbanCheckpoints,pathPoses,streetLevel,framesPerSegment,segmentNames,distribution,retainReports,comparePathReports,stillsInReportComparable,stillFromFrame,pathVersion,compareModelPixels,aaControlFromChecks,applyAaControlResult,runAaControl,type ModelReport} from '../src/lab/modelCampaign.ts';
+import {defaultModelConfig,modelMeasurementKind,urbanPath,urbanCheckpoints,pathPoses,streetLevel,framesPerSegment,segmentNames,pathQueue,retainReports,comparePathReports,stillsInReportComparable,stillFromFrame,pathVersion,compareModelPixels,aaControlFromChecks,applyAaControlResult,runAaControl,truthFromModelReport,type ModelReport} from '../src/lab/modelCampaign.ts';
 const aaPose={position:[0,0,0] as [number,number,number],target:[0,0,0] as [number,number,number],fov:55,near:.1,far:100};
 test('urban replay is deterministic, has ten named segments and a fast rotation',()=>{const bounds={min:{x:-100,y:0,z:-100},max:{x:100,y:50,z:100}},a=urbanPath(bounds);assert.deepEqual(a,urbanPath(bounds));assert.equal(segmentNames.length,10);assert.equal(a.length,framesPerSegment*segmentNames.length);const rotation=a.filter(p=>p.segment===5);assert.notDeepEqual(rotation[0].pose.position,rotation.at(-1)!.pose.position);assert.deepEqual(a[0].pose.position,a.at(-1)!.pose.position);assert.notDeepEqual(a[0].pose,urbanPath({min:bounds.min,max:{x:400,y:50,z:400}})[0].pose);assert.equal(urbanCheckpoints(bounds).length,10);assert.deepEqual(pathPoses(bounds),a.map(step=>step.pose));});
 test('urban path stays above the street when model geometry straddles y=0 with a basement and a height spike',()=>{
@@ -16,7 +16,7 @@ test('street level is the origin when the AABB crosses y=0, otherwise the floor'
  assert.equal(streetLevel({min:{y:-5},max:{y:108}}),0);
  assert.equal(streetLevel({min:{y:10},max:{y:40}}),10);
 });
-test('summaries contain actual percentiles and history retains two unique runs',()=>{assert.equal(distribution([]),null);assert.deepEqual(distribution([1,2,3,4,5,NaN]),{count:5,p50:3,p95:5,p99:5,max:5});const runs=Array.from({length:6},(_,i)=>({id:String(i)}));assert.deepEqual(retainReports(runs as never,{id:'2'} as never).map(r=>r.id),['2','0']);});
+test('history retains two unique runs',()=>{const runs=Array.from({length:6},(_,i)=>({id:String(i)}));assert.deepEqual(retainReports(runs as never,{id:'2'} as never).map(r=>r.id),['2','0']);});
 test('campaign reports preserve structured engine events for the report package',()=>{
  const value=report('exact-cluster-pages');
  assert.deepEqual(value.engineEvents,[]);
@@ -53,7 +53,7 @@ test('A/A sequence records later checkpoints after a divergent checkpoint',async
 function report(engine:ModelReport['configuration']['engine'],mutator?:(value:ModelReport)=>void):ModelReport{
  const bounds={min:{x:-1,y:0,z:-1},max:{x:1,y:1,z:1}};
  const samples=urbanPath(bounds).map(step=>({segment:step.segment,elapsedMs:0,pose:step.pose,backend:engine,measurementKind:'official' as const,rafIntervalMs:16,cpuFrameMs:1,cpuSubmitMs:null,gpuMs:null,drawCalls:1,triangles:10,clusters:1,selectedTriangles:10,residentPages:1,geometryAllocationBytes:0,vramBytes:null,pageLoads:0,pageBytesRead:0}));
- const value:ModelReport={version:1,id:engine,timestamp:'2026-09-12T00:00:00.000Z',status:'completed',configuration:{cities:1,detail:'source',lodQuality:'high',mode:'path',camera:'orbit',diagnostic:'beauty',layout:'single',engine,compareEngine:'three-webgl-reference',wipe:.5},pathEngines:[engine],sourceKey:'k',availableTriangles:1,sharedGeometry:true,multipliedInstances:1,resolution:[640,360],firstImageMs:1,preparationMs:1,warmupFrames:30,samples,captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:'test',pathVersion,comparison:'visual-only',comparisonReason:'blocked'};
+ const value:ModelReport={version:1,id:engine,timestamp:'2026-09-12T00:00:00.000Z',status:'completed',configuration:{cities:1,detail:'source',lodQuality:'high',mode:'path',camera:'orbit',diagnostic:'beauty',layout:'single',engine,compareEngine:'three-webgl-reference',wipe:.5,measureWidth:640,measureHeight:360,pixelRatio:2,campaignName:'verite-test',engineOrder:'direct'},pathEngines:[engine],sourceKey:'k',availableTriangles:1,sharedGeometry:true,multipliedInstances:1,resolution:[640,360],firstImageMs:1,preparationMs:1,warmupFrames:30,samples,captures:[],engineEvents:[],error:null,fallbacks:[],retainedSamplesOnly:false,environment:'test',pathVersion,comparison:'visual-only',comparisonReason:'blocked',truth:null};
  mutator?.(value);return value;
 }
 test('engine comparison requires the same path, poses and resolution and never invents a verdict',()=>{
@@ -67,7 +67,7 @@ test('engine comparison requires the same path, poses and resolution and never i
 test('a path campaign still records engine, pose and counters for each photo',()=>{
  const bounds={min:{x:-1,y:0,z:-1},max:{x:1,y:1,z:1}};
  const pose=urbanPath(bounds)[0].pose;
- const still=stillFromFrame({segment:0,image:'data:image/jpeg;base64,xx',elapsedMs:12,pose,metrics:{rafIntervalMs:16,cpuFrameMs:1.5,cpuSubmitMs:null,gpuMs:null,drawCalls:4,triangles:100,clusters:8,selectedTriangles:90,residentPages:8,geometryAllocationBytes:1,vramBytes:null,pageLoads:2,pageBytesRead:3,pagesRequested:2,cacheEvictions:0,frustumRejected:1},backend:'exact-cluster-pages',engine:'exact-cluster-pages',configuration:{cities:1,detail:'source',lodQuality:'high',mode:'path',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5},resolution:[640,360],sourceKey:'abc'});
+ const still=stillFromFrame({segment:0,image:'data:image/jpeg;base64,xx',elapsedMs:12,pose,metrics:{rafIntervalMs:16,cpuFrameMs:1.5,cpuSubmitMs:null,gpuMs:null,drawCalls:4,triangles:100,clusters:8,selectedTriangles:90,residentPages:8,geometryAllocationBytes:1,vramBytes:null,pageLoads:2,pageBytesRead:3,pagesRequested:2,cacheEvictions:0,frustumRejected:1},backend:'exact-cluster-pages',engine:'exact-cluster-pages',configuration:{cities:1,detail:'source',lodQuality:'high',mode:'path',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5,measureWidth:640,measureHeight:360,pixelRatio:1,campaignName:'verite-test',engineOrder:'direct'},resolution:[640,360],sourceKey:'abc'});
  assert.equal(still.name,'Vue générale du modèle');
  assert.equal(still.engine,'exact-cluster-pages');
  assert.equal(still.gpuMs,null);
@@ -87,4 +87,38 @@ test('debug is enabled by default and its frame samples cannot be official measu
  assert.equal(modelMeasurementKind(defaultModelConfig),'diagnostic');
  assert.equal(modelMeasurementKind({...defaultModelConfig,debug:false}),'official');
  assert.equal(modelMeasurementKind({...defaultModelConfig,debug:false,diagnostic:'wireframe'}),'diagnostic');
+});
+
+test('la file du parcours suit l’ordre du protocole puis son inverse pour le sens retour',()=>{
+ const engines=['three-webgl-reference','three-lod','exact-cluster-pages','webgpu-page-raster'] as const;
+ assert.deepEqual(pathQueue(engines,'direct'),[...engines]);
+ assert.deepEqual(pathQueue(engines,'reverse'),['webgpu-page-raster','exact-cluster-pages','three-lod','three-webgl-reference']);
+});
+
+test('le rapport de campagne de l’interface porte le même schéma que celui des scripts headless',()=>{
+ const truth=truthFromModelReport(report('exact-cluster-pages'),{
+  campaign:'verite-test',
+  sdk:{commit:'a'.repeat(40),dirty:false,checkout:'/c',distPath:'/c/dist',contentHash:'h',generatedAt:null},
+  machineLoad:{at:'2026-09-12T00:00:00.000Z',load1:1,load5:1,load15:1,thermal:null,chromeProcesses:1,compilerProcesses:0,viteProcesses:1},
+  measurementMode:'summary',deviceWidth:1280,deviceHeight:720,
+ });
+ assert.equal(truth.schema,'banc15-truth-campaign/v1');
+ assert.equal(truth.source,'ui');
+ assert.equal(truth.campaign,'verite-test');
+ assert.equal(truth.engineOrder,'direct');
+ assert.equal(truth.measurementMode,'summary');
+ assert.equal(truth.replicaCount,1);
+ assert.equal(truth.resolution.cssWidth,640);
+ assert.equal(truth.resolution.devicePixelRatio,2);
+ assert.equal(truth.resolution.deviceWidth,1280);
+ assert.equal(truth.sdk.commit,'a'.repeat(40));
+ assert.equal(truth.sdk.dirty,false);
+ assert.equal(truth.passes.length,1);
+ assert.equal(truth.passes[0].engine,'exact-cluster-pages');
+ assert.equal(truth.passes[0].gpuMs,null);
+ assert.equal(truth.passes[0].vramBytes,null);
+ assert.equal(truth.passes[0].raf?.p50,16);
+ assert.equal(truth.aggregates[0].fps,1000/16);
+ assert.equal(truth.aggregates[0].deltaPct,null);
+ assert.equal(truth.refreshCeiling.hz,60);
 });

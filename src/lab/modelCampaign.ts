@@ -1,9 +1,12 @@
 import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 import {LOD_QUALITY, type LodQualityId} from '@web-geometry/sdk';
 import {BENCH_ENGINES, benchmarkModels, type BenchEngineId} from '../../15-virtualized-integration/index.ts';
+import {buildTruthReport,canvasResolution,frameDistribution,type EngineOrder,type MachineLoad,type MeasurementMode,type SdkProvenance,type TruthPass,type TruthReport} from '../../shared/campaign/truthReport.ts';
 export type ModelLayout='single'|'comparison'|'wipe'|'toggle'|'difference';
-export type ModelConfig={debug?:boolean;modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number};
-export const defaultModelConfig:ModelConfig={debug:true,modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5};
+export type ModelConfig={debug?:boolean;modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number;measureWidth:number;measureHeight:number;pixelRatio:number;campaignName:string;engineOrder:EngineOrder};
+export const defaultModelConfig:ModelConfig={debug:true,modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5,measureWidth:1280,measureHeight:720,pixelRatio:1,campaignName:'verite',engineOrder:'direct'};
+/** File des moteurs du parcours : ordre figé du protocole, ou son inverse pour le sens retour. */
+export function pathQueue(engines:readonly BenchEngineId[],order:EngineOrder):BenchEngineId[]{return order==='reverse'?[...engines].reverse():[...engines];}
 export function modelMeasurementKind(config:Pick<ModelConfig,'debug'|'diagnostic'>):'official'|'diagnostic'{return config.debug||config.diagnostic!=='beauty'?'diagnostic':'official';}
 export const segmentNames=['Vue générale du modèle','Approche de la géométrie','Déplacement au niveau de référence','Matériaux et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et chargement','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;
@@ -49,7 +52,7 @@ export type ModelStill={
 export type ModelEngineEvent={timestamp:string;level:'debug'|'info'|'warn'|'error';phase:string;message:string;context:Record<string,unknown>};
 export type ModelAaCheck={engine:string;segment:number;differentPixels:number;maxChannelError:number};
 export type ModelAaControl={status:'passed'|'failed'|'not-run';checks?:ModelAaCheck[];failure?:string};
-export type ModelReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:ModelConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9|12;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:ModelSample[];captures:ModelStill[];engineEvents:ModelEngineEvent[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;aaControl?:ModelAaControl;};
+export type ModelReport={version:1;id:string;timestamp:string;status:'completed'|'stopped'|'error';configuration:ModelConfig;pathEngines:string[];sourceKey:string;availableTriangles:number;sharedGeometry:true;multipliedInstances:1|4|9|12;resolution:[number,number];firstImageMs:number|null;preparationMs:number|null;warmupFrames:number;samples:ModelSample[];captures:ModelStill[];engineEvents:ModelEngineEvent[];error:string|null;fallbacks:string[];retainedSamplesOnly:boolean;environment:string;pathVersion:typeof pathVersion;comparison:'visual-only'|'measured'|'unavailable'|'blocked';comparisonReason:string;aaControl?:ModelAaControl;truth:TruthReport|null;};
 
 export function compareModelPixels(a:Uint8Array,b:Uint8Array){
  if(a.length!==b.length)throw new Error(`Captures A/A de tailles différentes : ${a.length} et ${b.length} octets.`);
@@ -100,8 +103,42 @@ export function applyAaControlResult(report:Pick<ModelReport,'comparisonReason'>
  const aaControl=aaControlFromChecks(checks,expectedChecks);
  return {aaControl,comparisonReason:aaControlReason({aaControl,comparisonReason:report.comparisonReason})};
 }
-export function distribution(values:number[]){const sorted=values.filter(v=>Number.isFinite(v)&&v>=0).sort((a,b)=>a-b);if(!sorted.length)return null;const q=(p:number)=>sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*p)-1)];return {count:sorted.length,p50:q(.5),p95:q(.95),p99:q(.99),max:sorted.at(-1)!};}
-export function summarizeModel(samples:ModelSample[]){const intervals=samples.flatMap(s=>s.rafIntervalMs!==null&&s.rafIntervalMs>0?[s.rafIntervalMs]:[]);return {cpuSubmit:distribution(samples.flatMap(s=>typeof s.cpuSubmitMs==='number'?[s.cpuSubmitMs]:[])),cpu:distribution(samples.map(s=>s.cpuFrameMs)),raf:distribution(intervals),minFps:intervals.length?1000/Math.max(...intervals):null,gpu:distribution(samples.flatMap(s=>s.gpuMs===null?[]:[s.gpuMs])),frames:samples.length};}
+/** Intervalles rAF retenus d'une série d'échantillons. */
+export function rafIntervals(samples:ModelSample[]){return samples.flatMap(s=>s.rafIntervalMs!==null&&s.rafIntervalMs>0?[s.rafIntervalMs]:[]);}
+/** CPU et GPU restent des distributions séparées : elles ne sont jamais additionnées. */
+export function summarizeModel(samples:ModelSample[],slowFrameThresholdMs?:number){const intervals=rafIntervals(samples);return {cpuSubmit:frameDistribution(samples.flatMap(s=>typeof s.cpuSubmitMs==='number'?[s.cpuSubmitMs]:[]),slowFrameThresholdMs),cpu:frameDistribution(samples.flatMap(s=>s.cpuFrameMs===null?[]:[s.cpuFrameMs]),slowFrameThresholdMs),raf:frameDistribution(intervals,slowFrameThresholdMs),minFps:intervals.length?1000/Math.max(...intervals):null,gpu:frameDistribution(samples.flatMap(s=>s.gpuMs===null?[]:[s.gpuMs]),slowFrameThresholdMs),frames:samples.length};}
+export type ModelTruthContext={campaign:string;sdk:SdkProvenance;machineLoad:MachineLoad|null;measurementMode:MeasurementMode;deviceWidth:number|null;deviceHeight:number|null;slowFrameThresholdMs?:number};
+/**
+ * Rapport de campagne de l'interface, au schéma partagé avec les scripts headless.
+ * Une campagne de l'interface ne joue qu'un sens : l'agrégat ABBA se construit en concaténant
+ * les passes des deux campagnes aller et retour.
+ */
+export function truthFromModelReport(report:ModelReport,context:ModelTruthContext):TruthReport{
+ const engines=report.pathEngines.length?report.pathEngines:[report.configuration.engine];
+ const passes:TruthPass[]=engines.map((engine,index)=>{
+  const samples=report.samples.filter(sample=>sample.backend===engine);
+  const summary=summarizeModel(samples,context.slowFrameThresholdMs);
+  const lastMetrics=samples.at(-1);
+  return {
+   engine,order:report.configuration.engineOrder,index,
+   machineLoad:context.machineLoad,
+   raf:summary.raf,cpuFrameMs:summary.cpu,cpuSubmitMs:summary.cpuSubmit,
+   gpuMs:null,vramBytes:null,
+   selectedTriangles:lastMetrics?.selectedTriangles??null,triangles:lastMetrics?.triangles??null,
+   drawCalls:lastMetrics?.drawCalls??null,residentPages:lastMetrics?.residentPages??null,
+   shots:null,error:report.error,
+  };
+ });
+ return buildTruthReport({
+  source:'ui',campaign:context.campaign,id:report.id,timestamp:report.timestamp,
+  scene:report.configuration.modelId??'',engines,engineOrder:report.configuration.engineOrder,
+  replicaCount:report.configuration.cities,pixelError:pixelErrorFor(report.configuration),
+  measurementMode:context.measurementMode,
+  resolution:canvasResolution({cssWidth:report.resolution[0],cssHeight:report.resolution[1],devicePixelRatio:report.configuration.pixelRatio,deviceWidth:context.deviceWidth,deviceHeight:context.deviceHeight}),
+  sdk:context.sdk,slowFrameThresholdMs:context.slowFrameThresholdMs,passes,
+  environment:report.environment,ceilingIntervalsMs:rafIntervals(report.samples),
+ });
+}
 export function retainReports(previous:ModelReport[],report:ModelReport){return [report,...previous.filter(r=>r.id!==report.id)].slice(0,2);}
 export function pathPoses(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).map(step=>step.pose);}
 export function urbanCheckpoints(bounds:{min:{x:number;y:number;z:number};max:{x:number;y:number;z:number}}){return urbanPath(bounds).filter((_,index)=>index%framesPerSegment===0);}
