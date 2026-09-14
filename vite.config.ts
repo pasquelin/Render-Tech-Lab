@@ -188,6 +188,20 @@ function saveReportPlugin(): Plugin {
       server.middlewares.use('/api/get-latest', (req, res) => {
         try {
           const url = new URL(req.url || '', 'http://localhost');
+          if (url.searchParams.get('all') === '1') {
+            const entries = fs.readdirSync(server.config.root, { withFileTypes: true })
+              .filter(entry => entry.isDirectory() && /^\d{2}-[a-z0-9-]+$/.test(entry.name))
+              .flatMap(entry => {
+                const file = path.join(server.config.root, entry.name, 'results', 'latest.json');
+                if (!fs.existsSync(file)) return [];
+                try { return [{ moduleId: entry.name, report: JSON.parse(fs.readFileSync(file, 'utf-8')) }]; }
+                catch { return []; }
+              });
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(entries));
+            return;
+          }
           const rawId = url.searchParams.get('testId') || '01-indirect-draw';
           const testId = path.basename(rawId);
           const jsonPath = path.resolve(server.config.root, testId, 'results', 'latest.json');
@@ -198,9 +212,8 @@ function saveReportPlugin(): Plugin {
             res.setHeader('Content-Type', 'application/json');
             res.end(data);
           } else {
-            res.statusCode = 404;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: `Fichier latest.json non trouvé pour ${testId}` }));
+            res.statusCode = 204;
+            res.end();
           }
         } catch (err: any) {
           res.statusCode = 500;

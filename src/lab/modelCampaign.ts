@@ -2,8 +2,8 @@ import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
 import {LOD_QUALITY, type LodQualityId} from '@web-geometry/sdk';
 import {BENCH_ENGINES, benchmarkModels, type BenchEngineId} from '../../15-virtualized-integration/index.ts';
 export type ModelLayout='single'|'comparison'|'wipe'|'toggle'|'difference';
-export type ModelConfig={debug?:boolean;modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free';diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number};
-export const defaultModelConfig:ModelConfig={debug:true,modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5};
+export type ModelConfig={debug?:boolean;modelId?:string;cities:1|4|9|12;detail:'source'|'maximum';lodQuality:LodQualityId;mode:'explore'|'path';camera:'orbit'|'free'|'game';startCity?:number;diagnostic:'beauty'|'wireframe'|'clusters'|'pages'|'lod'|'visibility'|'screen-error';layout:ModelLayout;engine:BenchEngineId;compareEngine:BenchEngineId;wipe:number};
+export const defaultModelConfig:ModelConfig={debug:true,modelId:benchmarkModels[0]?.id??'',cities:1,detail:'source',lodQuality:'high',mode:'explore',camera:'orbit',startCity:0,diagnostic:'beauty',layout:'single',engine:'exact-cluster-pages',compareEngine:'three-webgl-reference',wipe:.5};
 export function modelMeasurementKind(config:Pick<ModelConfig,'debug'|'diagnostic'>):'official'|'diagnostic'{return config.debug||config.diagnostic!=='beauty'?'diagnostic':'official';}
 export const segmentNames=['Vue générale du modèle','Approche de la géométrie','Déplacement au niveau de référence','Matériaux et transparences','Gros plan sur une géométrie détaillée','Rotation rapide de caméra','Révélation d’une zone cachée','Déplacement rapide et chargement','Forte pression de pages','Retour vers une zone visitée'];
 export const framesPerSegment=60;

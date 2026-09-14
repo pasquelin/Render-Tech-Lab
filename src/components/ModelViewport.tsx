@@ -12,7 +12,15 @@ export function ModelViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElem
   const { model: view, state, actions } = useLab();
   if (!view) return null;
   const runAction = <Button disabled={view.availability.status !== 'ready'} onClick={actions.runBenchmark}>{state.benchLabel}</Button>;
-  const diagnostic = view.config.diagnostic === 'beauty' ? 'Rendu texturé' : view.config.diagnostic === 'pages' ? 'Vert : pages d’indices réellement attachées' : view.config.diagnostic === 'clusters' ? 'Couleurs : identifiants réels de clusters' : view.config.diagnostic === 'wireframe' ? 'Une couleur par triangle réellement soumis' : 'Triangles réellement soumis';
+  const diagnostic = {
+    beauty: 'Rendu texturé',
+    wireframe: 'Couleur stable par triangle soumis, sans éclairage',
+    clusters: 'Couleur stable par cluster ; gris : géométrie transparente non clusterisée',
+    lod: 'Bleu : détail exact ; orange : réduction LOD',
+    pages: 'Vert : pages d’indices attachées ; les pages absentes ne sont pas dessinées',
+    visibility: 'Vert : pages visibles après sélection ; rejets dans les métriques',
+    'screen-error': 'Erreur projetée : vert à 0 px, rouge au seuil de sélection',
+  }[view.config.diagnostic];
   return (
     <main className="relative flex-1 min-w-0 min-h-0 overflow-hidden bg-base-100 flex flex-col" data-model-status={view.status} data-rendered-mode={view.config.diagnostic}>
       {state.running ? (
@@ -24,7 +32,7 @@ export function ModelViewport({ webglRef }: { webglRef: RefObject<HTMLCanvasElem
                 {view.progress ? (
                   <ProgressPanel message={`${view.message} · ${diagnostic}`} value={view.progress.completed} max={view.progress.total} />
                 ) : (
-                  <p className="bg-base-200/90 p-3 rounded-box text-xs">Exploration libre · {benchEngine(view.config.engine).label} · {diagnostic}</p>
+                  <p className="bg-base-200/90 p-3 rounded-box text-xs">Exploration libre · {benchEngine(view.config.engine).label} · {diagnostic}{view.config.camera === 'game' ? ' · Jeu : clic pour entrer, WASD pour marcher, Espace pour sauter, Échap pour libérer la souris · collisions sur la géométrie' : view.config.camera === 'free' ? ' · Libre : WASD, R/F pour l’altitude, glisser pour regarder' : ''}</p>
                 )}
               </div>
             ) : null}

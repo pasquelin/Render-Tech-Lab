@@ -1,11 +1,12 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { totalmem } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { prepare, createTerminalProgress } from '@web-geometry/sdk/node';
 import { benchmarkModels } from './modelCatalog.ts';
 
-// Le banc ne fait que nommer les scènes : lecture de la source, manifeste, import FBX/OBJ, clusters,
-// élagage du cache et progression sont du ressort du compilateur et de son adaptateur Node.
+// Le SDK prépare le rendu et son cache ; le banc ajoute ensuite des triangles de navigation
+// dérivés du source.gltf préparé, sans modifier les géométries des moteurs de rendu.
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const ramBudgetMb = Math.floor(totalmem() / 1024 / 1024 * 0.9);
 const selectedIds = process.argv.slice(2);
@@ -27,4 +28,5 @@ for (const [index, model] of selected.entries()) {
     onProgress: (event: Parameters<ReturnType<typeof createTerminalProgress>['event']>[0]) => progress.event(event),
   }).catch(error => { progress.fail(String(error.message ?? error)); throw error; });
   if (result.status !== 'ready') { progress.fail(`préparation incomplète (${result.status})`); throw new Error(`${model.id} : préparation incomplète (${result.status})`); }
+  execFileSync(process.execPath, ['--experimental-strip-types', fileURLToPath(new URL('./prepare-navigation-mesh.ts', import.meta.url)), model.id], { stdio: 'inherit' });
 }

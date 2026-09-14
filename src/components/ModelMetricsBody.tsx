@@ -38,7 +38,7 @@ export function ModelMetricsBody() {
         { id: 'model-camera-position', label: 'Position X/Y/Z', value: camera ? vector(camera.position) : 'Non mesuré', provenance: 'Coordonnées monde' },
         { id: 'model-camera-target', label: 'Regarde vers X/Y/Z', value: camera ? vector(camera.target) : 'Non mesuré', provenance: 'Cible reconstruite depuis la direction de vue' },
         { id: 'model-camera-projection', label: 'Projection', value: camera ? `FOV ${number(camera.fov, 1)}° · plans ${number(camera.near, 2)}–${number(camera.far, 0)}` : 'Non mesuré', provenance: 'Champ de vision vertical ; plan proche–lointain' },
-        { id: 'model-camera-mode', label: 'Navigation', value: config.camera === 'orbit' ? 'Orbite' : 'Libre', provenance: config.camera === 'orbit' ? 'Rotation, zoom et translation' : 'W/A/S/D, R/F et regard souris' },
+        { id: 'model-camera-mode', label: 'Navigation', value: config.camera === 'orbit' ? 'Orbite' : config.camera === 'game' ? 'Jeu' : 'Libre à pied', provenance: config.camera === 'orbit' ? 'Rotation, zoom et translation' : config.camera === 'game' ? `Ville ${(config.startCity??0)+1} · collision sur triangles du modèle, saut et souris capturée` : 'Horizon stable · W/A/S/D, R/F et regard souris' },
       ]} />
     </>
   );
