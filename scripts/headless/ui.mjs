@@ -2,7 +2,7 @@
 // Usage : node ui.mjs
 import { launch, URL_BASE } from './lib.mjs';
 
-const { browser } = await launch({ headless: true });
+const { browser } = await launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 400)); });
