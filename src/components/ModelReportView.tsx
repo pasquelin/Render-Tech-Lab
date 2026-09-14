@@ -33,6 +33,11 @@ export function ModelReportView({ report, history = [] }: { report: ModelReport;
           { label: 'Mode debug', value: report.configuration.debug ? 'Actif' : 'Désactivé / non enregistré' },
           { label: 'Journal moteur', value: String(report.engineEvents.length), unit: 'événements' },
           { label: 'GPU / VRAM', value: report.engineEvents.some(event=>event.phase==='engine:gpu-timing') ? 'Passes GPU dans le journal / VRAM non mesurée' : 'Non mesuré' },
+          { label: 'Campagne', value: report.truth?.campaign ?? 'null' },
+          { label: 'Mode de mesure', value: report.truth?.measurementMode ?? 'null' },
+          { label: 'DPR / pixels physiques', value: report.truth ? `${report.truth.resolution.devicePixelRatio ?? 'null'} · ${report.truth.resolution.deviceWidth ?? 'null'} × ${report.truth.resolution.deviceHeight ?? 'null'}` : 'null' },
+          { label: 'Plafond rAF calibré', value: report.truth?.refreshCeiling.hz === null || report.truth === null ? 'null' : String(report.truth.refreshCeiling.hz), unit: 'Hz' },
+          { label: 'Commit SDK', value: report.truth?.sdk.commit ? `${report.truth.sdk.commit.slice(0,8)}${report.truth.sdk.dirty ? ' · sale' : ' · propre'}` : 'null' },
         ]} />
       </ReportSummary>
       {(engines.length?engines:[report.configuration.engine]).map(engine=>{
@@ -45,7 +50,9 @@ export function ModelReportView({ report, history = [] }: { report: ModelReport;
               {label:'CPU submit p50 / p95',value:summary.cpuSubmit?`${number(summary.cpuSubmit.p50,2)} / ${number(summary.cpuSubmit.p95,2)}`:'Non mesuré',unit:'ms'},
               {label:'CPU p50 / p95 / p99',value:summary.cpu?`${number(summary.cpu.p50,2)} / ${number(summary.cpu.p95,2)} / ${number(summary.cpu.p99,2)}`:'Non mesuré',unit:'ms'},
               {label:'rAF p50 / p95 / p99',value:summary.raf?`${number(summary.raf.p50,2)} / ${number(summary.raf.p95,2)} / ${number(summary.raf.p99,2)}`:'Non mesuré',unit:'ms'},
+              {label:'FPS médian',value:number(summary.raf?.fps??null,1)},
               {label:'FPS minimum',value:number(summary.minFps,1)},
+              {label:summary.raf?`Images > ${summary.raf.slowFrameThresholdMs.toFixed(2)} ms`:'Images lentes',value:summary.raf?String(summary.raf.slowFrames):'Non mesuré'},
             ]} />
           </ReportSummary>
         );
