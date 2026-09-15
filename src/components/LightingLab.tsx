@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SCENES, SCENE_LIGHT_BOUNDS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
 import type { LightingBackendId, LightingBenchConfig, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import type { StageProfile, StageQuantiles } from '@web-geometry/sdk';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
 import { parseMarkdownToHtml } from '../lab/markdown.ts';
@@ -16,6 +17,7 @@ import { LabShell } from './LabShell.tsx';
 import { Input } from './ui/Input.tsx';
 import { Button } from './ui/Button.tsx';
 import { MetricGrid } from './ui/MetricGrid.tsx';
+import { MetricTable, type MetricTableRow } from './ui/MetricTable.tsx';
 import { SegmentedControl } from './ui/SegmentedControl.tsx';
 
 type Status = 'idle' | 'loading' | 'running' | 'stopped' | 'error';
@@ -25,12 +27,46 @@ const number = (value: number | null | undefined, unit = '') => (value == null |
 /** Les bornes de position des lampes sont des mètres monde (SCENE_LIGHT_BOUNDS). */
 const metres = (value: number) => value.toFixed(1) + ' m';
 
-/** Le moteur ne publie encore aucun coût par étape ; l'emplacement est posé et affiche « Non mesuré »,
- *  jamais 0, qui se lirait comme une étape mesurée à coût nul. */
-const STAGE_COST_ITEMS = [{
-  id: 'lighting-stage-cost', label: 'Étapes du rendu', value: 'Non mesuré',
-  provenance: 'Le moteur ne publie pas encore le coût par étape ; son contrat arrive dans un lot séparé.',
-}];
+/** Les quatre colonnes de durées du profil. Processeur et carte graphique décrivent deux machines qui
+ *  travaillent en même temps : on ne les additionne jamais, on ne les compare jamais entre elles. */
+const STAGE_COLUMNS = ['Étape', 'CPU p50', 'CPU p95', 'GPU p50', 'GPU p95'];
+/** `null` veut dire « non mesuré » et ne vaut pas 0 : une étape absente ne coûte pas « rien ». */
+const quantile = (value: StageQuantiles, key: 'p50' | 'p95') => (value ? value[key].toFixed(2) + ' ms' : 'Non mesuré');
+/** Les compteurs d'une étape (ombres, listes de lampes) tels que le moteur les nomme : ce ne sont pas
+ *  des durées, et aucun libellé n'est réinventé ici — seule la casse du nom publié est aérée. */
+const counts = (values: Readonly<Record<string, number>> | undefined) =>
+  values ? Object.entries(values).map(([name, count]) => name.replace(/([A-Z])/g, ' $1').toLowerCase() + ' : ' + count).join(' · ') : '';
+const stageNote = (parts: readonly (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
+
+/** Une ligne par étape du contrat du moteur, puis l'enveloppe de l'image côté carte graphique, qui
+ *  n'est pas la somme des étapes : un appareil qui recouvre deux passes les compterait deux fois. */
+function stageRows(profile: StageProfile | null): MetricTableRow[] {
+  if (!profile?.enabled) {
+    return [{
+      id: 'lighting-stage-cost', cells: ['Étapes du rendu', 'Non mesuré', 'Non mesuré', 'Non mesuré', 'Non mesuré'],
+      note: profile?.gpuReason ?? 'Le moteur actif ne chronomètre pas ses étapes.',
+    }];
+  }
+  const rows: MetricTableRow[] = profile.stages.map(entry => ({
+    id: 'lighting-stage-' + entry.stage,
+    cells: [entry.label, quantile(entry.cpuMs, 'p50'), quantile(entry.cpuMs, 'p95'), quantile(entry.gpuMs, 'p50'), quantile(entry.gpuMs, 'p95')],
+    note: stageNote([counts(entry.counts), entry.cpuReason && 'CPU : ' + entry.cpuReason, entry.gpuReason && 'GPU : ' + entry.gpuReason]),
+  }));
+  rows.push({
+    id: 'lighting-stage-image',
+    cells: ['Image entière (GPU)', 'Non mesuré', 'Non mesuré', quantile(profile.gpuImageMs, 'p50'), quantile(profile.gpuImageMs, 'p95')],
+    note: stageNote(['du début de la première passe à la fin de la dernière ; les étapes ne s’y additionnent pas', profile.gpuImageMs ? undefined : profile.gpuReason ?? undefined]),
+  });
+  return rows;
+}
+
+/** Sur quoi la fenêtre du moteur a réellement porté, pour qu'aucun chiffre ne se lise sans son assise. */
+function stageProvenance(profile: StageProfile | null): string | undefined {
+  if (!profile?.enabled) return undefined;
+  const overhead = profile.overheadMs ? 'relevé lui-même ' + profile.overheadMs.p50.toFixed(3) + ' ms (p50)' : 'coût du relevé non mesuré';
+  return 'Fenêtre ' + profile.windowFrames + ' images · ' + profile.cpuFrames + ' images processeur, ' + profile.gpuSamples
+    + ' relevés carte graphique · ' + (profile.gpuMethod ?? profile.gpuReason ?? 'aucune horloge carte graphique') + ' · ' + overhead;
+}
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
@@ -219,7 +255,7 @@ export function LightingLab() {
             { id: 'lighting-gpu-shadows', label: 'GPU ombres', value: number(stats.gpuShadowsMs, ' ms') },
             { id: 'lighting-gpu-lighting', label: 'GPU éclairage', value: number(stats.gpuLightingMs, ' ms') },
           ]} />
-          <MetricGrid label="Coût par étape" items={STAGE_COST_ITEMS} />
+          <MetricTable label="Coût par étape" columns={STAGE_COLUMNS} rows={stageRows(stats.stageProfile)} provenance={stageProvenance(stats.stageProfile)} />
         </>
       } />
     ),

@@ -80,6 +80,9 @@ export async function createLightingBench(
   const explorer = await createExplorer(canvas, {
     manifestUrl: MANIFEST_URLS[scene], scope: 'full', signal, preload: 'all', width, height,
     backends: [BACKENDS[backend]], onPreparation: event => onProgress?.(event.message),
+    // Chronométrage par étape du moteur : c'est lui qui tient la fenêtre glissante, les quantiles et
+    // le coût du relevé. Sans ce drapeau, explorer.stageProfile() ne renvoie que « non mesuré ».
+    stageProfile: true,
   });
   const capabilities = detectEngineCapabilities(explorer);
 
@@ -182,6 +185,9 @@ export async function createLightingBench(
       gpuLightingMs: metrics.gpuLightingMs ?? null,
       frame: metrics,
       cameraPose: readCameraPose(),
+      // Le profil par étape est lu comme les autres compteurs, une fois par image : c'est le moteur
+      // qui tient la fenêtre glissante, ce relevé n'en est qu'une photographie.
+      stageProfile: explorer.stageProfile(),
     };
     rafHandle = requestAnimationFrame(tick);
   };

@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
+import type { StageProfile } from '@web-geometry/sdk';
 
 export type Vec3 = [number, number, number];
 export type SceneId = 'house' | 'emerald-night';
@@ -96,6 +97,10 @@ export interface LightingFrameStats {
   frame: FrameMetrics | null;
   /** Pose de la caméra active, pour le bloc « Caméra active » du même panneau commun. */
   cameraPose: CameraPose | null;
+  /** Profil par étape publié par le moteur (`explorer.stageProfile()`), lu à la même cadence que le
+   *  reste. Ses colonnes processeur et carte graphique ne s'additionnent ni ne se comparent ; `null`
+   *  y veut dire « non mesuré », jamais 0. Vaut `null` tant qu'aucune image n'a été relevée. */
+  stageProfile: StageProfile | null;
 }
 
 /** Aucune image mesurée : tout est « Non mesuré », jamais 0. L'état initial du composant React et
@@ -104,6 +109,7 @@ export function emptyLightingStats(): LightingFrameStats {
   return {
     fps: null, gpuMs: null, lightsActive: null, shadowsUpdated: null,
     gpuLightListsMs: null, gpuShadowsMs: null, gpuLightingMs: null, frame: null, cameraPose: null,
+    stageProfile: null,
   };
 }
 
