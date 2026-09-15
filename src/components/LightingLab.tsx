@@ -40,10 +40,14 @@ const degrees = (value: number) => value.toFixed(0) + '°';
 /** Un seul catalogue nomme les moteurs du Lab : ce banc lit celui du banc 15, il n'en réécrit aucun. */
 const engineLabel = (id: LightingBackendId) => benchEngine(id).label;
 
-/** Les plages des curseurs d'une lampe viennent toutes de SCENE_LIGHT_LIMITS, que la lampe soit
- *  nommée ou automatique : le pas minimal sert de borne basse, le contrat refusant une lampe nulle. */
-const intensitySlider = (limits: SceneLightLimits) => ({ type: 'range' as const, min: limits.intensityStep, max: limits.intensityMax, step: limits.intensityStep });
+/** Les plages des curseurs d'une lampe viennent toutes d'une table de bornes — SCENE_LIGHT_LIMITS
+ *  pour les lampes nommées et automatiques, SUN_LIMITS pour le soleil, qui les nomme pareil : le pas
+ *  minimal sert de borne basse, le contrat refusant une lampe nulle. */
+type IntensityLimits = { readonly intensityMax: number; readonly intensityStep: number };
+const intensitySlider = (limits: IntensityLimits) => ({ type: 'range' as const, min: limits.intensityStep, max: limits.intensityMax, step: limits.intensityStep });
 const rangeSlider = (limits: SceneLightLimits) => ({ type: 'range' as const, min: limits.rangeStep, max: limits.rangeMax, step: limits.rangeStep });
+/** Azimut et hauteur se règlent au degré ; seules leurs bornes les distinguent. */
+const angleSlider = (min: number, max: number) => ({ type: 'range' as const, min, max, step: SUN_LIMITS.angleStep });
 
 /** Deux images d'attente : le temps que la fiche commune démonte la surface avant d'en remonter une
  *  neuve, un canvas ne portant qu'un seul contexte graphique dans sa vie. */
@@ -108,20 +112,36 @@ function stageProvenance(profile: StageProfile | null): string | undefined {
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
+/** Les champs qu'une lampe du banc a tous, soleil compris : un seul endroit nomme la couleur,
+ *  l'intensité et l'ombre, et un seul convertit la couleur linéaire du contrat en couleur d'écran.
+ *  Le préfixe d'identifiant est celui du groupe, pour que chaque champ garde son libellé associé. */
+function ColorField({ prefix, color, disabled, onChange }: { prefix: string; color: Vec3; disabled: boolean; onChange: (color: Vec3) => void }) {
+  return <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(color)} disabled={disabled} onChange={event => onChange(linearColor(event.target.value))} />;
+}
+
+function IntensityField({ prefix, intensity, limits, disabled, onChange }: { prefix: string; intensity: number; limits: IntensityLimits; disabled: boolean; onChange: (intensity: number) => void }) {
+  return <Input id={prefix + '-intensity'} label={'Intensité · ' + radiometric(intensity)} help="Intensité radiométrique du contrat de lampes du moteur." {...intensitySlider(limits)} value={intensity} disabled={disabled} onChange={event => onChange(Number(event.target.value))} />;
+}
+
+function ShadowField({ prefix, castsShadow, help, disabled, onChange }: { prefix: string; castsShadow: boolean; help?: string; disabled: boolean; onChange: (castsShadow: boolean) => void }) {
+  return <Input id={prefix + '-shadow'} label="Ombre" help={help} type="checkbox" checked={castsShadow} disabled={disabled} onChange={event => onChange(event.target.checked)} />;
+}
+
 /** Le soleil du banc : une lampe directionnelle comme les autres, mais sans position ni portée —
  *  le moteur les refuse. L'éteindre ne laisse que les lampes posées : c'est la nuit. */
 function SunFields({ sun, disabled, onChange }: { sun: SunConfig; disabled: boolean; onChange: (patch: Partial<SunConfig>) => void }) {
+  const prefix = 'lighting-' + SUN_LIGHT_ID;
   const off = disabled || !sun.enabled;
   return (
     <div className="space-y-2" data-light-id={SUN_LIGHT_ID}>
       <h3 className="text-xs font-semibold">soleil</h3>
-      <Input id="lighting-sun-enabled" label="Allumé" help="Éteint, plus rien n’éclaire que les lampes déclarées : c’est la nuit." type="checkbox" checked={sun.enabled} disabled={disabled} onChange={event => onChange({ enabled: event.target.checked })} />
+      <Input id={prefix + '-enabled'} label="Allumé" help="Éteint, plus rien n’éclaire que les lampes déclarées : c’est la nuit." type="checkbox" checked={sun.enabled} disabled={disabled} onChange={event => onChange({ enabled: event.target.checked })} />
       <div className="grid grid-cols-2 gap-2">
-        <Input id="lighting-sun-color" label="Couleur" type="color" value={displayColor(sun.color)} disabled={off} onChange={event => onChange({ color: linearColor(event.target.value) })} />
-        <Input id="lighting-sun-intensity" label={'Intensité · ' + radiometric(sun.intensity)} help="Intensité radiométrique du contrat de lampes du moteur." type="range" min={SUN_LIMITS.intensityStep} max={SUN_LIMITS.intensityMax} step={SUN_LIMITS.intensityStep} value={sun.intensity} disabled={off} onChange={event => onChange({ intensity: Number(event.target.value) })} />
-        <Input id="lighting-sun-azimuth" label={'Azimut · ' + degrees(sun.azimuthDeg)} help="Où le soleil se tient sur l’horizon." type="range" min={0} max={SUN_LIMITS.azimuthMax} step={SUN_LIMITS.angleStep} value={sun.azimuthDeg} disabled={off} onChange={event => onChange({ azimuthDeg: Number(event.target.value) })} />
-        <Input id="lighting-sun-elevation" label={'Hauteur · ' + degrees(sun.elevationDeg)} help="Sa hauteur au-dessus de l’horizon : plus bas, les ombres s’allongent." type="range" min={SUN_LIMITS.elevationMin} max={SUN_LIMITS.elevationMax} step={SUN_LIMITS.angleStep} value={sun.elevationDeg} disabled={off} onChange={event => onChange({ elevationDeg: Number(event.target.value) })} />
-        <Input id="lighting-sun-shadow" label="Ombre" help="Cascades qui suivent la caméra." type="checkbox" checked={sun.castsShadow} disabled={off} onChange={event => onChange({ castsShadow: event.target.checked })} />
+        <ColorField prefix={prefix} color={sun.color} disabled={off} onChange={color => onChange({ color })} />
+        <IntensityField prefix={prefix} intensity={sun.intensity} limits={SUN_LIMITS} disabled={off} onChange={intensity => onChange({ intensity })} />
+        <Input id={prefix + '-azimuth'} label={'Azimut · ' + degrees(sun.azimuthDeg)} help="Où le soleil se tient sur l’horizon." {...angleSlider(0, SUN_LIMITS.azimuthMax)} value={sun.azimuthDeg} disabled={off} onChange={event => onChange({ azimuthDeg: Number(event.target.value) })} />
+        <Input id={prefix + '-elevation'} label={'Hauteur · ' + degrees(sun.elevationDeg)} help="Sa hauteur au-dessus de l’horizon : plus bas, les ombres s’allongent." {...angleSlider(SUN_LIMITS.elevationMin, SUN_LIMITS.elevationMax)} value={sun.elevationDeg} disabled={off} onChange={event => onChange({ elevationDeg: Number(event.target.value) })} />
+        <ShadowField prefix={prefix} castsShadow={sun.castsShadow} help="Cascades qui suivent la caméra." disabled={off} onChange={castsShadow => onChange({ castsShadow })} />
       </div>
     </div>
   );
@@ -138,13 +158,13 @@ function LightFields({ light, scene, disabled, onChange }: { light: PlacedLight;
     <div className="space-y-2" data-light-id={light.id}>
       <h3 className="text-xs font-semibold">{light.id}</h3>
       <div className="grid grid-cols-2 gap-2">
-        <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event => onChange({ color: linearColor(event.target.value) })} />
-        <Input id={prefix + '-intensity'} label={'Intensité · ' + radiometric(light.intensity)} help="Intensité radiométrique du contrat de lampes du moteur." {...intensitySlider(limits)} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <ColorField prefix={prefix} color={light.color} disabled={disabled} onChange={color => onChange({ color })} />
+        <IntensityField prefix={prefix} intensity={light.intensity} limits={limits} disabled={disabled} onChange={intensity => onChange({ intensity })} />
         <Input id={prefix + '-range'} label={'Portée · ' + metres(light.range)} help="Distance au-delà de laquelle cette lampe n’éclaire plus rien." {...rangeSlider(limits)} value={light.range} disabled={disabled} onChange={event => onChange({ range: Number(event.target.value) })} />
         <Input id={prefix + '-x'} label={'X · ' + metres(light.position[0])} type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
         <Input id={prefix + '-y'} label={'Y · ' + metres(light.position[1])} type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
         <Input id={prefix + '-z'} label={'Z · ' + metres(light.position[2])} type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
-        <Input id={prefix + '-shadow'} label="Ombre" type="checkbox" checked={light.castsShadow} disabled={disabled} onChange={event => onChange({ castsShadow: event.target.checked })} />
+        <ShadowField prefix={prefix} castsShadow={light.castsShadow} disabled={disabled} onChange={castsShadow => onChange({ castsShadow })} />
       </div>
     </div>
   );

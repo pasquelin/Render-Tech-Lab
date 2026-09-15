@@ -79,16 +79,10 @@ export interface SunConfig {
 export const SUN_LIGHT_ID = 'sun';
 
 /** Les bornes du soleil ne dépendent pas de la scène : une directionnelle porte la même irradiance
- *  partout, là où une ponctuelle se règle à l'échelle de la pièce ou de la rue qu'elle éclaire. */
-export interface SunLimits {
-  readonly intensityMax: number;
-  readonly intensityStep: number;
-  readonly elevationMin: number;
-  readonly elevationMax: number;
-  readonly azimuthMax: number;
-  readonly angleStep: number;
-}
-export const SUN_LIMITS: SunLimits = Object.freeze({
+ *  partout, là où une ponctuelle se règle à l'échelle de la pièce ou de la rue qu'elle éclaire.
+ *  `intensityMax` et `intensityStep` portent les mêmes noms que dans SCENE_LIGHT_LIMITS, pour que
+ *  le curseur d'intensité du banc lise les deux tables sans en distinguer aucune. */
+export const SUN_LIMITS = Object.freeze({
   intensityMax: 10, intensityStep: 0.1, elevationMin: 5, elevationMax: 90, azimuthMax: 359, angleStep: 1,
 });
 
