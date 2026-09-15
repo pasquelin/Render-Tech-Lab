@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SCENES, SCENE_LIGHT_BOUNDS, SCENE_LIGHT_LIMITS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, LIGHTING_BACKEND_IDS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
-import type { LightingBackendId, LightingBenchConfig, LightingCameraMode, LightingController, SceneId, SceneLight, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import type { LightingBackendId, LightingBenchConfig, LightingCameraMode, LightingController, SceneId, SceneLight, SceneLightLimits, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
 import type { StageProfile, StageQuantiles } from '@web-geometry/sdk';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
@@ -12,9 +12,9 @@ import { loadMarkdownReport } from '../lab/reportReader.ts';
 import { createNavigationControls } from '../../15-virtualized-integration/implementation/navigationControls.ts';
 import { loadNavigationWorld } from '../../15-virtualized-integration/implementation/navigationSource.ts';
 import { playerHeightFor, type NavigationWorld } from '../../15-virtualized-integration/implementation/navigation.ts';
-import { BENCH_ENGINES } from '../../15-virtualized-integration/implementation/engines.ts';
+import { benchEngine } from '../../15-virtualized-integration/implementation/engines.ts';
 import { streetLevel } from '../lab/modelCampaign.ts';
-import { LAB_CAMERA_MODES, cameraModeHelp } from '../lab/cameraModes.ts';
+import { LAB_CAMERA_MODES, cameraModeHelp, cameraModeLabel } from '../lab/cameraModes.ts';
 import { LabContext } from './LabContext.tsx';
 import { ModelMetricsBody, type ModelMetricsSource } from './ModelMetricsBody.tsx';
 import { LabShell } from './LabShell.tsx';
@@ -35,10 +35,17 @@ const metres = (value: number) => value.toFixed(1) + ' m';
 /** `intensity` est l'intensité radiométrique du contrat de lampes du moteur, pas un facteur. */
 const radiometric = (value: number) => value.toFixed(1) + ' W/sr';
 
-/** Les deux moteurs du banc, avec les libellés du catalogue du banc 15 : un seul catalogue nomme
- *  les moteurs du Lab, ce banc n'en réécrit aucun. */
-const LIGHTING_ENGINES = LIGHTING_BACKEND_IDS.map(id => ({ id, label: BENCH_ENGINES.find(engine => engine.id === id)?.label ?? id }));
-const engineLabel = (id: LightingBackendId | null) => LIGHTING_ENGINES.find(engine => engine.id === id)?.label ?? 'Non mesuré';
+/** Un seul catalogue nomme les moteurs du Lab : ce banc lit celui du banc 15, il n'en réécrit aucun. */
+const engineLabel = (id: LightingBackendId) => benchEngine(id).label;
+
+/** Les plages des curseurs d'une lampe viennent toutes de SCENE_LIGHT_LIMITS, que la lampe soit
+ *  nommée ou automatique : le pas minimal sert de borne basse, le contrat refusant une lampe nulle. */
+const intensitySlider = (limits: SceneLightLimits) => ({ type: 'range' as const, min: limits.intensityStep, max: limits.intensityMax, step: limits.intensityStep });
+const rangeSlider = (limits: SceneLightLimits) => ({ type: 'range' as const, min: limits.rangeStep, max: limits.rangeMax, step: limits.rangeStep });
+
+/** Deux images d'attente : le temps que la fiche commune démonte la surface avant d'en remonter une
+ *  neuve, un canvas ne portant qu'un seul contexte graphique dans sa vie. */
+const afterRemount = (run: () => void) => requestAnimationFrame(() => requestAnimationFrame(run));
 
 /** Départ générique au sol quand aucune géométrie de navigation ne donne de point praticable :
  *  centre de l'emprise, au niveau du sol, à hauteur d'œil, regard horizontal. Aucune coordonnée
@@ -102,7 +109,7 @@ const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = p
 function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; scene: SceneId; disabled: boolean; onChange: (patch: Partial<SceneLight>) => void }) {
   const bounds = SCENE_LIGHT_BOUNDS[scene];
   // Les plages suivent l'échelle de la scène : une pièce et un pâté de maisons ne se règlent pas
-  // avec le même curseur. Le pas minimal sert de borne basse, le contrat refusant une lampe nulle.
+  // avec le même curseur.
   const limits = SCENE_LIGHT_LIMITS[scene];
   const prefix = 'lighting-' + light.id;
   const move = (axis: 0 | 1 | 2, value: number) => { const position: Vec3 = [...light.position]; position[axis] = value; onChange({ position }); };
@@ -111,8 +118,8 @@ function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; 
       <h3 className="text-xs font-semibold">{light.id}</h3>
       <div className="grid grid-cols-2 gap-2">
         <Input id={prefix + '-color'} label="Couleur" type="color" value={displayColor(light.color)} disabled={disabled} onChange={event => onChange({ color: linearColor(event.target.value) })} />
-        <Input id={prefix + '-intensity'} label={'Intensité · ' + radiometric(light.intensity)} help="Intensité radiométrique du contrat de lampes du moteur." type="range" min={limits.intensityStep} max={limits.intensityMax} step={limits.intensityStep} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
-        <Input id={prefix + '-range'} label={'Portée · ' + metres(light.range)} help="Distance au-delà de laquelle cette lampe n’éclaire plus rien." type="range" min={limits.rangeStep} max={limits.rangeMax} step={limits.rangeStep} value={light.range} disabled={disabled} onChange={event => onChange({ range: Number(event.target.value) })} />
+        <Input id={prefix + '-intensity'} label={'Intensité · ' + radiometric(light.intensity)} help="Intensité radiométrique du contrat de lampes du moteur." {...intensitySlider(limits)} value={light.intensity} disabled={disabled} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <Input id={prefix + '-range'} label={'Portée · ' + metres(light.range)} help="Distance au-delà de laquelle cette lampe n’éclaire plus rien." {...rangeSlider(limits)} value={light.range} disabled={disabled} onChange={event => onChange({ range: Number(event.target.value) })} />
         <Input id={prefix + '-x'} label={'X · ' + metres(light.position[0])} type="range" min={bounds.minX} max={bounds.maxX} step={0.1} value={light.position[0]} disabled={disabled} onChange={event => move(0, Number(event.target.value))} />
         <Input id={prefix + '-y'} label={'Y · ' + metres(light.position[1])} type="range" min={bounds.minY} max={bounds.maxY} step={0.1} value={light.position[1]} disabled={disabled} onChange={event => move(1, Number(event.target.value))} />
         <Input id={prefix + '-z'} label={'Z · ' + metres(light.position[2])} type="range" min={bounds.minZ} max={bounds.maxZ} step={0.1} value={light.position[2]} disabled={disabled} onChange={event => move(2, Number(event.target.value))} />
@@ -162,7 +169,7 @@ export function LightingLab() {
   /** Les commandes de déplacement du banc 15, branchées telles quelles sur les deux scènes. Les deux
    *  caches exposent leur `navigation.bin` à côté de leur manifeste ; si le fichier manque vraiment,
    *  le motif est remonté à l'appelant, qui le dit et retombe sur l'orbite. */
-  const buildControls = (context: ControlsContext, signal: AbortSignal, owner: number) => async (): Promise<LightingControlsHandle> => {
+  const buildControls = async (context: ControlsContext, signal: AbortSignal, owner: number): Promise<LightingControlsHandle> => {
     if (context.mode === 'orbit') {
       const orbit = context.orbitControls();
       if (generation.current === owner) setCameraMode('orbit');
@@ -189,9 +196,8 @@ export function LightingLab() {
         const canvas = canvasRef.current;
         if (!canvas) throw new Error('La surface de rendu est indisponible.');
         const createControls = async (context: ControlsContext): Promise<LightingControlsHandle> => {
-          const build = buildControls(context, abort.signal, owner);
           try {
-            return await build();
+            return await buildControls(context, abort.signal, owner);
           } catch (error) {
             if (context.mode === 'orbit' || abort.signal.aborted) throw error;
             // Fait constaté, pas supposé : la géométrie de collision manque pour ce cache. On le dit
@@ -201,7 +207,7 @@ export function LightingLab() {
             // Second terme de la règle de départ : sans point praticable lu du fichier de navigation,
             // le centre de l'emprise au niveau du sol, à hauteur d'œil.
             placeAtGround(context.camera, context.bounds);
-            return buildControls({ ...context, mode: 'orbit' }, abort.signal, owner)();
+            return buildControls({ ...context, mode: 'orbit' }, abort.signal, owner);
           }
         };
         const controller = await runner.createLightingBench(canvas, sceneId, {
@@ -238,9 +244,8 @@ export function LightingLab() {
   const changeLight = (id: string, patch: Partial<SceneLight>) => {
     change({ lights: config.lights.map(light => (light.id === id ? { ...light, ...patch } : light)) });
   };
-  /** Comme au banc 15 : le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi.
-   *  Un canvas ne porte qu'un seul contexte graphique dans sa vie : la surface est démontée entre
-   *  les deux moteurs pour que la fiche commune en remonte une neuve, jamais recyclée. */
+  /** Comme au banc 15 : le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi,
+   *  sur une surface de rendu neuve que la fiche commune remonte pendant l'attente. */
   const changeEngine = (id: LightingBackendId) => {
     if (id === engine) return;
     setEngine(id);
@@ -248,7 +253,7 @@ export function LightingLab() {
     abortRef.current?.abort(); release(); busy.current = false;
     setStatus('stopped'); setCapabilities(null); setBackend(null);
     setMessage('Changement de moteur vers ' + engineLabel(id) + ' · surface de rendu neuve…');
-    requestAnimationFrame(() => requestAnimationFrame(() => launch({ engine: id, keepConfig: true })));
+    afterRemount(() => launch({ engine: id, keepConfig: true }));
   };
   /** Le déplacement se change scène ouverte : le runner ne libère les anciennes commandes qu'une
    *  fois les nouvelles construites, donc un refus laisse la scène pilotable comme avant. */
@@ -257,7 +262,7 @@ export function LightingLab() {
     const controller = controllerRef.current;
     if (!controller) return;
     void controller.setCamera(mode)
-      .then(applied => { setCameraMode(applied); setMessage('Déplacement : ' + (LAB_CAMERA_MODES.find(entry => entry.value === applied)?.label ?? applied) + '.'); })
+      .then(applied => { setCameraMode(applied); setMessage('Déplacement : ' + cameraModeLabel(applied) + '.'); })
       .catch(error => { setCamera(controller.camera); setMessage('Déplacement refusé : ' + (error instanceof Error ? error.message : String(error))); });
   };
 
@@ -299,30 +304,28 @@ export function LightingLab() {
     execution: { kind: 'exploration' as const, status: status === 'loading' ? ('running' as const) : status, phase: message, lastCampaign: null },
   };
 
-  const cameraSelect = (disabled: boolean) => (
-    <Select id="lighting-camera" label="Caméra" help={cameraModeHelp(camera)} value={camera} disabled={disabled} onChange={event => changeCamera(event.target.value as LightingCameraMode)}>
-      {LAB_CAMERA_MODES.map(mode => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
-    </Select>
-  );
-  const engineSelect = (disabled: boolean) => (
-    <Select id="lighting-engine" label="Moteur affiché" help="Le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi." value={engine} disabled={disabled} onChange={event => changeEngine(event.target.value as LightingBackendId)}>
-      {LIGHTING_ENGINES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-    </Select>
-  );
+  // Les deux sélecteurs restent au même endroit, scène ouverte comme à l'arrêt ; seul le chargement
+  // les fige, le temps que la scène demandée soit réellement en place.
+  const liveLocked = active && status !== 'running';
+  const limits = SCENE_LIGHT_LIMITS[sceneId];
 
   const panels = {
     configuration: (
       <>
         <SegmentedControl label="Scène" disabled={active} value={sceneId} onChange={value => setSceneId(value)} options={SCENES.map(scene => ({ value: scene.id, label: scene.title }))} />
+        <Select id="lighting-camera" label="Caméra" help={cameraModeHelp(camera)} value={camera} disabled={liveLocked} onChange={event => changeCamera(event.target.value as LightingCameraMode)}>
+          {LAB_CAMERA_MODES.map(mode => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
+        </Select>
+        <Select id="lighting-engine" label="Moteur affiché" help="Le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi." value={engine} disabled={liveLocked} onChange={event => changeEngine(event.target.value as LightingBackendId)}>
+          {LIGHTING_BACKEND_IDS.map(id => <option key={id} value={id}>{engineLabel(id)}</option>)}
+        </Select>
         {active ? (
           <>
-            {cameraSelect(status !== 'running')}
-            {engineSelect(status !== 'running')}
-            <Input id="lighting-night" label="Mode nuit" type="checkbox" checked={config.night} disabled={status !== 'running' || !capabilities?.setEnvironment} onChange={event => change({ night: event.target.checked })} />
-            <Input id="lighting-shadows" label="Ombres" type="checkbox" checked={config.shadows} disabled={status !== 'running'} onChange={event => change({ shadows: event.target.checked })} />
-            <Input id="lighting-auto-count" label={'Lampes automatiques · ' + config.autoLightCount} help="Lampadaires du modèle les plus proches du point de départ, puis grille de secours." type="range" min={AUTO_LIGHT_MIN} max={AUTO_LIGHT_MAX} step={1} value={config.autoLightCount} disabled={status !== 'running' || !capabilities?.addLight} onChange={event => change({ autoLightCount: Number(event.target.value) })} />
-            <Input id="lighting-auto-intensity" label={'Intensité des lampes automatiques · ' + radiometric(config.autoLightIntensity)} type="range" min={SCENE_LIGHT_LIMITS[sceneId].intensityStep} max={SCENE_LIGHT_LIMITS[sceneId].intensityMax} step={SCENE_LIGHT_LIMITS[sceneId].intensityStep} value={config.autoLightIntensity} disabled={status !== 'running' || !capabilities?.addLight} onChange={event => change({ autoLightIntensity: Number(event.target.value) })} />
-            <Input id="lighting-auto-range" label={'Portée des lampes automatiques · ' + metres(config.autoLightRange)} type="range" min={SCENE_LIGHT_LIMITS[sceneId].rangeStep} max={SCENE_LIGHT_LIMITS[sceneId].rangeMax} step={SCENE_LIGHT_LIMITS[sceneId].rangeStep} value={config.autoLightRange} disabled={status !== 'running' || !capabilities?.addLight} onChange={event => change({ autoLightRange: Number(event.target.value) })} />
+            <Input id="lighting-night" label="Mode nuit" type="checkbox" checked={config.night} disabled={liveLocked || !capabilities?.setEnvironment} onChange={event => change({ night: event.target.checked })} />
+            <Input id="lighting-shadows" label="Ombres" type="checkbox" checked={config.shadows} disabled={liveLocked} onChange={event => change({ shadows: event.target.checked })} />
+            <Input id="lighting-auto-count" label={'Lampes automatiques · ' + config.autoLightCount} help="Lampadaires du modèle les plus proches du point de départ, puis grille de secours." type="range" min={AUTO_LIGHT_MIN} max={AUTO_LIGHT_MAX} step={1} value={config.autoLightCount} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightCount: Number(event.target.value) })} />
+            <Input id="lighting-auto-intensity" label={'Intensité des lampes automatiques · ' + radiometric(config.autoLightIntensity)} {...intensitySlider(limits)} value={config.autoLightIntensity} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightIntensity: Number(event.target.value) })} />
+            <Input id="lighting-auto-range" label={'Portée des lampes automatiques · ' + metres(config.autoLightRange)} {...rangeSlider(limits)} value={config.autoLightRange} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightRange: Number(event.target.value) })} />
             {ADJUSTABLE_LIGHT_IDS.map(id => {
               const light = config.lights.find(entry => entry.id === id);
               return light ? <LightFields key={id} light={light} scene={sceneId} disabled={false} onChange={patch => changeLight(id, patch)} /> : null;
@@ -333,13 +336,7 @@ export function LightingLab() {
             <Input id="lighting-speed" label={'Vitesse · ×' + config.animationSpeed.toFixed(1)} type="range" min={0.1} max={4} step={0.1} value={config.animationSpeed} onChange={event => change({ animationSpeed: Number(event.target.value) })} />
             <p className="text-xs text-base-content/60">Portes, ventilateur, panneau, lampe baladeuse, miroir pivotant{sceneId === 'emerald-night' ? ', phares' : ''} : pilotés par setTransform/setLight à chaque image, sans allocation.</p>
           </>
-        ) : (
-          <>
-            {cameraSelect(false)}
-            {engineSelect(false)}
-            <p className="text-xs text-base-content/60">{SCENES.find(scene => scene.id === sceneId)?.description}</p>
-          </>
-        )}
+        ) : <p className="text-xs text-base-content/60">{SCENES.find(scene => scene.id === sceneId)?.description}</p>}
       </>
     ),
     // Le panneau commun du banc 15, tel quel, pour que les deux rapports se lisent de la même façon ;

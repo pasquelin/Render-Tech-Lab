@@ -61,6 +61,9 @@ const BACKENDS: Record<LightingBackendId, BackendFactory> = {
   'exact-cluster-pages': exactPagesBackend,
 };
 
+/** Les réglages dont dépend la liste des lampes automatiques ; les autres n'obligent pas à la refaire. */
+const AUTO_LIGHT_KEYS: readonly (keyof LightingBenchConfig)[] = ['autoLightCount', 'autoLightIntensity', 'autoLightRange', 'shadows'];
+
 export async function createLightingBench(
   canvas: HTMLCanvasElement, scene: SceneId, options: LightingBenchOptions = {},
 ): Promise<LightingController> {
@@ -199,7 +202,7 @@ export async function createLightingBench(
     getStats: () => stats,
     update(patch) {
       config = { ...config, ...patch, lights: patch.lights ? patch.lights.map(light => ({ ...light })) : config.lights };
-      if (patch.autoLightCount !== undefined || patch.autoLightIntensity !== undefined || patch.autoLightRange !== undefined || patch.shadows !== undefined) autoLights = rebuildAutoLights();
+      if (AUTO_LIGHT_KEYS.some(key => patch[key] !== undefined)) autoLights = rebuildAutoLights();
       if (patch.night !== undefined) applyEnvironment();
     },
     async setCamera(mode) {

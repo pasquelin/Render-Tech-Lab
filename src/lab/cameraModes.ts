@@ -11,6 +11,14 @@ export const LAB_CAMERA_MODES: ReadonlyArray<{ readonly value: LabCameraMode; re
   { value: 'game', label: 'Jeu à la première personne', help: 'Cliquer dans la vue pour capturer la souris. W/A/S/D : avancer ; Espace : sauter ; Maj : courir ; Échap : libérer la souris.' },
 ];
 
+function cameraMode(mode: LabCameraMode) {
+  return LAB_CAMERA_MODES.find(entry => entry.value === mode);
+}
+
+export function cameraModeLabel(mode: LabCameraMode): string {
+  return cameraMode(mode)?.label ?? mode;
+}
+
 export function cameraModeHelp(mode: LabCameraMode): string {
-  return LAB_CAMERA_MODES.find(entry => entry.value === mode)?.help ?? '';
+  return cameraMode(mode)?.help ?? '';
 }

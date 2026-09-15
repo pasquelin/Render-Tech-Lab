@@ -86,10 +86,9 @@ export function carHeadlightPoses(timeSeconds: number, speed: number): { positio
 export function autoLightPositions(scene: SceneId, count: number, origin?: Vec3): Vec3[] {
   if (scene === 'emerald-night') {
     const heads = EMERALD_STREETLIGHTS.map(entry => [entry.position[0], entry.position[1] + EMERALD_STREETLIGHT_HEAD_OFFSET_M, entry.position[2]] as Vec3);
-    const ordered = origin
-      ? [...heads].sort((a, b) => (a[0] - origin[0]) ** 2 + (a[2] - origin[2]) ** 2 - ((b[0] - origin[0]) ** 2 + (b[2] - origin[2]) ** 2))
-      : heads;
-    return ordered.slice(0, count);
+    if (!origin) return heads.slice(0, count);
+    const groundDistance2 = (point: Vec3) => (point[0] - origin[0]) ** 2 + (point[2] - origin[2]) ** 2;
+    return [...heads].sort((a, b) => groundDistance2(a) - groundDistance2(b)).slice(0, count);
   }
   const rooms: Vec3[] = [[-10, 2.6, 8], [10, 2.6, 8], [-10, 2.6, -8], [10, 2.6, -8]];
   const positions: Vec3[] = [];
