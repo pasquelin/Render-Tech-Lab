@@ -23,7 +23,8 @@ import { SegmentedControl } from './ui/SegmentedControl.tsx';
 type Status = 'idle' | 'loading' | 'running' | 'stopped' | 'error';
 const moduleId = '16-lighting-transport';
 const baseSnapshot = initialSnapshot(moduleId);
-const number = (value: number | null | undefined, unit = '') => (value == null || !Number.isFinite(value) ? 'Non mesuré' : value.toFixed(unit === ' ms' ? 2 : 0) + unit);
+const NOT_MEASURED = 'Non mesuré';
+const number = (value: number | null | undefined, unit = '') => (value == null || !Number.isFinite(value) ? NOT_MEASURED : value.toFixed(unit === ' ms' ? 2 : 0) + unit);
 /** Les bornes de position des lampes sont des mètres monde (SCENE_LIGHT_BOUNDS). */
 const metres = (value: number) => value.toFixed(1) + ' m';
 
@@ -31,31 +32,35 @@ const metres = (value: number) => value.toFixed(1) + ' m';
  *  travaillent en même temps : on ne les additionne jamais, on ne les compare jamais entre elles. */
 const STAGE_COLUMNS = ['Étape', 'CPU p50', 'CPU p95', 'GPU p50', 'GPU p95'];
 /** `null` veut dire « non mesuré » et ne vaut pas 0 : une étape absente ne coûte pas « rien ». */
-const quantile = (value: StageQuantiles, key: 'p50' | 'p95') => (value ? value[key].toFixed(2) + ' ms' : 'Non mesuré');
+const quantiles = (value: StageQuantiles): [string, string] =>
+  value ? [value.p50.toFixed(2) + ' ms', value.p95.toFixed(2) + ' ms'] : [NOT_MEASURED, NOT_MEASURED];
 /** Les compteurs d'une étape (ombres, listes de lampes) tels que le moteur les nomme : ce ne sont pas
  *  des durées, et aucun libellé n'est réinventé ici — seule la casse du nom publié est aérée. */
 const counts = (values: Readonly<Record<string, number>> | undefined) =>
-  values ? Object.entries(values).map(([name, count]) => name.replace(/([A-Z])/g, ' $1').toLowerCase() + ' : ' + count).join(' · ') : '';
-const stageNote = (parts: readonly (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
+  values && Object.entries(values).map(([name, count]) => name.replace(/([A-Z])/g, ' $1').toLowerCase() + ' : ' + count).join(' · ');
+const stageNote = (parts: readonly (string | null | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
 /** Une ligne par étape du contrat du moteur, puis l'enveloppe de l'image côté carte graphique, qui
  *  n'est pas la somme des étapes : un appareil qui recouvre deux passes les compterait deux fois. */
 function stageRows(profile: StageProfile | null): MetricTableRow[] {
   if (!profile?.enabled) {
     return [{
-      id: 'lighting-stage-cost', cells: ['Étapes du rendu', 'Non mesuré', 'Non mesuré', 'Non mesuré', 'Non mesuré'],
-      note: profile?.gpuReason ?? 'Le moteur actif ne chronomètre pas ses étapes.',
+      id: 'lighting-stage-cost', cells: ['Étapes du rendu', ...quantiles(null), ...quantiles(null)],
+      provenance: profile?.gpuReason ?? 'Le moteur actif ne chronomètre pas ses étapes.',
     }];
   }
   const rows: MetricTableRow[] = profile.stages.map(entry => ({
     id: 'lighting-stage-' + entry.stage,
-    cells: [entry.label, quantile(entry.cpuMs, 'p50'), quantile(entry.cpuMs, 'p95'), quantile(entry.gpuMs, 'p50'), quantile(entry.gpuMs, 'p95')],
-    note: stageNote([counts(entry.counts), entry.cpuReason && 'CPU : ' + entry.cpuReason, entry.gpuReason && 'GPU : ' + entry.gpuReason]),
+    cells: [entry.label, ...quantiles(entry.cpuMs), ...quantiles(entry.gpuMs)],
+    provenance: stageNote([counts(entry.counts), entry.cpuReason && 'CPU : ' + entry.cpuReason, entry.gpuReason && 'GPU : ' + entry.gpuReason]),
   }));
   rows.push({
     id: 'lighting-stage-image',
-    cells: ['Image entière (GPU)', 'Non mesuré', 'Non mesuré', quantile(profile.gpuImageMs, 'p50'), quantile(profile.gpuImageMs, 'p95')],
-    note: stageNote(['du début de la première passe à la fin de la dernière ; les étapes ne s’y additionnent pas', profile.gpuImageMs ? undefined : profile.gpuReason ?? undefined]),
+    cells: ['Image entière (GPU)', ...quantiles(null), ...quantiles(profile.gpuImageMs)],
+    provenance: stageNote([
+      'du début de la première passe à la fin de la dernière ; les étapes ne s’y additionnent pas',
+      profile.gpuImageMs ? undefined : profile.gpuReason,
+    ]),
   });
   return rows;
 }
@@ -63,9 +68,9 @@ function stageRows(profile: StageProfile | null): MetricTableRow[] {
 /** Sur quoi la fenêtre du moteur a réellement porté, pour qu'aucun chiffre ne se lise sans son assise. */
 function stageProvenance(profile: StageProfile | null): string | undefined {
   if (!profile?.enabled) return undefined;
-  const overhead = profile.overheadMs ? 'relevé lui-même ' + profile.overheadMs.p50.toFixed(3) + ' ms (p50)' : 'coût du relevé non mesuré';
-  return 'Fenêtre ' + profile.windowFrames + ' images · ' + profile.cpuFrames + ' images processeur, ' + profile.gpuSamples
-    + ' relevés carte graphique · ' + (profile.gpuMethod ?? profile.gpuReason ?? 'aucune horloge carte graphique') + ' · ' + overhead;
+  const overhead = profile.overheadMs ? `relevé lui-même ${profile.overheadMs.p50.toFixed(3)} ms (p50)` : 'coût du relevé non mesuré';
+  const clock = profile.gpuMethod ?? profile.gpuReason ?? 'aucune horloge carte graphique';
+  return `Fenêtre ${profile.windowFrames} images · ${profile.cpuFrames} images processeur, ${profile.gpuSamples} relevés carte graphique · ${clock} · ${overhead}`;
 }
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
