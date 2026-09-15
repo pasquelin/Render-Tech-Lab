@@ -125,15 +125,9 @@ export const DEFAULT_LIGHTING_BOUNCE = false;
 
 /** Le diagnostic où le moteur publie l'état de la lumière qui rebondit, une fois la question tranchée
  *  pour la session : son champ `unavailable` porte le motif quand le rebond n'existe pas (cache sans
- *  proxy résident, appareil qui refuse la passe, rebond non demandé) et vaut `null` quand il tourne.
- *  Rien n'est reformulé ici : c'est le motif du moteur, tel quel. `undefined` pour tout autre
- *  diagnostic, qui ne dit rien du rebond. */
+ *  proxy résident, appareil qui refuse la passe, rebond non demandé) et n'en porte aucun quand il
+ *  tourne. Le motif remonté est celui du moteur, jamais reformulé. */
 export const BOUNCE_DIAGNOSTIC = 'bounce-lighting';
-export function bounceUnavailable(diagnostic: { readonly phase: string; readonly context: Record<string, unknown> }): string | null | undefined {
-  if (diagnostic.phase !== BOUNCE_DIAGNOSTIC) return undefined;
-  const reason = diagnostic.context.unavailable;
-  return typeof reason === 'string' ? reason : null;
-}
 
 /** Curseur 1-30, placé automatiquement (grille dans les pièces / lampadaires à Emerald). */
 export const AUTO_LIGHT_MIN = 1;
@@ -265,8 +259,6 @@ export interface LightingBenchOptions {
 export interface LightingController {
   readonly backend: LightingBackendId;
   readonly camera: LightingCameraMode;
-  /** Le rebond réellement demandé à la création : il ne se change pas sans rouvrir la scène. */
-  readonly bounce: boolean;
   /** Le motif publié par le moteur quand le rebond n'existe pas ; `null` tant qu'il n'a rien dit ou
    *  qu'il tourne. Lu comme les compteurs, à la cadence de l'affichage. */
   getBounceUnavailable(): string | null;

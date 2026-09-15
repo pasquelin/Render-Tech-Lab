@@ -230,9 +230,10 @@ export function LightingLab() {
     if (busy.current) return;
     const wantedEngine = override?.engine ?? engine, wantedCamera = override?.camera ?? camera;
     const wantedBounce = override?.bounce ?? bounce;
+    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null); setBackend(null); setCameraMode(wantedCamera);
     // Aucune image n'a encore été relevée sur cette session : les compteurs de la précédente, et
     // l'indisponibilité qu'elle publiait, ne valent plus rien.
-    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null); setBackend(null); setCameraMode(wantedCamera); setStats(emptyLightingStats()); setBounceNotice(null);
+    setStats(emptyLightingStats()); setBounceNotice(null);
     navigationWorld.current = null;
     const abort = new AbortController(); abortRef.current = abort;
     const owner = ++generation.current;
@@ -370,6 +371,8 @@ export function LightingLab() {
   // les fige, le temps que la scène demandée soit réellement en place.
   const liveLocked = active && status !== 'running';
   const limits = SCENE_LIGHT_LIMITS[sceneId];
+  // Le moteur publie aussi un motif quand le rebond n'a tout simplement pas été demandé : case
+  // éteinte, il n'y a rien à annoncer.
   const bounceReason = bounce ? bounceNotice : null;
 
   const panels = {
