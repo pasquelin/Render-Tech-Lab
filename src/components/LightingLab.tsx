@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SCENES, SCENE_LIGHT_BOUNDS, SCENE_LIGHT_LIMITS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, LIGHTING_BACKEND_IDS, LIGHTING_VIEWS, SUN_LIGHT_ID, SUN_LIMITS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
+import { SCENES, SCENE_LIGHT_BOUNDS, SCENE_LIGHT_LIMITS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, LIGHTING_BACKEND_IDS, LIGHTING_VIEWS, SUN_LIGHT_ID, SUN_LIMITS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_BOUNCE, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
 import type { LightingBackendId, LightingBenchConfig, LightingCameraMode, LightingController, SceneId, SceneLightingView, SceneLightLimits, PlacedLight, SunConfig, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
 import type { StageProfile, StageQuantiles } from '@web-geometry/sdk';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
@@ -187,6 +187,10 @@ export function LightingLab() {
   const [backend, setBackend] = useState<LightingBackendId | null>(null);
   // Moteur demandé par l'utilisateur ; `backend` dit celui qui tourne réellement.
   const [engine, setEngine] = useState<LightingBackendId>(DEFAULT_LIGHTING_BACKEND);
+  // La lumière qui rebondit se demande à la création de l'explorateur : la changer rouvre la scène.
+  const [bounce, setBounce] = useState(DEFAULT_LIGHTING_BOUNCE);
+  // Le motif du moteur quand le rebond demandé n'existe pas, tel qu'il le publie dans son diagnostic.
+  const [bounceNotice, setBounceNotice] = useState<string | null>(null);
   // Déplacement demandé (sélecteur) et déplacement réellement branché. Le panneau « Caméra active »
   // annonce ce qui est branché, pas l'intention.
   const [camera, setCamera] = useState<LightingCameraMode>(DEFAULT_LIGHTING_CAMERA);
@@ -222,10 +226,13 @@ export function LightingLab() {
     return createNavigationControls(context.canvas, context.camera, world, context.mode, 0);
   };
 
-  const launch = (override?: { engine?: LightingBackendId; camera?: LightingCameraMode; keepConfig?: boolean }) => {
+  const launch = (override?: { engine?: LightingBackendId; camera?: LightingCameraMode; bounce?: boolean; keepConfig?: boolean }) => {
     if (busy.current) return;
     const wantedEngine = override?.engine ?? engine, wantedCamera = override?.camera ?? camera;
-    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null); setBackend(null); setCameraMode(wantedCamera);
+    const wantedBounce = override?.bounce ?? bounce;
+    // Aucune image n'a encore été relevée sur cette session : les compteurs de la précédente, et
+    // l'indisponibilité qu'elle publiait, ne valent plus rien.
+    busy.current = true; setStatus('loading'); setMessage('Chargement de la scène…'); setCapabilities(null); setBackend(null); setCameraMode(wantedCamera); setStats(emptyLightingStats()); setBounceNotice(null);
     navigationWorld.current = null;
     const abort = new AbortController(); abortRef.current = abort;
     const owner = ++generation.current;
@@ -252,17 +259,22 @@ export function LightingLab() {
           }
         };
         const controller = await runner.createLightingBench(canvas, sceneId, {
-          signal: abort.signal, backend: wantedEngine, camera: wantedCamera,
+          signal: abort.signal, backend: wantedEngine, camera: wantedCamera, bounce: wantedBounce,
           onProgress: value => { if (generation.current === owner) setMessage(value); }, createControls,
         });
         if (generation.current !== owner || abort.signal.aborted) { controller.dispose(); return; }
         controllerRef.current = controller;
+        // Scène rouverte à réglages conservés (moteur changé, rebond allumé ou éteint) : le nouvel
+        // explorateur reçoit la configuration que la colonne de droite affiche, sinon elle
+        // annoncerait des lampes que le moteur n'a pas.
+        if (override?.keepConfig) controller.update(config);
         setCapabilities(controller.getCapabilities());
         setBackend(controller.backend);
         setStatus('running'); setMessage('Scène active sur ' + engineLabel(controller.backend) + '. Le déplacement, le moteur et les lampes restent réglables à droite.');
         const tick = () => {
           if (generation.current !== owner || !controllerRef.current) return;
           setStats(controllerRef.current.getStats());
+          setBounceNotice(controllerRef.current.getBounceUnavailable());
           poll.current = requestAnimationFrame(tick);
         };
         poll.current = requestAnimationFrame(tick);
@@ -286,16 +298,24 @@ export function LightingLab() {
     change({ lights: config.lights.map(light => (light.id === id ? { ...light, ...patch } : light)) });
   };
   const changeSun = (patch: Partial<SunConfig>) => change({ sun: { ...config.sun, ...patch } });
-  /** Comme au banc 15 : le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi,
-   *  sur une surface de rendu neuve que la fiche commune remonte pendant l'attente. */
-  const changeEngine = (id: LightingBackendId) => {
-    if (id === engine) return;
-    setEngine(id);
+  /** Comme au banc 15 : l'explorateur précédent est libéré, puis la scène rouvre sur une surface de
+   *  rendu neuve que la fiche commune remonte pendant l'attente. Le moteur et le rebond se demandent
+   *  tous deux à la création de l'explorateur : ni l'un ni l'autre ne se change scène ouverte. */
+  const reopen = (notice: string, override: { engine?: LightingBackendId; bounce?: boolean }) => {
     if (!busy.current) return;
     abortRef.current?.abort(); release(); busy.current = false;
     setStatus('stopped'); setCapabilities(null); setBackend(null);
-    setMessage('Changement de moteur vers ' + engineLabel(id) + ' · surface de rendu neuve…');
-    afterRemount(() => launch({ engine: id, keepConfig: true }));
+    setMessage(notice);
+    afterRemount(() => launch({ ...override, keepConfig: true }));
+  };
+  const changeEngine = (id: LightingBackendId) => {
+    if (id === engine) return;
+    setEngine(id);
+    reopen('Changement de moteur vers ' + engineLabel(id) + ' · surface de rendu neuve…', { engine: id });
+  };
+  const changeBounce = (wanted: boolean) => {
+    setBounce(wanted);
+    reopen('Rebond de lumière ' + (wanted ? 'allumé' : 'éteint') + ' · surface de rendu neuve…', { bounce: wanted });
   };
   /** Le déplacement se change scène ouverte : le runner ne libère les anciennes commandes qu'une
    *  fois les nouvelles construites, donc un refus laisse la scène pilotable comme avant. */
@@ -350,6 +370,7 @@ export function LightingLab() {
   // les fige, le temps que la scène demandée soit réellement en place.
   const liveLocked = active && status !== 'running';
   const limits = SCENE_LIGHT_LIMITS[sceneId];
+  const bounceReason = bounce ? bounceNotice : null;
 
   const panels = {
     configuration: (
@@ -361,9 +382,10 @@ export function LightingLab() {
         <Select id="lighting-engine" label="Moteur affiché" help="Le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi." value={engine} disabled={liveLocked} onChange={event => changeEngine(event.target.value as LightingBackendId)}>
           {LIGHTING_BACKEND_IDS.map(id => <option key={id} value={id}>{engineLabel(id)}</option>)}
         </Select>
+        <Input id="lighting-bounce" label="Rebond de lumière" help="Coûteux sur les grandes scènes, lot d’optimisation en cours." error={bounceReason ? 'Rebond indisponible · ' + bounceReason : undefined} type="checkbox" checked={bounce} disabled={liveLocked} onChange={event => changeBounce(event.target.checked)} />
         {active ? (
           <>
-            <Select id="lighting-view" label="Vue d’éclairage" help="« Sans éclairage » est la vue de diagnostic d’albédo brut du moteur : la couleur des matériaux telle quelle, sans lampe. « Auto » la rend tant qu’aucune lampe n’est déclarée." value={config.view} disabled={liveLocked || !capabilities?.setLightingView} onChange={event => change({ view: event.target.value as SceneLightingView })}>
+            <Select id="lighting-view" label="Vue d’éclairage" help="« Sans éclairage » est la vue de diagnostic d’albédo brut du moteur : la couleur des matériaux telle quelle, sans lampe. « Auto » la rend tant qu’aucune lampe n’est déclarée. « Rebond seul » est la vue de mesure du moteur : l’irradiance indirecte seule, noire sans rebond gréé." value={config.view} disabled={liveLocked || !capabilities?.setLightingView} onChange={event => change({ view: event.target.value as SceneLightingView })}>
               {LIGHTING_VIEWS.map(view => <option key={view.value} value={view.value}>{view.label}</option>)}
             </Select>
             <SunFields sun={config.sun} disabled={liveLocked || !capabilities?.addLight} onChange={changeSun} />

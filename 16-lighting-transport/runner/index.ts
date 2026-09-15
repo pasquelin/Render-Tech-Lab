@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createExplorer, exactPagesBackend, webgpuPagesBackend } from '@web-geometry/sdk/browser';
 import type { CameraPose, Explorer, BackendFactory } from '@web-geometry/sdk/browser';
 import {
-  MAX_SHADOWED_LIGHTS_PER_FRAME, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats, sunLights,
+  MAX_SHADOWED_LIGHTS_PER_FRAME, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_BOUNCE, DEFAULT_LIGHTING_CAMERA, bounceUnavailable, defaultConfig, emptyLightingStats, sunLights,
   type LightingBackendId, type LightingBenchConfig, type LightingController, type LightingBenchOptions,
   type LightingCameraMode, type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
   type Vec3,
@@ -71,9 +71,18 @@ export async function createLightingBench(
   onProgress?.('Préparation de la scène avec le SDK…');
   const { width, height } = boxSize(canvas);
   const backend = options.backend ?? DEFAULT_LIGHTING_BACKEND;
+  const bounce = options.bounce ?? DEFAULT_LIGHTING_BOUNCE;
+  // Ce que le moteur a dit de la lumière qui rebondit, dans son propre diagnostic : le motif quand
+  // elle n'existe pas, `null` quand elle tourne. Aucune déduction d'ici.
+  let bounceNotice: string | null = null;
   const explorer = await createExplorer(canvas, {
     manifestUrl: MANIFEST_URLS[scene], scope: 'full', signal, preload: 'all', width, height,
     backends: [BACKENDS[backend]], onPreparation: event => onProgress?.(event.message),
+    // La lumière qui rebondit s'allume à la création, pour toute la session : le moteur compile
+    // sinon son programme direct seul. Son indisponibilité éventuelle (cache sans proxy résident)
+    // est celle qu'il publie sur son étape de rebond, jamais une supposition d'ici.
+    bounce,
+    onDiagnostic: diagnostic => { const notice = bounceUnavailable(diagnostic); if (notice !== undefined) bounceNotice = notice; },
     // Chronométrage par étape du moteur : c'est lui qui tient la fenêtre glissante, les quantiles et
     // le coût du relevé. Sans ce drapeau, explorer.stageProfile() ne renvoie que « non mesuré ».
     stageProfile: true,
@@ -198,6 +207,8 @@ export async function createLightingBench(
 
   return {
     backend,
+    bounce,
+    getBounceUnavailable: () => bounceNotice,
     get camera() { return cameraMode; },
     getConfig: () => ({ ...config, lights: config.lights.map(light => ({ ...light })) }),
     getCapabilities: () => ({ ...capabilities }),

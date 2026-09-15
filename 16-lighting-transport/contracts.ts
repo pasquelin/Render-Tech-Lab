@@ -113,8 +113,27 @@ export function sunLights(sun: SunConfig): SceneLight[] {
  *  n'est déclarée et l'éclairage réel dès qu'il y en a une. */
 export const LIGHTING_VIEWS: ReadonlyArray<{ readonly value: SceneLightingView; readonly label: string }> = [
   { value: 'auto', label: 'Auto' }, { value: 'lit', label: 'Éclairée' }, { value: 'unlit', label: 'Sans éclairage' },
+  // La vue de mesure du moteur : l'irradiance indirecte seule, en valeurs linéaires. Ce n'est pas une
+  // image à regarder ; sans rebond gréé elle est noire, ce qui est la mesure et non un défaut.
+  { value: 'bounce', label: 'Rebond seul' },
 ];
 export const DEFAULT_LIGHTING_VIEW: SceneLightingView = 'auto';
+
+/** La lumière qui rebondit, éteinte par défaut comme dans le moteur : elle s'allume à la création de
+ *  l'explorateur, pour toute la session, et coûte cher sur une grande scène. */
+export const DEFAULT_LIGHTING_BOUNCE = false;
+
+/** Le diagnostic où le moteur publie l'état de la lumière qui rebondit, une fois la question tranchée
+ *  pour la session : son champ `unavailable` porte le motif quand le rebond n'existe pas (cache sans
+ *  proxy résident, appareil qui refuse la passe, rebond non demandé) et vaut `null` quand il tourne.
+ *  Rien n'est reformulé ici : c'est le motif du moteur, tel quel. `undefined` pour tout autre
+ *  diagnostic, qui ne dit rien du rebond. */
+export const BOUNCE_DIAGNOSTIC = 'bounce-lighting';
+export function bounceUnavailable(diagnostic: { readonly phase: string; readonly context: Record<string, unknown> }): string | null | undefined {
+  if (diagnostic.phase !== BOUNCE_DIAGNOSTIC) return undefined;
+  const reason = diagnostic.context.unavailable;
+  return typeof reason === 'string' ? reason : null;
+}
 
 /** Curseur 1-30, placé automatiquement (grille dans les pièces / lampadaires à Emerald). */
 export const AUTO_LIGHT_MIN = 1;
@@ -236,12 +255,21 @@ export interface LightingBenchOptions {
    *  motif, à charge de l'utilisateur d'en choisir un autre dans le sélecteur. */
   backend?: LightingBackendId;
   camera?: LightingCameraMode;
+  /** Allume la lumière qui rebondit pour cette session d'explorateur. Éteinte par défaut : le moteur
+   *  compile alors son programme direct seul et déclare le rebond indisponible plutôt que de le
+   *  faire apparaître en silence. */
+  bounce?: boolean;
   createControls?: (context: ControlsContext) => Promise<LightingControlsHandle>;
 }
 
 export interface LightingController {
   readonly backend: LightingBackendId;
   readonly camera: LightingCameraMode;
+  /** Le rebond réellement demandé à la création : il ne se change pas sans rouvrir la scène. */
+  readonly bounce: boolean;
+  /** Le motif publié par le moteur quand le rebond n'existe pas ; `null` tant qu'il n'a rien dit ou
+   *  qu'il tourne. Lu comme les compteurs, à la cadence de l'affichage. */
+  getBounceUnavailable(): string | null;
   getConfig(): LightingBenchConfig;
   getCapabilities(): EngineCapabilities;
   getStats(): LightingFrameStats;
