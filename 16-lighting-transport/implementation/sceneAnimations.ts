@@ -102,8 +102,8 @@ export function autoLightPositions(scene: SceneId, count: number, origin?: Vec3)
   return positions;
 }
 
-/** Vague allumée/éteinte des lampes automatiques (exigence « lumières qui s'allument et s'éteignent »),
- * indépendante des trois lampes réglables à la main. */
+/** Vague allumée/éteinte des lampes automatiques (animation optionnelle « Clignotement des lampes »,
+ * décochée par défaut), indépendante des trois lampes réglables à la main. */
 export function autoLightOnOff(index: number, timeSeconds: number, speed: number): boolean {
   return Math.sin(timeSeconds * speed * 1.5 - index * 0.6) > 0;
 }

@@ -400,6 +400,7 @@ export function LightingLab() {
               const light = config.lights.find(entry => entry.id === id);
               return light ? <LightFields key={id} light={light} scene={sceneId} disabled={false} onChange={patch => changeLight(id, patch)} /> : null;
             })}
+            <Input id="lighting-auto-blink" label="Clignotement des lampes" help="Vague allumée/éteinte des lampes automatiques. Décochée, elles restent toutes allumées." type="checkbox" checked={config.autoLightBlink} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightBlink: event.target.checked })} />
             <Button id="lighting-pause" variant={config.animationPaused ? 'primary' : 'secondary'} onClick={() => change({ animationPaused: !config.animationPaused })}>
               {config.animationPaused ? 'Reprendre' : 'Mettre en pause'}
             </Button>

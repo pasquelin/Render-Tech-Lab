@@ -173,10 +173,14 @@ export async function createLightingBench(
     // Le soleil ouvre la liste : quand plus de lampes demandent une ombre que le moteur n'en
     // redessine par image, c'est lui qui garde sa tranche — ses cascades tiennent toute la scène.
     const adjustable = capShadows([...sunLights(config.sun), ...config.lights], config.shadows);
-    // Vague allumée/éteinte des lampes automatiques, indépendante des trois lampes réglables à la main.
-    // Le contrat refuse une intensité nulle (INVALID_SCENE_LIGHT) : une lampe « éteinte » est simplement
-    // absente de la liste souhaitée, retirée par applyLightSet le temps qu'elle reste hors cycle.
-    const auto = capShadows(autoLights.filter((_, index) => autoLightOnOff(index, elapsed, animSpeed)), config.shadows);
+    // Les lampes automatiques restent toutes allumées ; leur vague allumée/éteinte n'arrive que si
+    // l'utilisateur coche « Clignotement des lampes ». Le contrat refuse une intensité nulle
+    // (INVALID_SCENE_LIGHT) : une lampe « éteinte » est simplement absente de la liste souhaitée,
+    // retirée par applyLightSet le temps qu'elle reste hors cycle.
+    const blinking = config.autoLightBlink
+      ? autoLights.filter((_, index) => autoLightOnOff(index, elapsed, animSpeed))
+      : autoLights;
+    const auto = capShadows(blinking, config.shadows);
     let desired = [...adjustable, ...auto];
     if (scene === 'emerald-night') {
       const heads = carHeadlightPoses(elapsed, animSpeed);

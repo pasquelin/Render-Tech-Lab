@@ -162,6 +162,9 @@ export interface LightingBenchConfig {
   autoLightRange: number;
   autoLightIntensity: number;
   lights: PlacedLight[];
+  /** Vague allumée/éteinte des lampes automatiques. Éteinte par défaut : une lampe posée reste
+   *  allumée tant que l'utilisateur ne demande pas le clignotement. */
+  autoLightBlink: boolean;
   animationPaused: boolean;
   animationSpeed: number;
 }
@@ -174,7 +177,7 @@ export function defaultConfig(scene: SceneId): LightingBenchConfig {
     scene, view: DEFAULT_LIGHTING_VIEW, sun: { ...DEFAULT_SUN, enabled: scene !== 'emerald-night' },
     shadows: true, autoLightCount: 6,
     autoLightRange: limits.defaultRange, autoLightIntensity: limits.defaultIntensity,
-    lights: defaultAdjustableLights(scene), animationPaused: false, animationSpeed: 1,
+    lights: defaultAdjustableLights(scene), autoLightBlink: false, animationPaused: false, animationSpeed: 1,
   };
 }
 
