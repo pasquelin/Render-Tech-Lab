@@ -80,10 +80,16 @@ export function carHeadlightPoses(timeSeconds: number, speed: number): { positio
 }
 
 /** Emplacement automatique des lampes (curseur 1-30) : grille dans les pièces pour la maison,
- * lampadaires réels (puis grille de secours) pour Emerald. */
-export function autoLightPositions(scene: SceneId, count: number): Vec3[] {
+ * lampadaires réels (puis grille de secours) pour Emerald. Quand un point de vue est donné, les
+ * lampadaires retenus sont les plus proches de lui : la rue où l'on arrive est celle qu'on allume,
+ * sans qu'aucune coordonnée de scène soit écrite ici. */
+export function autoLightPositions(scene: SceneId, count: number, origin?: Vec3): Vec3[] {
   if (scene === 'emerald-night') {
-    return EMERALD_STREETLIGHTS.slice(0, count).map(entry => [entry.position[0], entry.position[1] + EMERALD_STREETLIGHT_HEAD_OFFSET_M, entry.position[2]] as Vec3);
+    const heads = EMERALD_STREETLIGHTS.map(entry => [entry.position[0], entry.position[1] + EMERALD_STREETLIGHT_HEAD_OFFSET_M, entry.position[2]] as Vec3);
+    const ordered = origin
+      ? [...heads].sort((a, b) => (a[0] - origin[0]) ** 2 + (a[2] - origin[2]) ** 2 - ((b[0] - origin[0]) ** 2 + (b[2] - origin[2]) ** 2))
+      : heads;
+    return ordered.slice(0, count);
   }
   const rooms: Vec3[] = [[-10, 2.6, 8], [10, 2.6, 8], [-10, 2.6, -8], [10, 2.6, -8]];
   const positions: Vec3[] = [];
@@ -103,14 +109,14 @@ export function autoLightOnOff(index: number, timeSeconds: number, speed: number
   return Math.sin(timeSeconds * speed * 1.5 - index * 0.6) > 0;
 }
 
-export function buildAutoLights(scene: SceneId, count: number, baseColor: Vec3, baseIntensity: number, castsShadow: boolean): SceneLight[] {
-  return autoLightPositions(scene, count).map((position, index) => ({
+export function buildAutoLights(scene: SceneId, count: number, baseColor: Vec3, baseIntensity: number, range: number, castsShadow: boolean, origin?: Vec3): SceneLight[] {
+  return autoLightPositions(scene, count, origin).map((position, index) => ({
     id: `auto-${index}`,
     kind: 'point',
     position,
     color: baseColor,
     intensity: baseIntensity,
-    range: scene === 'emerald-night' ? 14 : 6,
+    range,
     castsShadow: castsShadow && index < 4,
   }));
 }

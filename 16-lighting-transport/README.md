@@ -11,4 +11,4 @@ L'entrée publique est [`index.ts`](index.ts). Elle expose les métadonnées et 
 - [Périmètre et limites](docs/limits.md)
 - [Intégration dans le Lab](docs/migration.md)
 
-Aucune mesure de performance n'est déduite de l'enregistrement de ce banc. Le rendu observé est le backend expérimental WebGL2, pas le parcours de géométrie préparée du renderer de production.
+Aucune mesure de performance n'est déduite de l'enregistrement de ce banc. Le moteur observé est celui que le panneau de droite laisse choisir, WebGPU ou WebGL2 ; le bandeau de la vue nomme celui qui tourne réellement.

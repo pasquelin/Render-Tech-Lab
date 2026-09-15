@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { createExplorer, exactPagesBackend, webgpuPagesBackend, detectCapabilities } from '@web-geometry/sdk/browser';
+import { createExplorer, exactPagesBackend, webgpuPagesBackend } from '@web-geometry/sdk/browser';
 import type { CameraPose, Explorer, BackendFactory } from '@web-geometry/sdk/browser';
 import {
-  MAX_SHADOWED_LIGHTS_PER_FRAME, defaultConfig, emptyLightingStats,
+  MAX_SHADOWED_LIGHTS_PER_FRAME, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats,
   type LightingBackendId, type LightingBenchConfig, type LightingController, type LightingBenchOptions,
-  type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
+  type LightingCameraMode, type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
+  type Vec3,
 } from '../contracts.ts';
 import { detectEngineCapabilities } from '../implementation/engineCapabilities.ts';
 import { createHouseAnimatedNodes, carHeadlightPoses, autoLightOnOff, buildAutoLights, type AnimatedNode } from '../implementation/sceneAnimations.ts';
@@ -53,22 +54,12 @@ function boxSize(canvas: HTMLCanvasElement): { width: number; height: number } {
   return { width: Math.max(1, Math.round(box.width)), height: Math.max(1, Math.round(box.height)) };
 }
 
-/** Le contrat de lampes (addLight/setLight/removeLight/setEnvironment/setTransform) n'est rendu
- * visible que par le backend WebGPU (webgpuPagesBackend) ; exact-cluster-pages (WebGL2) reste la
- * valeur sûre partout ailleurs. On préfère WebGPU dès qu'un adaptateur existe, sans jamais l'exiger. */
+/** Les deux moteurs que l'utilisateur choisit dans le panneau, comme au banc 15. Aucun repli
+ * silencieux : le moteur demandé est le seul construit, et son absence est dite. */
 const BACKENDS: Record<LightingBackendId, BackendFactory> = {
   'webgpu-page-raster': webgpuPagesBackend,
   'exact-cluster-pages': exactPagesBackend,
 };
-
-async function pickBackend(): Promise<LightingBackendId> {
-  try {
-    const probe = document.createElement('canvas');
-    const detected = await detectCapabilities('webgpu', probe);
-    if (detected.adapter) return 'webgpu-page-raster';
-  } catch { /* WebGPU indisponible sur ce navigateur ou cet appareil : repli WebGL2 silencieux. */ }
-  return 'exact-cluster-pages';
-}
 
 export async function createLightingBench(
   canvas: HTMLCanvasElement, scene: SceneId, options: LightingBenchOptions = {},
@@ -76,7 +67,7 @@ export async function createLightingBench(
   const { signal, onProgress } = options;
   onProgress?.('Préparation de la scène avec le SDK…');
   const { width, height } = boxSize(canvas);
-  const backend = await pickBackend();
+  const backend = options.backend ?? DEFAULT_LIGHTING_BACKEND;
   const explorer = await createExplorer(canvas, {
     manifestUrl: MANIFEST_URLS[scene], scope: 'full', signal, preload: 'all', width, height,
     backends: [BACKENDS[backend]], onPreparation: event => onProgress?.(event.message),
@@ -94,11 +85,13 @@ export async function createLightingBench(
 
   // La caméra à la première personne (WASD, souris, collisions) est le composant existant du banc 15 ;
   // ce fichier ne construit rien lui-même — options.createControls (fourni par LightingLab.tsx, la
-  // seule couche autorisée à importer un autre banc) choisit navigationControls ou l'orbite de repli.
-  const controls: LightingControlsHandle = options.createControls ? await options.createControls({
-    canvas, camera: explorer.camera, bounds: explorer.bounds, manifestUrl: MANIFEST_URLS[scene],
+  // seule couche autorisée à importer un autre banc) construit le déplacement demandé.
+  const buildControls = (mode: LightingCameraMode) => options.createControls?.({
+    mode, canvas, camera: explorer.camera, bounds: explorer.bounds, manifestUrl: MANIFEST_URLS[scene],
     sourceKey: explorer.metadata.key, orbitControls: () => explorer.controls(),
-  }) : noopControls;
+  }) ?? Promise.resolve(noopControls);
+  let cameraMode = options.camera ?? DEFAULT_LIGHTING_CAMERA;
+  let controls: LightingControlsHandle = await buildControls(cameraMode);
 
   const houseNodes = scene === 'house' ? createHouseAnimatedNodes() : [];
   const nodeBuffers = new Map<string, { matrix: THREE.Matrix4; buffer: Float32Array }>();
@@ -120,7 +113,12 @@ export async function createLightingBench(
 
   let config: LightingBenchConfig = defaultConfig(scene);
   const activeLightIds = new Set<string>();
-  let autoLights: SceneLight[] = buildAutoLights(scene, config.autoLightCount, [1, 0.85, 0.6], 5, config.shadows);
+  // Les commandes viennent de placer la caméra à son point de départ : c'est autour de lui que les
+  // lampadaires automatiques sont retenus, pour que la rue d'arrivée soit celle qui s'allume.
+  const lightOrigin = explorer.camera.position.toArray() as Vec3;
+  const autoColor: Vec3 = [1, 0.85, 0.6];
+  const rebuildAutoLights = () => buildAutoLights(scene, config.autoLightCount, autoColor, config.autoLightIntensity, config.autoLightRange, config.shadows, lightOrigin);
+  let autoLights: SceneLight[] = rebuildAutoLights();
   let stats = emptyLightingStats();
   const start0 = performance.now();
   let previousRafTime: number | null = null;
@@ -195,13 +193,24 @@ export async function createLightingBench(
 
   return {
     backend,
+    get camera() { return cameraMode; },
     getConfig: () => ({ ...config, lights: config.lights.map(light => ({ ...light })) }),
     getCapabilities: () => ({ ...capabilities }),
     getStats: () => stats,
     update(patch) {
       config = { ...config, ...patch, lights: patch.lights ? patch.lights.map(light => ({ ...light })) : config.lights };
-      if (patch.autoLightCount !== undefined) autoLights = buildAutoLights(scene, config.autoLightCount, [1, 0.85, 0.6], 5, config.shadows);
+      if (patch.autoLightCount !== undefined || patch.autoLightIntensity !== undefined || patch.autoLightRange !== undefined || patch.shadows !== undefined) autoLights = rebuildAutoLights();
       if (patch.night !== undefined) applyEnvironment();
+    },
+    async setCamera(mode) {
+      if (disposed || mode === cameraMode) return cameraMode;
+      // Les nouvelles commandes sont construites avant de libérer les anciennes : si la géométrie de
+      // navigation manque, la scène reste pilotable avec le déplacement précédent.
+      const replacement = await buildControls(mode);
+      controls.dispose();
+      controls = replacement;
+      cameraMode = mode;
+      return cameraMode;
     },
     dispose() {
       if (disposed) return;

@@ -1,6 +1,7 @@
 export { manifest } from './manifest.ts';
 export {
   SCENES, MAX_ENGINE_LIGHTS, MAX_SHADOWED_LIGHTS_PER_FRAME, ADJUSTABLE_LIGHT_IDS, SCENE_LIGHT_BOUNDS,
+  SCENE_LIGHT_LIMITS, LIGHTING_BACKEND_IDS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA,
   AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, CAPABILITY_LABELS, defaultAdjustableLights, defaultConfig, emptyLightingStats,
 } from './contracts.ts';
 export type * from './contracts.ts';

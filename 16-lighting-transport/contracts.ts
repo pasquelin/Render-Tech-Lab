@@ -36,13 +36,35 @@ export const SCENE_LIGHT_BOUNDS: Readonly<Record<SceneId, PositionBounds>> = Obj
   'emerald-night': Object.freeze({ minX: -64, maxX: -13, minY: 0.3, maxY: 10, minZ: 13, maxZ: 64 }),
 });
 
+/** Plages des curseurs d'une lampe, à l'échelle de la scène. `intensity` est l'intensité
+ *  radiométrique du contrat du moteur (W/sr) et `range` la portée en mètres : un pâté de maisons
+ *  demande des dizaines de mètres et des dizaines de W/sr là où une pièce se contente de quelques
+ *  unités. Les valeurs par défaut sortent d'ici pour qu'une seule table décrive chaque scène. */
+export interface SceneLightLimits {
+  readonly intensityMax: number;
+  readonly intensityStep: number;
+  readonly rangeMax: number;
+  readonly rangeStep: number;
+  readonly defaultIntensity: number;
+  readonly defaultRange: number;
+}
+export const SCENE_LIGHT_LIMITS: Readonly<Record<SceneId, SceneLightLimits>> = Object.freeze({
+  house: Object.freeze({ intensityMax: 20, intensityStep: 0.5, rangeMax: 20, rangeStep: 0.5, defaultIntensity: 6, defaultRange: 12 }),
+  'emerald-night': Object.freeze({ intensityMax: 200, intensityStep: 5, rangeMax: 80, rangeStep: 1, defaultIntensity: 40, defaultRange: 30 }),
+});
+
 export function defaultAdjustableLights(scene: SceneId): SceneLight[] {
   const b = SCENE_LIGHT_BOUNDS[scene];
+  const limits = SCENE_LIGHT_LIMITS[scene];
   const midY = Math.min(b.maxY, 2.4);
+  // Le projecteur garde son rapport historique aux deux ponctuelles : un tiers plus intense, un
+  // sixième moins portant. Seule l'échelle de la scène change d'une scène à l'autre.
+  const spotIntensity = Math.min(limits.intensityMax, limits.defaultIntensity * 4 / 3);
+  const spotRange = limits.defaultRange * 5 / 6;
   return [
-    { id: 'light-1', kind: 'point', position: [b.minX + (b.maxX - b.minX) * 0.25, midY, b.minZ + (b.maxZ - b.minZ) * 0.5], color: [1, 0.82, 0.6], intensity: 6, range: 12, castsShadow: true },
-    { id: 'light-2', kind: 'point', position: [b.minX + (b.maxX - b.minX) * 0.75, midY, b.minZ + (b.maxZ - b.minZ) * 0.5], color: [0.55, 0.75, 1], intensity: 6, range: 12, castsShadow: true },
-    { id: 'light-3', kind: 'spot', position: [b.minX + (b.maxX - b.minX) * 0.5, Math.min(b.maxY, 2.8), b.minZ + (b.maxZ - b.minZ) * 0.25], direction: [0, -1, 0], color: [1, 0.55, 0.85], intensity: 8, range: 10, coneAngle: 0.6, castsShadow: false },
+    { id: 'light-1', kind: 'point', position: [b.minX + (b.maxX - b.minX) * 0.25, midY, b.minZ + (b.maxZ - b.minZ) * 0.5], color: [1, 0.82, 0.6], intensity: limits.defaultIntensity, range: limits.defaultRange, castsShadow: true },
+    { id: 'light-2', kind: 'point', position: [b.minX + (b.maxX - b.minX) * 0.75, midY, b.minZ + (b.maxZ - b.minZ) * 0.5], color: [0.55, 0.75, 1], intensity: limits.defaultIntensity, range: limits.defaultRange, castsShadow: true },
+    { id: 'light-3', kind: 'spot', position: [b.minX + (b.maxX - b.minX) * 0.5, Math.min(b.maxY, 2.8), b.minZ + (b.maxZ - b.minZ) * 0.25], direction: [0, -1, 0], color: [1, 0.55, 0.85], intensity: spotIntensity, range: spotRange, coneAngle: 0.6, castsShadow: false },
   ];
 }
 
@@ -71,17 +93,33 @@ export interface LightingBenchConfig {
   night: boolean;
   shadows: boolean;
   autoLightCount: number;
+  /** Portée (m) et intensité (W/sr) communes aux lampes automatiques, réglables comme celles des
+   *  trois lampes nommées : sans elles, une lampe de pièce éclairerait une rue entière. */
+  autoLightRange: number;
+  autoLightIntensity: number;
   lights: SceneLight[];
   animationPaused: boolean;
   animationSpeed: number;
 }
 
 export function defaultConfig(scene: SceneId): LightingBenchConfig {
-  return { scene, night: scene === 'emerald-night', shadows: true, autoLightCount: 6, lights: defaultAdjustableLights(scene), animationPaused: false, animationSpeed: 1 };
+  const limits = SCENE_LIGHT_LIMITS[scene];
+  return {
+    scene, night: scene === 'emerald-night', shadows: true, autoLightCount: 6,
+    autoLightRange: limits.defaultRange, autoLightIntensity: limits.defaultIntensity,
+    lights: defaultAdjustableLights(scene), animationPaused: false, animationSpeed: 1,
+  };
 }
 
-/** Backend réellement retenu au démarrage ; mêmes identifiants que le catalogue de moteurs du Lab. */
-export type LightingBackendId = 'exact-cluster-pages' | 'webgpu-page-raster';
+/** Moteurs que ce banc sait lancer ; mêmes identifiants que le catalogue de moteurs du Lab, pour
+ *  que le sélecteur reprenne les libellés du banc 15 au lieu d'en inventer. */
+export const LIGHTING_BACKEND_IDS = ['webgpu-page-raster', 'exact-cluster-pages'] as const;
+export type LightingBackendId = (typeof LIGHTING_BACKEND_IDS)[number];
+export const DEFAULT_LIGHTING_BACKEND: LightingBackendId = 'webgpu-page-raster';
+
+/** Les trois déplacements du banc 15, repris tels quels : orbite, marche libre, jeu. */
+export type LightingCameraMode = 'orbit' | 'free' | 'game';
+export const DEFAULT_LIGHTING_CAMERA: LightingCameraMode = 'game';
 
 export interface LightingFrameStats {
   fps: number | null;
@@ -125,6 +163,8 @@ export interface LightingControlsHandle {
  * en dehors du runner (dans src/components/LightingLab.tsx, la seule couche autorisée à importer les
  * fichiers internes d'un autre banc), pour que le runner reste sans dépendance envers un autre banc. */
 export interface ControlsContext {
+  /** Déplacement demandé par l'utilisateur ; la couche React décide ce qu'elle sait construire. */
+  mode: LightingCameraMode;
   canvas: HTMLCanvasElement;
   camera: THREE.PerspectiveCamera;
   bounds: THREE.Box3;
@@ -138,14 +178,22 @@ export interface ControlsContext {
 export interface LightingBenchOptions {
   signal?: AbortSignal;
   onProgress?: (message: string) => void;
+  /** Moteur demandé. Aucun repli silencieux : un moteur absent fait échouer le lancement avec son
+   *  motif, à charge de l'utilisateur d'en choisir un autre dans le sélecteur. */
+  backend?: LightingBackendId;
+  camera?: LightingCameraMode;
   createControls?: (context: ControlsContext) => Promise<LightingControlsHandle>;
 }
 
 export interface LightingController {
   readonly backend: LightingBackendId;
+  readonly camera: LightingCameraMode;
   getConfig(): LightingBenchConfig;
   getCapabilities(): EngineCapabilities;
   getStats(): LightingFrameStats;
   update(patch: Partial<LightingBenchConfig>): void;
+  /** Reconstruit les commandes pour un autre déplacement, scène ouverte. Les anciennes ne sont
+   *  libérées qu'une fois les nouvelles construites : un échec laisse la scène pilotable. */
+  setCamera(mode: LightingCameraMode): Promise<LightingCameraMode>;
   dispose(): void;
 }
