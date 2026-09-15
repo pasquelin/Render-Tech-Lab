@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createExplorer, exactPagesBackend, webgpuPagesBackend } from '@web-geometry/sdk/browser';
 import type { CameraPose, Explorer, BackendFactory } from '@web-geometry/sdk/browser';
 import {
-  MAX_SHADOWED_LIGHTS_PER_FRAME, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats,
+  MAX_SHADOWED_LIGHTS_PER_FRAME, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats, sunLights,
   type LightingBackendId, type LightingBenchConfig, type LightingController, type LightingBenchOptions,
   type LightingCameraMode, type SceneId, type SceneLight, type EngineCapabilities, type LightingControlsHandle,
   type Vec3,
@@ -128,12 +128,12 @@ export async function createLightingBench(
   let rafHandle = 0;
   let disposed = false;
 
-  const applyEnvironment = () => {
-    if (!capabilities.setEnvironment) return;
-    const skyColor: [number, number, number] = config.night ? [0.02, 0.03, 0.06] : [0.55, 0.68, 0.85];
-    explorer.setEnvironment({ skyColor, exposure: config.night ? 0.6 : 1 });
+  // Ce que le chemin opaque doit sortir. Rien n'éclaire plus une surface sans lampe déclarée : la
+  // nuit n'est pas une vue, c'est un soleil éteint.
+  const applyLightingView = () => {
+    if (capabilities.setLightingView) explorer.setLightingView(config.view);
   };
-  applyEnvironment();
+  applyLightingView();
 
   const tick = (time: number) => {
     if (disposed) return;
@@ -158,7 +158,9 @@ export async function createLightingBench(
       }
     }
 
-    const adjustable = capShadows(config.lights, config.shadows);
+    // Le soleil ouvre la liste : quand plus de lampes demandent une ombre que le moteur n'en
+    // redessine par image, c'est lui qui garde sa tranche — ses cascades tiennent toute la scène.
+    const adjustable = capShadows([...sunLights(config.sun), ...config.lights], config.shadows);
     // Vague allumée/éteinte des lampes automatiques, indépendante des trois lampes réglables à la main.
     // Le contrat refuse une intensité nulle (INVALID_SCENE_LIGHT) : une lampe « éteinte » est simplement
     // absente de la liste souhaitée, retirée par applyLightSet le temps qu'elle reste hors cycle.
@@ -203,7 +205,7 @@ export async function createLightingBench(
     update(patch) {
       config = { ...config, ...patch, lights: patch.lights ? patch.lights.map(light => ({ ...light })) : config.lights };
       if (AUTO_LIGHT_KEYS.some(key => patch[key] !== undefined)) autoLights = rebuildAutoLights();
-      if (patch.night !== undefined) applyEnvironment();
+      if (patch.view !== undefined) applyLightingView();
     },
     async setCamera(mode) {
       if (disposed || mode === cameraMode) return cameraMode;

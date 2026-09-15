@@ -10,7 +10,7 @@ export function detectEngineCapabilities(explorer: unknown): EngineCapabilities 
     addLight: typeof owned.addLight === 'function',
     setLight: typeof owned.setLight === 'function',
     removeLight: typeof owned.removeLight === 'function',
-    setEnvironment: typeof owned.setEnvironment === 'function',
+    setLightingView: typeof owned.setLightingView === 'function',
     setTransform: typeof owned.setTransform === 'function',
   };
 }

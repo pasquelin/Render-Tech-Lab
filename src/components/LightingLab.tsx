@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { SCENES, SCENE_LIGHT_BOUNDS, SCENE_LIGHT_LIMITS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, LIGHTING_BACKEND_IDS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
-import type { LightingBackendId, LightingBenchConfig, LightingCameraMode, LightingController, SceneId, SceneLight, SceneLightLimits, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
+import { SCENES, SCENE_LIGHT_BOUNDS, SCENE_LIGHT_LIMITS, AUTO_LIGHT_MIN, AUTO_LIGHT_MAX, ADJUSTABLE_LIGHT_IDS, LIGHTING_BACKEND_IDS, LIGHTING_VIEWS, SUN_LIGHT_ID, SUN_LIMITS, DEFAULT_LIGHTING_BACKEND, DEFAULT_LIGHTING_CAMERA, defaultConfig, emptyLightingStats } from '../../16-lighting-transport/index.ts';
+import type { LightingBackendId, LightingBenchConfig, LightingCameraMode, LightingController, SceneId, SceneLightingView, SceneLightLimits, PlacedLight, SunConfig, EngineCapabilities, LightingFrameStats, Vec3, ControlsContext, LightingControlsHandle } from '../../16-lighting-transport/index.ts';
 import type { StageProfile, StageQuantiles } from '@web-geometry/sdk';
 import { initialSnapshot, type LabActions } from '../lab/labState.ts';
 import { navigateLabRoute } from '../lab/navigation.ts';
@@ -34,6 +34,8 @@ const number = (value: number | null | undefined, unit = '') => (value == null |
 const metres = (value: number) => value.toFixed(1) + ' m';
 /** `intensity` est l'intensité radiométrique du contrat de lampes du moteur, pas un facteur. */
 const radiometric = (value: number) => value.toFixed(1) + ' W/sr';
+/** La direction du soleil se règle en degrés : azimut sur l'horizon, hauteur au-dessus de lui. */
+const degrees = (value: number) => value.toFixed(0) + '°';
 
 /** Un seul catalogue nomme les moteurs du Lab : ce banc lit celui du banc 15, il n'en réécrit aucun. */
 const engineLabel = (id: LightingBackendId) => benchEngine(id).label;
@@ -106,7 +108,26 @@ function stageProvenance(profile: StageProfile | null): string | undefined {
 const displayColor = (color: Vec3) => '#' + color.map(value => { const x = Math.min(1, Math.max(0, value)); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055)).toString(16).padStart(2, '0'); }).join('');
 const linearColor = (hex: string): Vec3 => [1, 3, 5].map(offset => { const x = parseInt(hex.slice(offset, offset + 2), 16) / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }) as Vec3;
 
-function LightFields({ light, scene, disabled, onChange }: { light: SceneLight; scene: SceneId; disabled: boolean; onChange: (patch: Partial<SceneLight>) => void }) {
+/** Le soleil du banc : une lampe directionnelle comme les autres, mais sans position ni portée —
+ *  le moteur les refuse. L'éteindre ne laisse que les lampes posées : c'est la nuit. */
+function SunFields({ sun, disabled, onChange }: { sun: SunConfig; disabled: boolean; onChange: (patch: Partial<SunConfig>) => void }) {
+  const off = disabled || !sun.enabled;
+  return (
+    <div className="space-y-2" data-light-id={SUN_LIGHT_ID}>
+      <h3 className="text-xs font-semibold">soleil</h3>
+      <Input id="lighting-sun-enabled" label="Allumé" help="Éteint, plus rien n’éclaire que les lampes déclarées : c’est la nuit." type="checkbox" checked={sun.enabled} disabled={disabled} onChange={event => onChange({ enabled: event.target.checked })} />
+      <div className="grid grid-cols-2 gap-2">
+        <Input id="lighting-sun-color" label="Couleur" type="color" value={displayColor(sun.color)} disabled={off} onChange={event => onChange({ color: linearColor(event.target.value) })} />
+        <Input id="lighting-sun-intensity" label={'Intensité · ' + radiometric(sun.intensity)} help="Intensité radiométrique du contrat de lampes du moteur." type="range" min={SUN_LIMITS.intensityStep} max={SUN_LIMITS.intensityMax} step={SUN_LIMITS.intensityStep} value={sun.intensity} disabled={off} onChange={event => onChange({ intensity: Number(event.target.value) })} />
+        <Input id="lighting-sun-azimuth" label={'Azimut · ' + degrees(sun.azimuthDeg)} help="Où le soleil se tient sur l’horizon." type="range" min={0} max={SUN_LIMITS.azimuthMax} step={SUN_LIMITS.angleStep} value={sun.azimuthDeg} disabled={off} onChange={event => onChange({ azimuthDeg: Number(event.target.value) })} />
+        <Input id="lighting-sun-elevation" label={'Hauteur · ' + degrees(sun.elevationDeg)} help="Sa hauteur au-dessus de l’horizon : plus bas, les ombres s’allongent." type="range" min={SUN_LIMITS.elevationMin} max={SUN_LIMITS.elevationMax} step={SUN_LIMITS.angleStep} value={sun.elevationDeg} disabled={off} onChange={event => onChange({ elevationDeg: Number(event.target.value) })} />
+        <Input id="lighting-sun-shadow" label="Ombre" help="Cascades qui suivent la caméra." type="checkbox" checked={sun.castsShadow} disabled={off} onChange={event => onChange({ castsShadow: event.target.checked })} />
+      </div>
+    </div>
+  );
+}
+
+function LightFields({ light, scene, disabled, onChange }: { light: PlacedLight; scene: SceneId; disabled: boolean; onChange: (patch: Partial<PlacedLight>) => void }) {
   const bounds = SCENE_LIGHT_BOUNDS[scene];
   // Les plages suivent l'échelle de la scène : une pièce et un pâté de maisons ne se règlent pas
   // avec le même curseur.
@@ -241,9 +262,10 @@ export function LightingLab() {
     if (!controllerRef.current) return;
     setConfig(previous => ({ ...previous, ...patch })); controllerRef.current.update(patch);
   };
-  const changeLight = (id: string, patch: Partial<SceneLight>) => {
+  const changeLight = (id: string, patch: Partial<PlacedLight>) => {
     change({ lights: config.lights.map(light => (light.id === id ? { ...light, ...patch } : light)) });
   };
+  const changeSun = (patch: Partial<SunConfig>) => change({ sun: { ...config.sun, ...patch } });
   /** Comme au banc 15 : le moteur précédent est libéré, puis la scène rouvre sur le moteur choisi,
    *  sur une surface de rendu neuve que la fiche commune remonte pendant l'attente. */
   const changeEngine = (id: LightingBackendId) => {
@@ -321,7 +343,10 @@ export function LightingLab() {
         </Select>
         {active ? (
           <>
-            <Input id="lighting-night" label="Mode nuit" type="checkbox" checked={config.night} disabled={liveLocked || !capabilities?.setEnvironment} onChange={event => change({ night: event.target.checked })} />
+            <Select id="lighting-view" label="Vue d’éclairage" help="« Sans éclairage » est la vue de diagnostic d’albédo brut du moteur : la couleur des matériaux telle quelle, sans lampe. « Auto » la rend tant qu’aucune lampe n’est déclarée." value={config.view} disabled={liveLocked || !capabilities?.setLightingView} onChange={event => change({ view: event.target.value as SceneLightingView })}>
+              {LIGHTING_VIEWS.map(view => <option key={view.value} value={view.value}>{view.label}</option>)}
+            </Select>
+            <SunFields sun={config.sun} disabled={liveLocked || !capabilities?.addLight} onChange={changeSun} />
             <Input id="lighting-shadows" label="Ombres" type="checkbox" checked={config.shadows} disabled={liveLocked} onChange={event => change({ shadows: event.target.checked })} />
             <Input id="lighting-auto-count" label={'Lampes automatiques · ' + config.autoLightCount} help="Lampadaires du modèle les plus proches du point de départ, puis grille de secours." type="range" min={AUTO_LIGHT_MIN} max={AUTO_LIGHT_MAX} step={1} value={config.autoLightCount} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightCount: Number(event.target.value) })} />
             <Input id="lighting-auto-intensity" label={'Intensité des lampes automatiques · ' + radiometric(config.autoLightIntensity)} {...intensitySlider(limits)} value={config.autoLightIntensity} disabled={liveLocked || !capabilities?.addLight} onChange={event => change({ autoLightIntensity: Number(event.target.value) })} />

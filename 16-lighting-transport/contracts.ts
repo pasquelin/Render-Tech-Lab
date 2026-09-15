@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import type { CameraPose, FrameMetrics } from '@web-geometry/sdk/browser';
-import type { StageProfile } from '@web-geometry/sdk';
+import type { SceneLight, SceneLightingView, StageProfile } from '@web-geometry/sdk';
 
 export type Vec3 = [number, number, number];
 export type SceneId = 'house' | 'emerald-night';
@@ -10,19 +10,15 @@ export const SCENES: ReadonlyArray<{ readonly id: SceneId; readonly title: strin
   { id: 'emerald-night', title: 'Scène urbaine de nuit', description: 'Un pâté de maisons de nuit, lampadaires du modèle et deux phares qui suivent un parcours fermé.' },
 ];
 
-/** Contrat livré par l'Opus (moteur) ; le banc l'appelle tel quel et détecte ce qui manque encore. */
-export type SceneLightKind = 'point' | 'spot';
-export interface SceneLight {
-  id: string;
-  kind: SceneLightKind;
-  position: Vec3;
-  direction?: Vec3;
-  color: Vec3;
-  intensity: number;
-  range: number;
-  coneAngle?: number;
-  castsShadow: boolean;
-}
+/** Le contrat de lampes du moteur, repris tel quel : le banc ne redécrit pas une lampe, il déclare
+ *  celles du moteur. Trois types — ponctuelle, projecteur, directionnelle (le soleil) — et les champs
+ *  qu'un type n'utilise pas sont refusés à la validation. */
+export type { SceneLight, SceneLightingView };
+
+/** Une lampe que le banc pose dans la scène : ponctuelle ou projecteur, donc toujours une position
+ *  et une portée. Le soleil n'en a ni l'une ni l'autre, et n'entre pas dans ce type. */
+export type PlacedLight = Omit<SceneLight, 'kind' | 'position' | 'range'> & { kind: 'point' | 'spot'; position: Vec3; range: number };
+
 export const MAX_ENGINE_LIGHTS = 64;
 export const MAX_SHADOWED_LIGHTS_PER_FRAME = 4;
 
@@ -53,7 +49,7 @@ export const SCENE_LIGHT_LIMITS: Readonly<Record<SceneId, SceneLightLimits>> = O
   'emerald-night': Object.freeze({ intensityMax: 200, intensityStep: 5, rangeMax: 80, rangeStep: 1, defaultIntensity: 40, defaultRange: 30 }),
 });
 
-export function defaultAdjustableLights(scene: SceneId): SceneLight[] {
+export function defaultAdjustableLights(scene: SceneId): PlacedLight[] {
   const b = SCENE_LIGHT_BOUNDS[scene];
   const limits = SCENE_LIGHT_LIMITS[scene];
   const midY = Math.min(b.maxY, 2.4);
@@ -68,6 +64,64 @@ export function defaultAdjustableLights(scene: SceneId): SceneLight[] {
   ];
 }
 
+/** Le soleil du banc : une lampe directionnelle déclarée comme les autres, sur les deux scènes. On
+ *  l'éteint pour passer à la nuit — le moteur n'ayant plus aucune lumière implicite, il ne reste
+ *  alors que les lampes posées. Sa direction se règle en degrés, azimut et hauteur au-dessus de
+ *  l'horizon, parce qu'un vecteur de propagation ne se manipule pas à la main. */
+export interface SunConfig {
+  enabled: boolean;
+  azimuthDeg: number;
+  elevationDeg: number;
+  color: Vec3;
+  intensity: number;
+  castsShadow: boolean;
+}
+export const SUN_LIGHT_ID = 'sun';
+
+/** Les bornes du soleil ne dépendent pas de la scène : une directionnelle porte la même irradiance
+ *  partout, là où une ponctuelle se règle à l'échelle de la pièce ou de la rue qu'elle éclaire. */
+export interface SunLimits {
+  readonly intensityMax: number;
+  readonly intensityStep: number;
+  readonly elevationMin: number;
+  readonly elevationMax: number;
+  readonly azimuthMax: number;
+  readonly angleStep: number;
+}
+export const SUN_LIMITS: SunLimits = Object.freeze({
+  intensityMax: 10, intensityStep: 0.1, elevationMin: 5, elevationMax: 90, azimuthMax: 359, angleStep: 1,
+});
+
+/** Un après-midi quelconque : le soleil vient de derrière l'épaule gauche, assez haut pour que les
+ *  ombres entrent par les portes sans raser le sol. Aucune valeur n'est propre à une scène. */
+export const DEFAULT_SUN: Readonly<SunConfig> = Object.freeze({
+  enabled: true, azimuthDeg: 135, elevationDeg: 40, color: [1, 0.97, 0.92] as Vec3, intensity: 3, castsShadow: true,
+});
+
+/** La direction de propagation, du ciel vers le sol : azimut mesuré depuis +Z vers +X, hauteur
+ *  au-dessus de l'horizon. Le moteur veut le sens où va la lumière, donc l'opposé du vecteur qui
+ *  pointe vers le soleil. */
+export function sunDirection(sun: SunConfig): Vec3 {
+  const azimuth = (sun.azimuthDeg * Math.PI) / 180, elevation = (sun.elevationDeg * Math.PI) / 180;
+  const horizontal = Math.cos(elevation);
+  return [-horizontal * Math.sin(azimuth), -Math.sin(elevation), -horizontal * Math.cos(azimuth)];
+}
+
+/** La lampe déclarée pour ce soleil, ou aucune quand il est éteint. Une directionnelle refuse une
+ *  position, une portée et un cône : ce contrat n'en donne aucun. */
+export function sunLights(sun: SunConfig): SceneLight[] {
+  if (!sun.enabled) return [];
+  return [{ id: SUN_LIGHT_ID, kind: 'directional', direction: sunDirection(sun), color: sun.color, intensity: sun.intensity, castsShadow: sun.castsShadow }];
+}
+
+/** Ce que l'hôte demande au chemin opaque de sortir (`setLightingView`). « Sans éclairage » est une
+ *  vue de diagnostic d'albédo brut, pas une lumière ; « auto » rend cette vue tant qu'aucune lampe
+ *  n'est déclarée et l'éclairage réel dès qu'il y en a une. */
+export const LIGHTING_VIEWS: ReadonlyArray<{ readonly value: SceneLightingView; readonly label: string }> = [
+  { value: 'auto', label: 'Auto' }, { value: 'lit', label: 'Éclairée' }, { value: 'unlit', label: 'Sans éclairage' },
+];
+export const DEFAULT_LIGHTING_VIEW: SceneLightingView = 'auto';
+
 /** Curseur 1-30, placé automatiquement (grille dans les pièces / lampadaires à Emerald). */
 export const AUTO_LIGHT_MIN = 1;
 export const AUTO_LIGHT_MAX = 30;
@@ -77,27 +131,30 @@ export interface EngineCapabilities {
   addLight: boolean;
   setLight: boolean;
   removeLight: boolean;
-  setEnvironment: boolean;
+  setLightingView: boolean;
   setTransform: boolean;
 }
 export const CAPABILITY_LABELS: Readonly<Record<keyof EngineCapabilities, string>> = Object.freeze({
   addLight: 'Ajout de lampes (addLight)',
   setLight: 'Réglage des lampes (setLight)',
   removeLight: 'Retrait des lampes (removeLight)',
-  setEnvironment: 'Ciel et exposition (setEnvironment)',
+  setLightingView: 'Vue d’éclairage (setLightingView)',
   setTransform: 'Transformations de nœuds (setTransform) — portes, ventilateur, panneau, lampe, miroir, voiture',
 });
 
 export interface LightingBenchConfig {
   scene: SceneId;
-  night: boolean;
+  /** Ce que le chemin opaque sort : éclairage réel, albédo brut, ou l'un ou l'autre selon qu'une
+   *  lampe est déclarée. */
+  view: SceneLightingView;
+  sun: SunConfig;
   shadows: boolean;
   autoLightCount: number;
   /** Portée (m) et intensité (W/sr) communes aux lampes automatiques, réglables comme celles des
    *  trois lampes nommées : sans elles, une lampe de pièce éclairerait une rue entière. */
   autoLightRange: number;
   autoLightIntensity: number;
-  lights: SceneLight[];
+  lights: PlacedLight[];
   animationPaused: boolean;
   animationSpeed: number;
 }
@@ -105,7 +162,10 @@ export interface LightingBenchConfig {
 export function defaultConfig(scene: SceneId): LightingBenchConfig {
   const limits = SCENE_LIGHT_LIMITS[scene];
   return {
-    scene, night: scene === 'emerald-night', shadows: true, autoLightCount: 6,
+    // La scène urbaine se présente de nuit : son soleil est déclaré comme celui de la maison, mais
+    // éteint au départ. C'est le seul endroit où une scène choisit autre chose que le réglage commun.
+    scene, view: DEFAULT_LIGHTING_VIEW, sun: { ...DEFAULT_SUN, enabled: scene !== 'emerald-night' },
+    shadows: true, autoLightCount: 6,
     autoLightRange: limits.defaultRange, autoLightIntensity: limits.defaultIntensity,
     lights: defaultAdjustableLights(scene), animationPaused: false, animationSpeed: 1,
   };

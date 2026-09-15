@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { SceneId, SceneLight, Vec3 } from '../contracts.ts';
+import type { PlacedLight, SceneId, Vec3 } from '../contracts.ts';
 import { EMERALD_CAR_LOOP, EMERALD_STREETLIGHTS, EMERALD_STREETLIGHT_HEAD_OFFSET_M } from './emeraldFixtures.ts';
 
 /** Un nœud animé : mémoire réutilisée (position/quaternion), jamais réallouée à chaque image. */
@@ -108,7 +108,7 @@ export function autoLightOnOff(index: number, timeSeconds: number, speed: number
   return Math.sin(timeSeconds * speed * 1.5 - index * 0.6) > 0;
 }
 
-export function buildAutoLights(scene: SceneId, count: number, baseColor: Vec3, baseIntensity: number, range: number, castsShadow: boolean, origin?: Vec3): SceneLight[] {
+export function buildAutoLights(scene: SceneId, count: number, baseColor: Vec3, baseIntensity: number, range: number, castsShadow: boolean, origin?: Vec3): PlacedLight[] {
   return autoLightPositions(scene, count, origin).map((position, index) => ({
     id: `auto-${index}`,
     kind: 'point',
